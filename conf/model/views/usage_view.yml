@@ -1,0 +1,78 @@
+# 用票交付视图—— P5（docs/cube-dataqa-topic/01-design.md §9，多事实视图）
+# 多事实视图（multi-fact view）：含项目/不含项目两口径并存
+# （cbill.receipt_count 去重 / cbill_item.item_count 不去重），
+# 由 Tesseract 支持（v1.7.0+ 默认开启，1.7.42 ✓）。
+# 同名冲突规避（bill_month/total_amount/count 两 cube 都有）：cbill 为基准
+# 不前缀，cbill_item 只暴露不冲突成员；bill_type.name 与 agency.name 冲突
+# → bill_type 用 prefix: true（bill_type_name）。
+views:
+  - name: usage_view
+    title: 用票（交付视图）
+    description: 开票全口径（含/不含项目两口径）+ 票种/单位下钻；消费方统一从这里查
+    meta:
+      ai_context: >-
+        用票交付视图。不含项目笔数用 receipt_count（FID 去重），含项目份数用
+        item_count（FPID 不去重）——两口径并存，切分维度时注意口径差异。
+        金额用 total_amount/income_amt；状态口径用 normal_count/void_count；
+        业务类型金额 regular/ebill_paper/offset/direct_transfer_amt。
+        按月分析走 bill_month；票种名称走 bill_type_name。
+        单位下钻走 name/industry_name。用票单位数(去重)用 agen_cnt。
+        日均开票数量用 daily_avg（有单日均：笔数÷有开票天数），
+        分母天数用 date_cnt；冲红数用 red_cnt（正常状态金额为负，
+        比冲销开票 FBUSTYPE=3 口径宽）。缴款人类型用 payer_type
+        （FPAYERTYPE，取值 1/2 语义待业务确认）。
+        收款方式用 rec_mode（FRECMODE，1 现金/2 转账/3 其它）。
+    cubes:
+      - join_path: cbill
+        includes:
+          - count
+          - receipt_count
+          - total_amount
+          - avg_amount
+          - normal_count
+          - void_count
+          - income_amt
+          - regular_amt
+          - ebill_paper_amt
+          - offset_amt
+          - direct_transfer_amt
+          - bill_month
+          - bill_date
+          - state
+          - bus_type
+          - is_income
+          - bill_no
+          - agen_cnt
+          - daily_avg
+          - date_cnt
+          - red_cnt
+          - payer_type
+          - rec_mode
+        excludes:
+          - fid              # 技术主键
+          - bill_id          # 技术外键，票种名称走 bill_type_name
+          - region_code      # 行级权限维度
+          - agency_code      # 关联键
+          - payer_name       # 敏感字段，用票口径不需要
+      - join_path: cbill.cbill_item
+        includes:
+          - item_count
+          - total_number
+          - item_code
+          - item_name
+          - created_date
+        excludes:
+          - fid
+          - total_amount     # 与 cbill.total_amount 冲突，用票口径走主表
+          - bill_month       # 与 cbill.bill_month 冲突，按月走主表
+          - region_code
+          - agency_code
+      - join_path: cbill.agency
+        includes:
+          - name
+          - industry_name
+      - join_path: cbill.bill_type
+        prefix: true         # bill_type.name 与 agency.name 冲突 → bill_type_name
+        includes:
+          - name
+          - code

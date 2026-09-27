@@ -1,0 +1,64 @@
+# 票种维度 —— 源表 FAB_BILL（93 行，FID 主键）
+# 事实表（UNE_CBILL.FBILLID）按本 cube 的 id 关联
+cubes:
+  - name: bill_type
+    title: 票种
+    description: |
+      票据种类维度。事实表的 bill_id（FBILLID）关联本 cube 的 id 维度。
+      票据性质（FBILLNATURECODE）与开票方式（FINVOICEMODECODE）为代码维度，
+      字典翻译待后续接入。
+    public: false    # 只通过 join 被事实 cube 引用
+    sql_table: FAB_BILL
+
+    measures:
+      - name: count
+        title: 票种数
+        type: count
+
+    dimensions:
+      - name: id
+        title: 票种ID
+        description: 事实表 FBILLID 关联键
+        sql: "{CUBE}.\"FID\""
+        type: string
+        primary_key: true
+        public: false
+      - name: code
+        title: 票据编码
+        sql: "{CUBE}.\"FBILLCODE\""
+        type: string
+      - name: name
+        title: 票据名称
+        sql: "{CUBE}.\"FBILLNAME\""
+        type: string
+      - name: nature_code
+        title: 票据性质代码
+        sql: "{CUBE}.\"FBILLNATURECODE\""
+        type: string
+      - name: invoice_mode_code
+        title: 开票方式代码
+        sql: "{CUBE}.\"FINVOICEMODECODE\""
+        type: string
+      - name: units
+        title: 计量单位
+        sql: "{CUBE}.\"FUNITS\""
+        type: string
+      - name: is_quota
+        title: 是否定额票
+        description: 1 是 / 0 否
+        sql: "{CUBE}.\"FISQUOTA\""
+        type: string
+      - name: quota_value
+        title: 定额面值(元)
+        sql: "{CUBE}.\"FQUO\""
+        type: number
+      - name: eff_date
+        title: 生效日期
+        description: FEFFDATE（VARCHAR2 'YYYY-MM-DD'）转日期
+        sql: "TO_DATE({CUBE}.\"FEFFDATE\", 'YYYY-MM-DD')"
+        type: time
+      - name: exp_date
+        title: 失效日期
+        description: FEXPDATE（VARCHAR2 'YYYY-MM-DD'）转日期
+        sql: "TO_DATE({CUBE}.\"FEXPDATE\", 'YYYY-MM-DD')"
+        type: time

@@ -1,0 +1,52 @@
+{
+  "publicId": "3PfSCGlqnnO",
+  "title": "我的看板",
+  "createdAt": "2026-09-24T05:56:16.957Z",
+  "updatedAt": "2026-09-24T06:32:07.534Z",
+  "widgets": [
+    {
+      "id": "w1",
+      "title": "各执收单位缴库单数与金额（按缴库状态）",
+      "viz": "bar",
+      "layout": {
+        "width": "full"
+      },
+      "query": {
+        "measures": [
+          "treasury_view.count",
+          "treasury_view.total_amt"
+        ],
+        "dimensions": [
+          "treasury_view.chg_agen_name",
+          "treasury_view.status"
+        ],
+        "timeDimensions": [],
+        "limit": 100,
+        "timezone": "UTC",
+        "filters": [],
+        "rowLimit": 100
+      }
+    },
+    {
+      "id": "w2",
+      "title": "各执收单位收款金额（按收入类别）",
+      "viz": "line",
+      "layout": {
+        "width": "full"
+      },
+      "query": {
+        "measures": [
+          "daybook_view.income_amt"
+        ],
+        "dimensions": [
+          "daybook_view.chg_agen_name",
+          "daybook_view.income_sort_name"
+        ],
+        "timeDimensions": [],
+        "limit": 100,
+        "timezone": "UTC",
+        "filters": []
+      }
+    }
+  ]
+}

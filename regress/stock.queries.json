@@ -1,0 +1,188 @@
+[
+  {
+    "name": "出库单数与明细金额",
+    "query": {
+      "measures": [
+        "stock_out.out_count",
+        "stock_out_item.total_amount"
+      ]
+    }
+  },
+  {
+    "name": "出库按状态分组",
+    "query": {
+      "measures": [
+        "stock_out.out_count"
+      ],
+      "dimensions": [
+        "stock_out.state"
+      ],
+      "order": {
+        "stock_out.state": "asc"
+      }
+    }
+  },
+  {
+    "name": "入库单数与明细金额",
+    "query": {
+      "measures": [
+        "stock_in.in_count",
+        "stock_in_item.total_amount"
+      ]
+    }
+  },
+  {
+    "name": "申领口径",
+    "query": {
+      "measures": [
+        "stock_apply.apply_count",
+        "stock_apply.approve_count",
+        "stock_apply.rejected_count"
+      ]
+    }
+  },
+  {
+    "name": "申领按状态分组",
+    "query": {
+      "measures": [
+        "stock_apply.apply_count"
+      ],
+      "dimensions": [
+        "stock_apply.state"
+      ],
+      "order": {
+        "stock_apply.state": "asc"
+      }
+    }
+  },
+  {
+    "name": "库存段数按来源",
+    "query": {
+      "measures": [
+        "stock.stock_count"
+      ],
+      "dimensions": [
+        "stock.source"
+      ],
+      "order": {
+        "stock.source": "asc"
+      }
+    }
+  },
+  {
+    "name": "库存按票种名称分组(传递join)",
+    "query": {
+      "measures": [
+        "stock.stock_count"
+      ],
+      "dimensions": [
+        "bill_type.name"
+      ],
+      "limit": 10,
+      "order": {
+        "stock.stock_count": "desc"
+      }
+    }
+  },
+  {
+    "name": "可疑票据全口径",
+    "query": {
+      "measures": [
+        "suspicious.suspicious_count",
+        "suspicious.pending_count",
+        "suspicious.processed_count",
+        "suspicious.cleared_count",
+        "suspicious.total_amt"
+      ]
+    }
+  },
+  {
+    "name": "可疑按状态分组",
+    "query": {
+      "measures": [
+        "suspicious.suspicious_count"
+      ],
+      "dimensions": [
+        "suspicious.status"
+      ],
+      "order": {
+        "suspicious.status": "asc"
+      }
+    }
+  },
+  {
+    "name": "可疑按处理结果分组",
+    "query": {
+      "measures": [
+        "suspicious.suspicious_count"
+      ],
+      "dimensions": [
+        "suspicious.result"
+      ],
+      "order": {
+        "suspicious.result": "asc"
+      }
+    }
+  },
+  {
+    "name": "可疑按区划分组",
+    "query": {
+      "measures": [
+        "suspicious.suspicious_count"
+      ],
+      "dimensions": [
+        "suspicious.region_code"
+      ],
+      "limit": 10,
+      "order": {
+        "suspicious.suspicious_count": "desc"
+      }
+    }
+  },
+  {
+    "name": "出库单票下钻(bill_no+date)",
+    "query": {
+      "measures": [
+        "stock_out_item.count",
+        "stock_out_item.total_amount"
+      ],
+      "dimensions": [
+        "stock_out_item.bill_code"
+      ],
+      "filters": [
+        {
+          "member": "stock_out.bill_no",
+          "operator": "equals",
+          "values": [
+            "0000000001"
+          ]
+        },
+        {
+          "member": "stock_out.out_date",
+          "operator": "equals",
+          "values": [
+            "2019-08-27"
+          ]
+        }
+      ],
+      "order": {
+        "stock_out_item.bill_code": "asc"
+      }
+    }
+  },
+  {
+    "name": "库存份数按来源",
+    "query": {
+      "measures": [
+        "stock.stock_qty",
+        "stock.stock_count"
+      ],
+      "dimensions": [
+        "stock.source"
+      ],
+      "order": {
+        "stock.source": "asc"
+      }
+    }
+  }
+]

@@ -1,0 +1,175 @@
+# 缴库单主表（FNE_AGEN_TREASURY，20 行）—— 新增主题③（用户指定三表核心之一）
+# 覆盖：付款/收款银行编码与行号、收款账户（国库）、预算级次、缴库金额/日期/状态。
+# ③-1 核实结论（db.js 实测）：
+#   FID/FTRANSNO 全表唯一（缴库单号）；20 行；
+#   FAMT 缴库总金额合计 33,211；FPAYDATE 2022-01-25 ~ 2026-08-04；
+#   FSTATUS 0=13 / 9=6 / 空 1（表注释无取值说明，语义待业务确认）；
+#   FRECACCTTYPE 全 5（国库账户）；
+#   FBELONGRGNCODE/FCHGRGNCODE 530000=19 / 530102=1，无空值；
+#   FCHGAGENIDCODE→FAB_AGEN matchkey 90%（2/20 miss）→ 用户拍板建 agency
+#   join（2026-09-24），需实测验证 join 语义下 20 行不丢（LEFT JOIN 保行、
+#   miss 行单位维度为 null；若 INNER 丢行则回退源列交付并报告）。
+# 敏感字段：FRECACCT/FRECACCTNAME 为国库收款账户（非个人），按用户要求建模。
+cubes:
+  - name: treasury
+    title: 缴库单
+    description: |
+      缴库单主表 FNE_AGEN_TREASURY，每行一张缴库单（FID/FTRANSNO 全表唯一）。
+      覆盖付款/收款银行、国库收款账户、预算级次、缴库金额与状态。
+      明细（预算科目）走 treasury_item 子表。
+    public: true
+    meta:
+      ai_context: >-
+        缴库单。缴库总金额用 total_amt；时间轴用 pay_date（缴款日期，
+        无缴款日期的行取生成单子日期）。缴库状态用 status 维度
+        （实测 0=13/9=6/空1，取值语义待业务确认）。
+        付款银行编码用 pay_bank_code、付款行行号用 pay_bank_no；
+        收款银行编码用 rec_bank_code、开户行名称用 rec_bank_name；
+        国库收款账号用 rec_acct、账户名称用 rec_acct_name、账户类型用
+        rec_acct_type（实测全部 5 国库账户）。预算级次用 sub_level/
+        sub_level_name。归属区划用 belong_rgn_code（行级权限维度）；
+        执收区划用 chg_rgn_code；执收单位用 chg_agen_code/chg_agen_name。
+        预算科目走明细子表 treasury_item（sub_code/sub_name），
+        明细份数/金额用 treasury_item.item_count/item_amt。
+
+    sql_table: FNE_AGEN_TREASURY
+
+    joins:
+      # agency join（用户拍板 2026-09-24）：FCHGAGENIDCODE→FAB_AGEN matchkey
+      # 90%（2/20 miss），LEFT JOIN 语义下 miss 行单位维度为 null、行不丢
+      # （查询验证 treasury_view.count 应仍为 20）。
+      - name: agency
+        sql: "{CUBE}.\"FCHGAGENIDCODE\" = {agency}.\"FAGENIDCODE\""
+        relationship: many_to_one
+      # 反向 join（与 cbill→cbill_item 同款）：供 drill_members 与视图
+      # join 路径用；ITEM 4 笔孤儿（FPARENTID 不在主表）不进主表侧查询。
+      - name: treasury_item
+        sql: "{CUBE}.\"FID\" = {treasury_item}.\"FPARENTID\""
+        relationship: one_to_many
+
+    measures:
+      - name: count
+        title: 缴库单数
+        drill_members: [treasury.trans_no, treasury.batch_no, treasury.pay_date,
+                        treasury.chg_agen_name, treasury.rec_acct_name]
+        type: count
+      - name: total_amt
+        title: 缴库总金额(元)
+        description: sum(FAMT)，实测合计 33,211
+        drill_members: [treasury.trans_no, treasury.chg_agen_name, treasury.pay_date,
+                        treasury_item.sub_code, treasury_item.sub_name]
+        sql: "{CUBE}.\"FAMT\""
+        type: sum
+
+    dimensions:
+      - name: fid
+        title: 缴库单ID
+        sql: "{CUBE}.\"FID\""
+        type: string
+        primary_key: true
+        public: false    # 技术主键不对外
+      - name: trans_no
+        title: 缴库单号
+        description: FTRANSNO 缴库单号（凭证号），全表唯一
+        sql: "{CUBE}.\"FTRANSNO\""
+        type: string
+      - name: batch_no
+        title: 缴库批次号
+        description: FBATCHNO，可多个缴库单号对应一个批次号
+        sql: "{CUBE}.\"FBATCHNO\""
+        type: string
+      - name: pay_date
+        title: 缴款日期
+        description: FPAYDATE（VARCHAR2 'YYYY-MM-DD'）转日期；汇总项有缴款日期用此值，没有则是生成单子日期
+        sql: "TO_DATE({CUBE}.\"FPAYDATE\", 'YYYY-MM-DD')"
+        type: time
+      - name: status
+        title: 缴库状态
+        description: FSTATUS，实测 0=13 / 9=6 / 空 1——表注释无取值说明，语义待业务确认
+        sql: "{CUBE}.\"FSTATUS\""
+        type: string
+      - name: pay_bank_code
+        title: 付款银行编码
+        description: FBANKCODE 付款银行（缴款书代理银行）编码
+        sql: "{CUBE}.\"FBANKCODE\""
+        type: string
+      - name: pay_bank_no
+        title: 付款行行号
+        description: FPAYBANKNO 付款行行号，可不填
+        sql: "{CUBE}.\"FPAYBANKNO\""
+        type: string
+      - name: rec_bank_code
+        title: 收款银行编码
+        description: FRECBANKCODE 收款银行（缴款书中收款银行）编码
+        sql: "{CUBE}.\"FRECBANKCODE\""
+        type: string
+      # 2026-09-23 命名：原名 rec_bank_open_name（18 字符）视图别名
+      # treasury_view__rec_bank_open_name=33 超 11g 30 字符上限（ORA-00972
+      # 实测），改短 rec_bank_name；title/description 不变。
+      - name: rec_bank_name
+        title: 收款开户行名称
+        description: FRECBANKOPENNAME 收款账户开户行名称（国库收款账户开户行）
+        sql: "{CUBE}.\"FRECBANKOPENNAME\""
+        type: string
+      - name: rec_acct
+        title: 收款账号
+        description: FRECACCT 收款账号（国库收款账号，非个人）
+        sql: "{CUBE}.\"FRECACCT\""
+        type: string
+      - name: rec_acct_name
+        title: 收款账户名称
+        description: FRECACCTNAME 收款账户名称（国库收款账户名称，非个人）
+        sql: "{CUBE}.\"FRECACCTNAME\""
+        type: string
+      - name: rec_acct_type
+        title: 收款账户类型
+        description: FRECACCTTYPE 字典 0 虚拟账户/1 财政专户/2 汇缴专户/3 待解缴科目/4 单位监管账户/5 国库账户/6 单位清分账户/9 其他；实测全部 5
+        sql: "{CUBE}.\"FRECACCTTYPE\""
+        type: string
+      - name: sub_level
+        title: 预算级次代码
+        description: FSUBLEVEL
+        sql: "{CUBE}.\"FSUBLEVEL\""
+        type: string
+      - name: sub_level_name
+        title: 预算级次名称
+        description: FSUBLEVELNAME
+        sql: "{CUBE}.\"FSUBLEVELNAME\""
+        type: string
+      - name: belong_rgn_code
+        title: 归属区划编码
+        description: FBELONGRGNCODE 缴款业务数据归属区划（行级权限维度）
+        sql: "{CUBE}.\"FBELONGRGNCODE\""
+        type: string
+      - name: chg_rgn_code
+        title: 执收区划编码
+        description: FCHGRGNCODE
+        sql: "{CUBE}.\"FCHGRGNCODE\""
+        type: string
+      - name: chg_agen_code
+        title: 执收单位编码
+        description: FCHGAGENCODE 缴款书中的执收单位编码
+        sql: "{CUBE}.\"FCHGAGENCODE\""
+        type: string
+      - name: chg_agen_name
+        title: 执收单位名称
+        description: FCHGAGENNAME 缴款书中的执收单位名称
+        sql: "{CUBE}.\"FCHGAGENNAME\""
+        type: string
+
+# 行级权限：双互补策略（与 cbill/paybook/daybook 同款），区划维度用
+# 归属区划 belong_rgn_code（注释明示"表明缴款的业务数据是哪个归属哪个区划"）。
+    access_policy:
+      - group: "*"
+        conditions:
+          - if: "{ securityContext.region_code }"
+        row_level:
+          filters:
+            - member: belong_rgn_code
+              operator: equals
+              values: ["{ securityContext.region_code }"]
+      - group: "*"
+        conditions:
+          - if: "{ not securityContext.region_code }"
+        row_level:
+          allow_all: true

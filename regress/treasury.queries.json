@@ -1,0 +1,44 @@
+[
+  {
+    "name": "缴库-主子表总量",
+    "query": {
+      "measures": ["treasury_view.count", "treasury_view.total_amt", "treasury_view.item_count", "treasury_view.item_amt"]
+    }
+  },
+  {
+    "name": "缴库-预算科目下钻",
+    "query": {
+      "measures": ["treasury_view.item_count", "treasury_view.item_amt"],
+      "dimensions": ["treasury_view.sub_code", "treasury_view.sub_name"],
+      "order": {"treasury_view.item_amt": "desc"},
+      "limit": 10
+    }
+  },
+  {
+    "name": "缴库-缴库状态分组",
+    "query": {
+      "measures": ["treasury_view.count", "treasury_view.total_amt"],
+      "dimensions": ["treasury_view.status"],
+      "order": {"treasury_view.count": "desc"},
+      "limit": 5
+    }
+  },
+  {
+    "name": "缴库-执收单位主数据下钻(agency join)",
+    "query": {
+      "measures": ["treasury_view.count", "treasury_view.total_amt"],
+      "dimensions": ["treasury_view.chg_agen_name", "treasury_view.name"],
+      "order": {"treasury_view.count": "desc"},
+      "limit": 10
+    }
+  },
+  {
+    "name": "缴库-银行与账户下钻",
+    "query": {
+      "measures": ["treasury_view.count", "treasury_view.total_amt"],
+      "dimensions": ["treasury_view.pay_bank_code", "treasury_view.rec_bank_name"],
+      "order": {"treasury_view.total_amt": "desc"},
+      "limit": 5
+    }
+  }
+]

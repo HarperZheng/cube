@@ -1,0 +1,44 @@
+{
+  "publicId": "xn72meLXGnd",
+  "title": "我的看板",
+  "createdAt": "2026-09-24T06:45:55.456Z",
+  "updatedAt": "2026-09-24T06:45:55.456Z",
+  "widgets": [
+    {
+      "id": "w1",
+      "title": "2026年各单位领票入库明细（金额与数量）",
+      "viz": "table",
+      "layout": {
+        "width": "full"
+      },
+      "query": {
+        "measures": [
+          "stock_in_item.total_amount",
+          "stock_in_item.total_number"
+        ],
+        "dimensions": [
+          "agency.name",
+          "stock_in.bill_no",
+          "stock_in.in_date",
+          "stock_in_item.bill_code",
+          "stock_in_item.bill_no1",
+          "stock_in_item.bill_no2"
+        ],
+        "filters": [],
+        "timeDimensions": [
+          {
+            "dimension": "stock_in.in_date",
+            "dateRange": [
+              "2026-01-01",
+              "2026-12-31"
+            ]
+          }
+        ],
+        "limit": 1000,
+        "order": {
+          "stock_in.in_date": "desc"
+        }
+      }
+    }
+  ]
+}

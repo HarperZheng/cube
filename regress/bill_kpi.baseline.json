@@ -1,0 +1,308 @@
+{
+  "savedAt": "2026-09-21T01:05:43.137Z",
+  "results": [
+    {
+      "name": "按单位汇总-可用时间（交付视图）",
+      "query": {
+        "measures": [
+          "bill_kpi_view.availMonths",
+          "bill_kpi_view.stockSum",
+          "bill_kpi_view.monthlyUsage"
+        ],
+        "dimensions": [
+          "bill_kpi_view.fbillname"
+        ],
+        "filters": [
+          {
+            "member": "bill_kpi_view.stockSum",
+            "operator": "gt",
+            "values": [
+              "0"
+            ]
+          }
+        ],
+        "order": {
+          "bill_kpi_view.fbillname": "asc"
+        },
+        "limit": 50
+      },
+      "resultSet": {
+        "data": [
+          {
+            "bill_kpi_view.fbillname": "非税收入收款收据(银行代收)",
+            "bill_kpi_view.availMonths": "3",
+            "bill_kpi_view.stockSum": "1",
+            "bill_kpi_view.monthlyUsage": "0.33333333333333326"
+          },
+          {
+            "bill_kpi_view.fbillname": "非税收入一般缴款书（机开）（新版）",
+            "bill_kpi_view.availMonths": "272.7272727272731",
+            "bill_kpi_view.stockSum": "5000",
+            "bill_kpi_view.monthlyUsage": "18.33333333333333"
+          },
+          {
+            "bill_kpi_view.fbillname": "丽江古城维护费专用收据",
+            "bill_kpi_view.availMonths": null,
+            "bill_kpi_view.stockSum": "1000",
+            "bill_kpi_view.monthlyUsage": "0"
+          }
+        ]
+      }
+    },
+    {
+      "name": "按票据+单位粒度-库存量（交付视图）",
+      "query": {
+        "measures": [
+          "bill_kpi_view.stockSum",
+          "bill_kpi_view.quarterlyUsage"
+        ],
+        "dimensions": [
+          "bill_kpi_view.fbillname",
+          "bill_kpi_view.fbillcode"
+        ],
+        "order": {
+          "bill_kpi_view.stockSum": "desc"
+        },
+        "limit": 20
+      },
+      "resultSet": {
+        "data": [
+          {
+            "bill_kpi_view.fbillname": "非税收入一般缴款书（机开）（新版）",
+            "bill_kpi_view.fbillcode": "530301",
+            "bill_kpi_view.stockSum": "5000",
+            "bill_kpi_view.quarterlyUsage": "43"
+          },
+          {
+            "bill_kpi_view.fbillname": "丽江古城维护费专用收据",
+            "bill_kpi_view.fbillcode": "530213",
+            "bill_kpi_view.stockSum": "1000",
+            "bill_kpi_view.quarterlyUsage": "0"
+          },
+          {
+            "bill_kpi_view.fbillname": "非税收入收款收据(银行代收)",
+            "bill_kpi_view.fbillcode": "530102",
+            "bill_kpi_view.stockSum": "1",
+            "bill_kpi_view.quarterlyUsage": "1"
+          },
+          {
+            "bill_kpi_view.fbillname": "测试环境专用票据及缴款书",
+            "bill_kpi_view.fbillcode": "5400",
+            "bill_kpi_view.stockSum": "0",
+            "bill_kpi_view.quarterlyUsage": "0"
+          },
+          {
+            "bill_kpi_view.fbillname": "医疗住院电子票",
+            "bill_kpi_view.fbillcode": "540301",
+            "bill_kpi_view.stockSum": "0",
+            "bill_kpi_view.quarterlyUsage": "0"
+          },
+          {
+            "bill_kpi_view.fbillname": "财政电子票据（纸质）",
+            "bill_kpi_view.fbillcode": "539905",
+            "bill_kpi_view.stockSum": "0",
+            "bill_kpi_view.quarterlyUsage": "0"
+          },
+          {
+            "bill_kpi_view.fbillname": "非税收入通用收据",
+            "bill_kpi_view.fbillcode": "5301",
+            "bill_kpi_view.stockSum": "0",
+            "bill_kpi_view.quarterlyUsage": "0"
+          },
+          {
+            "bill_kpi_view.fbillname": "测试",
+            "bill_kpi_view.fbillcode": "540004",
+            "bill_kpi_view.stockSum": "0",
+            "bill_kpi_view.quarterlyUsage": "0"
+          },
+          {
+            "bill_kpi_view.fbillname": "非税收入定额收据（丽江古城维护电子50元）",
+            "bill_kpi_view.fbillcode": "530208",
+            "bill_kpi_view.stockSum": "0",
+            "bill_kpi_view.quarterlyUsage": "0"
+          },
+          {
+            "bill_kpi_view.fbillname": "非税收入一般缴款书",
+            "bill_kpi_view.fbillcode": "5303",
+            "bill_kpi_view.stockSum": "0",
+            "bill_kpi_view.quarterlyUsage": "0"
+          },
+          {
+            "bill_kpi_view.fbillname": "社会保险费缴款收据（机打）",
+            "bill_kpi_view.fbillcode": "530802",
+            "bill_kpi_view.stockSum": "0",
+            "bill_kpi_view.quarterlyUsage": "0"
+          },
+          {
+            "bill_kpi_view.fbillname": "非税收入定额收据",
+            "bill_kpi_view.fbillcode": "530108",
+            "bill_kpi_view.stockSum": "0",
+            "bill_kpi_view.quarterlyUsage": "8"
+          },
+          {
+            "bill_kpi_view.fbillname": "高等级公路桥梁车辆通行费通用收据（机开）",
+            "bill_kpi_view.fbillcode": "530209",
+            "bill_kpi_view.stockSum": "0",
+            "bill_kpi_view.quarterlyUsage": "0"
+          },
+          {
+            "bill_kpi_view.fbillname": "CS003",
+            "bill_kpi_view.fbillcode": "54020401",
+            "bill_kpi_view.stockSum": "0",
+            "bill_kpi_view.quarterlyUsage": "10"
+          },
+          {
+            "bill_kpi_view.fbillname": "社会捐赠收据",
+            "bill_kpi_view.fbillcode": "530501",
+            "bill_kpi_view.stockSum": "0",
+            "bill_kpi_view.quarterlyUsage": "20"
+          },
+          {
+            "bill_kpi_view.fbillname": "医疗收费明细票据",
+            "bill_kpi_view.fbillcode": "530607",
+            "bill_kpi_view.stockSum": "0",
+            "bill_kpi_view.quarterlyUsage": "0"
+          },
+          {
+            "bill_kpi_view.fbillname": "测试票据模板",
+            "bill_kpi_view.fbillcode": "53040501",
+            "bill_kpi_view.stockSum": "0",
+            "bill_kpi_view.quarterlyUsage": "0"
+          },
+          {
+            "bill_kpi_view.fbillname": "医疗电子票",
+            "bill_kpi_view.fbillcode": "5401",
+            "bill_kpi_view.stockSum": "0",
+            "bill_kpi_view.quarterlyUsage": "0"
+          },
+          {
+            "bill_kpi_view.fbillname": "测试-政府非税收入统一票据（电子）",
+            "bill_kpi_view.fbillcode": "530109",
+            "bill_kpi_view.stockSum": "0",
+            "bill_kpi_view.quarterlyUsage": "0"
+          },
+          {
+            "bill_kpi_view.fbillname": "罚没物资专用票据（微机）",
+            "bill_kpi_view.fbillcode": "530204",
+            "bill_kpi_view.stockSum": "0",
+            "bill_kpi_view.quarterlyUsage": "11"
+          }
+        ]
+      }
+    },
+    {
+      "name": "全区汇总-总可用月（交付视图）",
+      "query": {
+        "measures": [
+          "bill_kpi_view.availMonths",
+          "bill_kpi_view.stockSum"
+        ],
+        "limit": 5
+      },
+      "resultSet": {
+        "data": [
+          {
+            "bill_kpi_view.availMonths": "92.32307692307693",
+            "bill_kpi_view.stockSum": "6001"
+          }
+        ]
+      }
+    },
+    {
+      "name": "cube 层-KPI 直查（比值指标在任意维度切分下正确）",
+      "query": {
+        "measures": [
+          "bill_kpi.availMonths"
+        ],
+        "dimensions": [
+          "bill_kpi.fbillname"
+        ],
+        "limit": 20
+      },
+      "resultSet": {
+        "data": [
+          {
+            "bill_kpi.fbillname": "罚没物资专用收据",
+            "bill_kpi.availMonths": null
+          },
+          {
+            "bill_kpi.fbillname": "非税缴款通知书（电子）",
+            "bill_kpi.availMonths": null
+          },
+          {
+            "bill_kpi.fbillname": "公益事业捐赠票据",
+            "bill_kpi.availMonths": null
+          },
+          {
+            "bill_kpi.fbillname": "医疗门诊收费票据",
+            "bill_kpi.availMonths": null
+          },
+          {
+            "bill_kpi.fbillname": "医疗住院收费票据",
+            "bill_kpi.availMonths": null
+          },
+          {
+            "bill_kpi.fbillname": "非税收入专用票据",
+            "bill_kpi.availMonths": null
+          },
+          {
+            "bill_kpi.fbillname": "医疗住院收费票据（手工）(新版）",
+            "bill_kpi.availMonths": null
+          },
+          {
+            "bill_kpi.fbillname": "测试-政府非税收入统一票据（电子）1",
+            "bill_kpi.availMonths": null
+          },
+          {
+            "bill_kpi.fbillname": "非税收入定额收据（丽江古城维护机开50元）",
+            "bill_kpi.availMonths": null
+          },
+          {
+            "bill_kpi.fbillname": "云南罚没物资统一票据",
+            "bill_kpi.availMonths": null
+          },
+          {
+            "bill_kpi.fbillname": "医疗门诊收费票据（机打）（新版）",
+            "bill_kpi.availMonths": null
+          },
+          {
+            "bill_kpi.fbillname": "测试缴款书",
+            "bill_kpi.availMonths": null
+          },
+          {
+            "bill_kpi.fbillname": "非税收入定额收据（丽江古城维护电子50元）",
+            "bill_kpi.availMonths": null
+          },
+          {
+            "bill_kpi.fbillname": "医疗住院收费票据（机打）（新版）",
+            "bill_kpi.availMonths": null
+          },
+          {
+            "bill_kpi.fbillname": "缴库换开专用缴款书（电子）",
+            "bill_kpi.availMonths": null
+          },
+          {
+            "bill_kpi.fbillname": "测试分类",
+            "bill_kpi.availMonths": null
+          },
+          {
+            "bill_kpi.fbillname": "人民法院诉讼费专用票据(预收)",
+            "bill_kpi.availMonths": null
+          },
+          {
+            "bill_kpi.fbillname": "CS002",
+            "bill_kpi.availMonths": null
+          },
+          {
+            "bill_kpi.fbillname": "罚没收入定额收据",
+            "bill_kpi.availMonths": null
+          },
+          {
+            "bill_kpi.fbillname": "非税收入电子缴款书（电子）",
+            "bill_kpi.availMonths": null
+          }
+        ]
+      }
+    }
+  ]
+}

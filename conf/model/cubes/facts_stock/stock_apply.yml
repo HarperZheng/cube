@@ -1,0 +1,109 @@
+# 申领单（领用申请）—— P4（docs/cube-dataqa-topic/01-design.md §5）
+# 表名勘误（P4 核实）：设计写的 fbe_stock_receiveapply + ube_stock_apply 两表——
+# 核实 UBE_STOCK_RECEIVEAPPLY（30 行）全部是 UBE_STOCK_APPLY 同一单的接收副本
+# （FAPPLYID → APPLY.FID 100% 命中、票号一致），不重复建 cube（避免重复计数）；
+# "是否已接收"口径由 APPLY 自身 FCHANGESTATE 覆盖（5 上级已接收等）。
+# P4 核实结论（db.js 直查）：
+#   FID 100% 唯一（201=201）；FDATE 2020-04-16~2026-09-16；
+#   FRGNCODE/FAGENIDCODE 无空值；
+#   口径分布实测：FCHANGESTATE 64=141 / 4=17 / 31=22 / 1=5 / 2=6 / 541=9 / 521=1
+#   （复合码 64/31/541/521 为字典外取值，按 state 维度原样分组）。
+# 敏感字段：FLINKTEL（联系电话）/FLINKADDR（地址）不建维度，不对外暴露。
+cubes:
+  - name: stock_apply
+    title: 领票申领
+    description: |
+      领票申领主表（UBE_STOCK_APPLY，单表 201 行）。每行 = 一张申领单。
+      明细（票种/数量/审批数）走 stock_apply_item（FPID 关联本表 FID）。
+    meta:
+      ai_context: >-
+        申领单数用 apply_count；审核通过用 approve_count（FCHANGESTATE='1'），
+        未通过用 rejected_count（'2'）；状态分布用 state 维度（实测
+        64=141/4=17/31=22/1=5/2=6/541=9/521=1，存在字典外复合码）。
+        单票下钻用 bill_no + apply_date 组合（票号跨日期不唯一）。
+
+    sql_table: UBE_STOCK_APPLY
+
+    joins:
+      - name: agency
+        sql: "{CUBE}.\"FAGENIDCODE\" = {agency}.\"FAGENIDCODE\""
+        relationship: many_to_one
+      # 反向 join：供 drill_members 原生下钻（P4 沿用 cbill/cbill_item 模式）
+      - name: stock_apply_item
+        sql: "{CUBE}.\"FID\" = {stock_apply_item}.\"FPID\""
+        relationship: one_to_many
+
+    measures:
+      - name: count
+        title: 申领记录数
+        type: count
+      - name: apply_count
+        title: 申领单数
+        description: count_distinct(FID)（FID 100% 唯一已验证，等价 count）
+        sql: "{CUBE}.\"FID\""
+        type: countDistinct
+        drill_members: [stock_apply.bill_no, stock_apply.apply_date,
+                        stock_apply_item.bill_code, stock_apply_item.appr_num]
+      - name: approve_count
+        title: 审核通过数
+        description: FCHANGESTATE='1'（审核通过）
+        sql: "{CUBE}.\"FID\""
+        type: count
+        filters:
+          - sql: "{CUBE}.\"FCHANGESTATE\" = '1'"
+      - name: rejected_count
+        title: 审核未通过数
+        description: FCHANGESTATE='2'（未通过）
+        sql: "{CUBE}.\"FID\""
+        type: count
+        filters:
+          - sql: "{CUBE}.\"FCHANGESTATE\" = '2'"
+
+    dimensions:
+      - name: fid
+        title: 申领单ID
+        sql: "{CUBE}.\"FID\""
+        type: string
+        primary_key: true
+        public: false    # 技术主键不对外
+      - name: bill_no
+        title: 申领单号
+        description: FNO（跨日期不唯一，"单票"要 bill_no + apply_date 组合）
+        sql: "{CUBE}.\"FNO\""
+        type: string
+      - name: apply_date
+        title: 申领日期
+        description: FDATE（VARCHAR2 'YYYY-MM-DD'）转日期，时间分析默认维度
+        sql: "TO_DATE({CUBE}.\"FDATE\", 'YYYY-MM-DD')"
+        type: time
+      - name: state
+        title: 申领状态
+        description: FCHANGESTATE；实测 64=141 / 4=17 / 31=22 / 1 审核通过=5 / 2 未通过=6 / 541=9 / 521=1（复合码字典外取值原样分组）
+        sql: "{CUBE}.\"FCHANGESTATE\""
+        type: string
+      - name: region_code
+        title: 区划编码
+        description: FRGNCODE 关联 region.code
+        sql: "{CUBE}.\"FRGNCODE\""
+        type: string
+      - name: agency_code
+        title: 单位识别码
+        description: FAGENIDCODE 关联 agency.agency_code
+        sql: "{CUBE}.\"FAGENIDCODE\""
+        type: string
+
+# 行级权限：access_policy 双互补策略（与 paybook/cbill 同款）。
+    access_policy:
+      - group: "*"
+        conditions:
+          - if: "{ securityContext.region_code }"
+        row_level:
+          filters:
+            - member: region_code
+              operator: equals
+              values: ["{ securityContext.region_code }"]
+      - group: "*"
+        conditions:
+          - if: "{ not securityContext.region_code }"
+        row_level:
+          allow_all: true

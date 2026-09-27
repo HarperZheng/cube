@@ -1,0 +1,72 @@
+# ============================================================
+# cube 原料层骨架 —— 从 bill_kpi 验证过的成品抽出（2026-09 验证）
+# 用法：拷贝到 conf/model/cubes/<短名>.yml，替换全部 <...> 占位符，
+#       落盘前 grep '<' 确认无残留（残留占位符会编译报错，但先自检更稳）
+# ============================================================
+cubes:
+  - name: <短名>                 # ⚠️ 11g 30字符：cube名__成员名 合计≤30（ORA-00972）
+    title: <中文标题>
+    description: >               # 口径即文档：公式+单位+假设+来源，BI/前端直接读
+      口径：<一句话公式>
+      单位：<计量单位>
+      假设：<AskUserQuestion 的结论>
+      来源：<表名>，关联键：<键>（质量：<去重/NULL情况>）
+    data_source: default
+    # meta.ai_context：给 AI/智能体的口径上下文（不暴露 UI）；meta 其他键传前端
+    # meta:
+    #   ai_context: >-
+    #     <口径假设、单位换算、关联键质量、交付面位置——让模型懂口径>
+
+    # sql_table：单表写 "\"表名\""；跨表/预聚合写 ( SELECT ... ) 子查询。
+    # 子查询规则：聚合到最细粒度（比值不可加，禁止明细行相除再求和）；
+    # 字典表先 GROUP BY 键去重（MAX(名称)，否则行翻倍）；
+    # 关联键选两边都有的（名称优先于识别码），必要时 WHERE 键 IS NOT NULL；
+    # 多表组合的粒度用各表 (键组合) UNION 驱动，"有A无B"的行不丢失
+    sql_table: >
+      ( <子查询> )
+
+    dimensions:
+      - name: <短名>             # 业务键/主键
+        title: <中文>
+        sql: "{CUBE}.\"<列名>\""
+        type: string             # string / number / time
+        primaryKey: true
+        # public: false           # 技术主键不对外（meta 隐藏；硬拦截需 access_policy/RBAC）
+
+      - name: <短名>             # 时间维度：Oracle DATE/字符串列用 TO_DATE 转
+        title: <中文>
+        sql: "TO_DATE({CUBE}.\"<列名>\", 'YYYY-MM-DD')"
+        type: time
+
+    measures:
+      # —— 原子聚合：原料成员，public: false（消费方从 view 取，见 templates/view.yml）——
+      - name: <短名>
+        title: <中文>
+        sql: "{CUBE}.\"<列名>\""
+        type: sum                # sum / avg（写 sql）；count 不写 sql
+        public: false
+
+      # —— 交付指标：官方 calculated measure 写法，{度量名} 引用自动展开为
+      # 完整聚合表达式，任意维度切分下比值都正确。
+      # ⚠️ 禁止 {CUBE}.成员 形式——渲染成裸列引用报 ORA-00904。
+      # ⚠️ 若 11g 仍报错，回退 raw 写法（已验证可行）：
+      #    sql: "SUM({CUBE}.\"分子\") / NULLIF(SUM({CUBE}.\"分母\") / <常数>, 0)"
+      - name: <短名>
+        title: <中文>
+        description: 口径：<公式>
+        sql: "1.0 * {分子度量} / NULLIF({分母度量}, 0)"    # 1.0* 防整除
+        type: number
+        format: number_2         # number/percent/currency/abbr/accounting + _N 精度后缀
+        # drill_members: [维度1, 维度2]   # 点指标数字下钻到明细
+
+    # —— 新技术点速查（docs/01-09，按需启用）——
+    # 度量级过滤：  filters: [{ sql: "{CUBE}.列 = '值'" }]     # "有库存的单位数"类口径，不用写子查询
+    # 同比/环比：   time_shift: { type: prior, interval: 1 month } + multi_stage: true（需时间维度）
+    # 占比/份额：   grain: keep_only + multi_stage: true       # 分母忽略查询过滤：filter: { exclude: [维度] }
+    # 下钻/上卷：   hierarchies: [{ name: <短名>, levels: [粗维度, 细维度] }]
+    # 可加和去重：  type: count_distinct_approx                # 唯一能进预聚合的去重计数
+    # 代码复用：    extends: <已有cube名>                      # 同构指标继承（cube/view 均支持）
+    # 缓存：       refresh_key: { every: 1 hour }             # 默认10秒（Oracle），缓存基本无效
+    # 预聚合：     pre_aggregations: [{ name: <短名>, type: original_sql, ... }]  # 数据量大时物化多join子查询
+    # 谓词下推：   {FILTER_PARAMS.<cube>.<成员>.filter('列')}  # 仅性能优化时用，大量使用是坏实践
+    # join 事实：  全部生成为 LEFT JOIN；INNER 语义靠过滤 IS NOT NULL；不支持 FULL/RIGHT OUTER

@@ -1,0 +1,31 @@
+{
+  "publicId": "UPmp20NqmGT",
+  "title": "我的看板",
+  "createdAt": "2026-09-27T01:07:10.035Z",
+  "updatedAt": "2026-09-27T01:07:10.035Z",
+  "widgets": [
+    {
+      "id": "w1",
+      "title": "各执收单位收缴资金收入情况（按收入类别）",
+      "viz": "pie",
+      "layout": {
+        "width": "full"
+      },
+      "query": {
+        "measures": [
+          "daybook_view.income_amt"
+        ],
+        "dimensions": [
+          "daybook_view.chg_agen_name",
+          "daybook_view.income_sort_name"
+        ],
+        "filters": [],
+        "timeDimensions": [],
+        "order": {
+          "daybook_view.income_amt": "desc"
+        },
+        "limit": 100
+      }
+    }
+  ]
+}

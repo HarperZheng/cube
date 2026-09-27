@@ -1,0 +1,87 @@
+[
+  {
+    "name": "审验单总数与记录数",
+    "query": {
+      "measures": ["writeoff.count", "writeoff.writeoff_count"]
+    }
+  },
+  {
+    "name": "审验状态口径",
+    "query": {
+      "measures": ["writeoff.audited_count", "writeoff.unaudited_count"]
+    }
+  },
+  {
+    "name": "审验结果口径",
+    "query": {
+      "measures": ["writeoff.good_count", "writeoff.qualified_count"]
+    }
+  },
+  {
+    "name": "主表金额三项",
+    "query": {
+      "measures": ["writeoff.payable_amt", "writeoff.real_amt", "writeoff.owe_amt"]
+    }
+  },
+  {
+    "name": "按区划分组",
+    "query": {
+      "measures": ["writeoff.writeoff_count"],
+      "dimensions": ["writeoff.region_code"]
+    }
+  },
+  {
+    "name": "按单位分组（agency join）",
+    "query": {
+      "measures": ["writeoff.writeoff_count"],
+      "dimensions": ["agency.name"],
+      "limit": 10
+    }
+  },
+  {
+    "name": "按编制月份分组",
+    "query": {
+      "measures": ["writeoff.writeoff_count"],
+      "dimensions": ["writeoff.compiled_date.month"],
+      "order": {"writeoff.compiled_date.month": "asc"}
+    }
+  },
+  {
+    "name": "收入明细金额四项",
+    "query": {
+      "measures": ["writeoff_income.count", "writeoff_income.item_amt", "writeoff_income.payable_amt", "writeoff_income.paid_amt", "writeoff_income.unpaid_amt"]
+    }
+  },
+  {
+    "name": "收入按项目名称分组",
+    "query": {
+      "measures": ["writeoff_income.item_amt"],
+      "dimensions": ["writeoff_income.item_name"],
+      "order": {"writeoff_income.item_amt": "desc"},
+      "limit": 10
+    }
+  },
+  {
+    "name": "票据明细开票份数与票面金额",
+    "query": {
+      "measures": ["writeoff_billitem.count", "writeoff_billitem.inv_num", "writeoff_billitem.face_amt"]
+    }
+  },
+  {
+    "name": "票据明细按票据名称分组",
+    "query": {
+      "measures": ["writeoff_billitem.inv_num", "writeoff_billitem.face_amt"],
+      "dimensions": ["writeoff_billitem.bill_name"],
+      "order": {"writeoff_billitem.face_amt": "desc"},
+      "limit": 10
+    }
+  },
+  {
+    "name": "单票下钻（billitem belongs_to join）",
+    "query": {
+      "measures": ["writeoff_billitem.count", "writeoff_billitem.inv_num"],
+      "dimensions": ["writeoff.no", "writeoff_billitem.bill_name"],
+      "filters": [{"member": "writeoff.no", "operator": "equals", "values": ["124045-23009"]}]
+    }
+  }
+]

@@ -1,0 +1,293 @@
+{
+  "savedAt": "2026-09-23T08:43:23.816Z",
+  "results": [
+    {
+      "name": "缴款书视图-全口径与区划下钻",
+      "query": {
+        "measures": [
+          "paybook_view.total_amount",
+          "paybook_view.paid_count"
+        ],
+        "dimensions": [
+          "paybook_view.region_name"
+        ],
+        "limit": 10
+      },
+      "resultSet": {
+        "data": [
+          {
+            "paybook_view.region_name": "云南省本级",
+            "paybook_view.total_amount": "200006344.081133",
+            "paybook_view.paid_count": "2688"
+          },
+          {
+            "paybook_view.region_name": "五华区",
+            "paybook_view.total_amount": "149757.80000000002",
+            "paybook_view.paid_count": "2"
+          },
+          {
+            "paybook_view.region_name": "古城区",
+            "paybook_view.total_amount": "8316",
+            "paybook_view.paid_count": "1"
+          },
+          {
+            "paybook_view.region_name": "昆明市本级",
+            "paybook_view.total_amount": "551",
+            "paybook_view.paid_count": "1"
+          }
+        ]
+      }
+    },
+    {
+      "name": "用票视图-两口径并存（多事实）",
+      "query": {
+        "measures": [
+          "usage_view.receipt_count",
+          "usage_view.item_count"
+        ],
+        "dimensions": [
+          "usage_view.bill_type_name"
+        ],
+        "order": {
+          "usage_view.receipt_count": "desc"
+        },
+        "limit": 5
+      },
+      "resultSet": {
+        "data": [
+          {
+            "usage_view.bill_type_name": "医疗门诊收费票据",
+            "usage_view.receipt_count": "16686",
+            "usage_view.item_count": "19126"
+          },
+          {
+            "usage_view.bill_type_name": "测试-政府非税收入统一票据（电子）",
+            "usage_view.receipt_count": "4674",
+            "usage_view.item_count": "6000"
+          },
+          {
+            "usage_view.bill_type_name": "医疗住院收费票据",
+            "usage_view.receipt_count": "4041",
+            "usage_view.item_count": "4139"
+          },
+          {
+            "usage_view.bill_type_name": "非税收入电子缴款书（电子）",
+            "usage_view.receipt_count": "1899",
+            "usage_view.item_count": "1964"
+          },
+          {
+            "usage_view.bill_type_name": "医疗门诊收费票据（机打）（新版）",
+            "usage_view.receipt_count": "1810",
+            "usage_view.item_count": "2120"
+          }
+        ]
+      }
+    },
+    {
+      "name": "领票视图-五事实单查询",
+      "query": {
+        "measures": [
+          "outbound_view.out_count",
+          "outbound_view.in_count",
+          "outbound_view.apply_count",
+          "outbound_view.stock_count",
+          "outbound_view.total_amount"
+        ]
+      },
+      "resultSet": {
+        "data": [
+          {
+            "outbound_view.out_count": "996",
+            "outbound_view.in_count": "413",
+            "outbound_view.apply_count": "201",
+            "outbound_view.stock_count": "677",
+            "outbound_view.total_amount": "213013.06"
+          }
+        ]
+      }
+    },
+    {
+      "name": "审验视图-主子表三事实",
+      "query": {
+        "measures": [
+          "writeoff_view.writeoff_count",
+          "writeoff_view.item_amt",
+          "writeoff_view.face_amt"
+        ]
+      },
+      "resultSet": {
+        "data": [
+          {
+            "writeoff_view.writeoff_count": "333",
+            "writeoff_view.item_amt": "1238187350356.01",
+            "writeoff_view.face_amt": "1245028815017.17"
+          }
+        ]
+      }
+    },
+    {
+      "name": "监管视图-区划下钻",
+      "query": {
+        "measures": [
+          "superv_view.suspicious_count"
+        ],
+        "dimensions": [
+          "superv_view.region_name"
+        ],
+        "limit": 10
+      },
+      "resultSet": {
+        "data": [
+          {
+            "superv_view.region_name": "云南省本级",
+            "superv_view.suspicious_count": "19001"
+          },
+          {
+            "superv_view.region_name": "昆明市本级",
+            "superv_view.suspicious_count": "110"
+          },
+          {
+            "superv_view.region_name": "五华区",
+            "superv_view.suspicious_count": "46"
+          },
+          {
+            "superv_view.region_name": "古城区",
+            "superv_view.suspicious_count": "37"
+          }
+        ]
+      }
+    },
+    {
+      "name": "单位管理视图-区划与行业下钻",
+      "query": {
+        "measures": [
+          "agen_view.count"
+        ],
+        "dimensions": [
+          "agen_view.region_name",
+          "agen_view.industry_name"
+        ],
+        "limit": 5
+      },
+      "resultSet": {
+        "data": [
+          {
+            "agen_view.region_name": "云南省本级",
+            "agen_view.industry_name": "通用",
+            "agen_view.count": "260"
+          },
+          {
+            "agen_view.region_name": "云南省本级",
+            "agen_view.industry_name": "三甲医院",
+            "agen_view.count": "21"
+          },
+          {
+            "agen_view.region_name": "昆明市本级",
+            "agen_view.industry_name": "通用",
+            "agen_view.count": "13"
+          },
+          {
+            "agen_view.region_name": "云南省本级",
+            "agen_view.industry_name": "社团",
+            "agen_view.count": "11"
+          },
+          {
+            "agen_view.region_name": "云南省本级",
+            "agen_view.industry_name": "社区医院",
+            "agen_view.count": "8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "用票视图-按月分组",
+      "query": {
+        "measures": [
+          "usage_view.receipt_count"
+        ],
+        "dimensions": [
+          "usage_view.bill_month"
+        ],
+        "order": {
+          "usage_view.bill_month": "asc"
+        },
+        "limit": 5
+      },
+      "resultSet": {
+        "data": [
+          {
+            "usage_view.bill_month": "2023-02-01T00:00:00.000",
+            "usage_view.receipt_count": "13"
+          },
+          {
+            "usage_view.bill_month": "2023-03-01T00:00:00.000",
+            "usage_view.receipt_count": "244"
+          },
+          {
+            "usage_view.bill_month": "2023-04-01T00:00:00.000",
+            "usage_view.receipt_count": "104"
+          },
+          {
+            "usage_view.bill_month": "2023-05-01T00:00:00.000",
+            "usage_view.receipt_count": "378"
+          },
+          {
+            "usage_view.bill_month": "2023-06-01T00:00:00.000",
+            "usage_view.receipt_count": "1989"
+          }
+        ]
+      }
+    },
+    {
+      "name": "用票视图-日均与冲红",
+      "query": {
+        "measures": [
+          "usage_view.daily_avg",
+          "usage_view.date_cnt",
+          "usage_view.red_cnt"
+        ]
+      },
+      "resultSet": {
+        "data": [
+          {
+            "usage_view.daily_avg": "49.895061728395056",
+            "usage_view.date_cnt": "648",
+            "usage_view.red_cnt": "2554"
+          }
+        ]
+      }
+    },
+    {
+      "name": "领票视图-库存份数",
+      "query": {
+        "measures": [
+          "outbound_view.stock_qty",
+          "outbound_view.stock_count"
+        ]
+      },
+      "resultSet": {
+        "data": [
+          {
+            "outbound_view.stock_qty": "107270761",
+            "outbound_view.stock_count": "677"
+          }
+        ]
+      }
+    },
+    {
+      "name": "监管视图-核销单数",
+      "query": {
+        "measures": [
+          "superv_view.wo_cnt"
+        ]
+      },
+      "resultSet": {
+        "data": [
+          {
+            "superv_view.wo_cnt": "35"
+          }
+        ]
+      }
+    }
+  ]
+}

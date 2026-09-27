@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>embed 看板</title>
+<!-- ECharts vendor 本地静态资源（15 §10，禁止运行时引 CDN） -->
+<script src="/embed/static/echarts.min.js"></script>
+<style>
+  body{margin:0;background:#f5f6f8;color:rgba(0,0,0,.88);
+       font:14px/1.5 -apple-system,'Segoe UI','Microsoft YaHei',sans-serif;}
+  #board{max-width:1280px;margin:0 auto;padding:16px;}
+  /* header（showDashboardHeader=false 可藏，§11） */
+  .dash-head{display:flex;align-items:center;margin:4px 2px 14px;}
+  .dash-head h1{font-size:20px;font-weight:600;margin:0;}
+  /* 聚合模式：看板卡 2 列网格（/embed/all，一行两个看板） */
+  .all-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;align-items:start;}
+  @media (max-width:1100px){.all-grid{grid-template-columns:1fr;}}
+  .dash-sec{background:#fff;border:1px solid #f0f0f0;border-radius:8px;padding:14px 16px;
+            box-shadow:0 1px 2px rgba(0,0,0,.03);}
+  .dash-sec h2{font-size:17px;font-weight:600;margin:0 0 12px;}
+  /* KPI 数值卡（viz=number） */
+  .kpiwrap{display:flex;gap:40px;flex-wrap:wrap;align-items:center;padding:14px 4px;}
+  .kpi-v{font-size:30px;font-weight:700;color:#1a1a2e;line-height:1.2;}
+  .kpi-t{color:rgba(0,0,0,.45);font-size:13px;margin-top:2px;}
+  /* 档位流式布局：12 列 grid，full=12 / half=6，按固化顺序垂直堆叠（§10.2） */
+  .dash-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px;}
+  .card{grid-column:span 12;background:#fff;border:1px solid #f0f0f0;border-radius:8px;
+        padding:12px 16px;min-height:160px;box-shadow:0 1px 2px rgba(0,0,0,.03);}
+  .card.half{grid-column:span 6;}
+  @media (max-width:900px){.card.half{grid-column:span 12;}}
+  .card-head{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+  .card-head .t{font-weight:600;font-size:15px;}
+  .card-head .viz{color:rgba(0,0,0,.40);font-size:12px;background:#f5f5f5;
+                  border-radius:4px;padding:0 6px;}
+  .btn{margin-left:auto;border:1px solid #d9d9d9;background:#fff;border-radius:4px;
+       padding:2px 10px;font-size:12px;cursor:pointer;color:rgba(0,0,0,.65);}
+  .btn:hover{border-color:#1677ff;color:#1677ff;}
+  .chart{height:280px;}
+  table{border-collapse:collapse;width:100%;font-size:13px;}
+  th,td{border:1px solid #f0f0f0;padding:5px 10px;text-align:left;white-space:nowrap;}
+  th{background:#fafafa;font-weight:500;position:sticky;top:0;}
+  .twrap{max-height:420px;overflow:auto;}
+  td.drillable{cursor:pointer;}
+  td.drillable:hover{background:rgba(22,119,255,.08);outline:1px dashed #1677ff;outline-offset:-1px;}
+  .drill-area{margin-top:10px;border-top:1px dashed #e8e8e8;padding-top:8px;}
+  .drill-head{font-size:13px;color:rgba(0,0,0,.55);margin-bottom:6px;}
+  .chip{display:inline-flex;align-items:center;gap:4px;background:#f5f5f5;border:1px solid #d9d9d9;
+        border-radius:4px;padding:1px 8px;font-size:12px;margin:0 6px 6px 0;}
+  .chip b{font-weight:500;}
+  .chip button{border:none;background:transparent;cursor:pointer;color:rgba(0,0,0,.45);padding:0 2px;}
+  .chip button:hover{color:rgba(0,0,0,.88);}
+  td.slicable{cursor:pointer;}
+  td.slicable:hover{background:rgba(22,119,255,.08);}
+  .loading,.error{padding:24px;text-align:center;color:rgba(0,0,0,.45);}
+  .error{color:#cf1322;}
+  .toast{position:fixed;left:50%;bottom:60px;transform:translateX(-50%);z-index:9999;
+         background:rgba(0,0,0,.75);color:#fff;border-radius:4px;padding:6px 14px;font-size:13px;}
+</style>
+</head>
+<body>
+<div id="board"><div class="loading">加载中…</div></div>
+<script>
+(function () {
+  'use strict';
+
+  /* ---------- §11 URL 参数：解析规则照搬官方（字面匹配，正反例无效） ---------- */
+
+  function param(name) {
+    var m = new RegExp('[?&]' + name + '=([^&]*)').exec(location.search);
+    return m ? decodeURIComponent(m[1]) : null;
+  }
+  var allowExport = param('allowExport') === 'true';          // 授权类仅字面 true（=1/TRUE/裸参数无效）
+  var showHeader = param('showDashboardHeader') !== 'false';  // 隐藏类仅字面 false（=0/False/裸参数无效）
+  // 其余参数（含将来的 session，§6 预留）一律忽略——照搬官方"typo 不买没要的东西"
+
+  /* ---------- 路由模式：/embed/all 聚合（无 publicId）/ /embed/dashboard/:publicId ---------- */
+
+  var ALL_MODE = location.pathname === '/embed/all';
+  var mPid = /^\/embed\/dashboard\/([A-Za-z0-9_-]+)$/.exec(location.pathname);
+  if (!mPid && !ALL_MODE) { fatal('路径不合法：' + location.pathname); return; }
+  var publicId = mPid ? mPid[1] : null;
+
+  var LOAD_URL = '/cubejs-api/v1/load';
+  var STD_GRAN = ['day', 'week', 'month', 'quarter', 'year'];
+  var charts = []; // echarts 实例，window resize 时同步
+
+  /* ---------- 小工具 ---------- */
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function fmtVal(v) { // 数字千分位，日期只留日期段
+    if (typeof v === 'number') return v.toLocaleString('zh-CN');
+    if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(v)) return v.slice(0, 10);
+    return v;
+  }
+  function toast(msg) {
+    var t = document.querySelector('.toast');
+    if (!t) { t = document.createElement('div'); t.className = 'toast'; document.body.appendChild(t); }
+    t.textContent = msg;
+    setTimeout(function () { if (t.parentNode) t.parentNode.removeChild(t); }, 2600);
+  }
+  function fatal(msg) {
+    document.getElementById('board').innerHTML = '<div class="error">' + esc(msg) + '</div>';
+  }
+
+  /* ---------- 时间粒度 → 该桶 dateRange（从 ext-drill 移植，§10.3） ---------- */
+
+  function pad2(n) { return (n < 10 ? '0' : '') + n; }
+  function parseYMD(iso) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso == null ? '' : iso));
+    return m ? { y: +m[1], m: +m[2], d: +m[3] } : null;
+  }
+  function fmtYMD(p) { return p.y + '-' + pad2(p.m) + '-' + pad2(p.d); }
+  function lastDay(y, m) { return new Date(Date.UTC(y, m, 0)).getUTCDate(); }
+  function addDays(p, n) {
+    var d = new Date(Date.UTC(p.y, p.m - 1, p.d + n));
+    return { y: d.getUTCFullYear(), m: d.getUTCMonth() + 1, d: d.getUTCDate() };
+  }
+  function bucketToRange(iso, gran) {
+    var p = parseYMD(iso);
+    if (!p) return null;
+    if (gran === 'day') { var s = fmtYMD(p); return [s, s]; }
+    if (gran === 'week') { // 周一为起点（Cube week 默认）
+      var dow = new Date(Date.UTC(p.y, p.m - 1, p.d)).getUTCDay();
+      var start = addDays(p, -((dow + 6) % 7));
+      return [fmtYMD(start), fmtYMD(addDays(start, 6))];
+    }
+    if (gran === 'month') {
+      return [fmtYMD({ y: p.y, m: p.m, d: 1 }), fmtYMD({ y: p.y, m: p.m, d: lastDay(p.y, p.m) })];
+    }
+    if (gran === 'quarter') {
+      var qm = Math.floor((p.m - 1) / 3) * 3 + 1;
+      return [fmtYMD({ y: p.y, m: qm, d: 1 }), fmtYMD({ y: p.y, m: qm + 2, d: lastDay(p.y, qm + 2) })];
+    }
+    if (gran === 'year') return [p.y + '-01-01', p.y + '-12-31'];
+    return null; // 非标准粒度 → 提示而非静默失败
+  }
+
+  /* ---------- annotation 工具（title/shortTitle 现拿，不存双份，§8 规则 2） ---------- */
+
+  function memberTitle(ann, name) {
+    var a = (ann && ann.dimensions && ann.dimensions[name]) ||
+            (ann && ann.measures && ann.measures[name]) ||
+            (ann && ann.timeDimensions && ann.timeDimensions[name]);
+    return (a && (a.shortTitle || a.title)) || name;
+  }
+
+  /* widget 列清单（表格列序：measures → dimensions → 时间维度，同 playground 习惯） */
+  function widgetColumns(q) {
+    var cols = q.measures.slice();
+    (q.dimensions || []).forEach(function (d) { if (cols.indexOf(d) < 0) cols.push(d); });
+    (q.timeDimensions || []).forEach(function (td) {
+      if (td && td.dimension && cols.indexOf(td.dimension) < 0) cols.push(td.dimension);
+    });
+    return cols;
+  }
+
+  /* ---------- 主流程：定义 → header → 逐 widget（per-widget 错误隔离，§10.1） ---------- */
+
+  function render() {
+    if (ALL_MODE) return renderAll();
+    fetch('/cubejs-api/dashboards/' + publicId)
+      .then(function (res) {
+        if (res.status === 404) throw new Error('看板不存在: ' + publicId);
+        if (!res.ok) throw new Error('看板定义读取失败: HTTP ' + res.status);
+        return res.json();
+      })
+      .then(function (dash) {
+        var board = document.getElementById('board');
+        board.innerHTML = '';
+        if (showHeader) {
+          var head = document.createElement('div');
+          head.className = 'dash-head';
+          head.innerHTML = '<h1>' + esc(dash.title) + '</h1>';
+          board.appendChild(head);
+        }
+        var grid = document.createElement('div');
+        grid.className = 'dash-grid';
+        board.appendChild(grid);
+        (dash.widgets || []).forEach(function (w) { renderWidget(grid, w); }); // 顺序 = 固化顺序
+        if (!(dash.widgets || []).length) {
+          grid.innerHTML = '<div class="loading" style="grid-column:span 12">看板暂无 widget</div>';
+        }
+      })
+      .catch(function (e) { fatal(e.message); });
+  }
+
+  /* 聚合模式：逐看板取定义，看板卡进 2 列网格（一行两个看板），widget 网格在卡内 */
+  function renderAll() {
+    fetch('/cubejs-api/dashboards')
+      .then(function (res) {
+        if (!res.ok) throw new Error('看板列表读取失败: HTTP ' + res.status);
+        return res.json();
+      })
+      .then(function (list) {
+        var board = document.getElementById('board');
+        board.innerHTML = '';
+        if (!(list || []).length) {
+          board.innerHTML = '<div class="loading">暂无看板——在 Playground 固化后这里会显示</div>';
+          return;
+        }
+        var allGrid = document.createElement('div');
+        allGrid.className = 'all-grid';
+        board.appendChild(allGrid);
+        var chain = Promise.resolve(); // 列表已按 updatedAt 倒序，逐看板串行渲染
+        (list || []).forEach(function (item) {
+          chain = chain.then(function () {
+            return fetch('/cubejs-api/dashboards/' + item.publicId)
+              .then(function (r) { return r.ok ? r.json() : null; })
+              .then(function (dash) {
+                if (!dash || !surfaceAlive(board)) return;
+                var sec = document.createElement('div');
+                sec.className = 'dash-sec';
+                sec.innerHTML = '<h2>' + esc(dash.title) + '</h2>';
+                allGrid.appendChild(sec); // 看板卡进 2 列网格
+                var grid = document.createElement('div');
+                grid.className = 'dash-grid';
+                sec.appendChild(grid); // widget 网格在卡内（full=卡宽 / half=半卡）
+                (dash.widgets || []).forEach(function (w) { renderWidget(grid, w); }); // 顺序 = 固化顺序
+              });
+          });
+        });
+        chain.catch(function (e) { fatal(e.message); });
+      })
+      .catch(function (e) { fatal(e.message); });
+  }
+
+  function surfaceAlive(board) { return board && board.parentNode; } // 面板/页面已切走则停
+
+  /* layout 渲染分支（§8 规则 4，字段存在性）：有 x/w 走网格坐标，否则回退 width 档位 */
+  function applyLayout(card, layout) {
+    if (layout && layout.x != null && layout.w) {
+      card.style.gridColumn = (layout.x + 1) + ' / span ' + layout.w;
+    } else if (layout && layout.width === 'half') {
+      card.className += ' half';
+    }
+  }
+
+  function renderWidget(grid, w) {
+    var card = document.createElement('div');
+    card.className = 'card';
+    applyLayout(card, w.layout);
+    card.innerHTML = '<div class="card-head"><span class="t">' + esc(w.title) + '</span>' +
+      '<span class="viz">' + esc(w.viz) + '</span>' +
+      (allowExport ? '<button class="btn">下载CSV</button>' : '') + '</div>' +
+      '<div class="loading">加载中…</div>';
+    grid.appendChild(card);
+    if (allowExport) {
+      card.querySelector('.btn').addEventListener('click', function () {
+        exportCsv(card, w); // 客户端从已加载数据生成，不发新查询（§10.4）
+      });
+    }
+    // 错误隔离：单个 widget 失败只渲染错误态，不拖垮整板
+    var q = JSON.parse(JSON.stringify(w.query));
+    delete q.rowLimit; // 存量定义兼容：rowLimit 是网关响应回显字段，请求侧拒绝
+    fetch(LOAD_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },   // dev 模式无 Authorization（§7）
+      body: JSON.stringify({ query: q }),
+    }).then(function (res) {
+      if (!res.ok) return res.text().then(function (t) {
+        throw new Error('查询失败 HTTP ' + res.status + ': ' + t.slice(0, 200));
+      });
+      return res.json();
+    }).then(function (body) {
+      if (!body || !body.annotation || !Array.isArray(body.data)) {
+        throw new Error('响应缺 annotation/data');
+      }
+      var content = card.querySelector('.loading,.error');
+      if (w.viz === 'table') renderTable(card, content, w, body);
+      else if (w.viz === 'number') renderNumber(content, w, body);
+      else renderChart(card, content, w, body);
+      card.__loaded = { ann: body.annotation, data: body.data }; // CSV 从这里取（不发新查询）
+    }).catch(function (e) {
+      card.querySelector('.loading,.error').outerHTML =
+        '<div class="error">' + esc(e.message) + '</div>';
+    });
+  }
+
+  /* ---------- 表格 + 下钻（§10.3，交互复刻 ext-drill §3） ---------- */
+
+  function renderTable(card, content, w, body) {
+    var ann = body.annotation, data = body.data;
+    var cols = widgetColumns(w.query);
+    var thead = cols.map(function (c) { return '<th>' + esc(memberTitle(ann, c)) + '</th>'; }).join('');
+    var rows = data.map(function (row) {
+      return '<tr>' + cols.map(function (c) {
+        var drillable = w.query.measures.indexOf(c) >= 0 &&
+          ann.measures[c] && ann.measures[c].drillMembers && ann.measures[c].drillMembers.length;
+        return '<td' + (drillable ? ' class="drillable" data-m="' + esc(c) + '"' : '') + '>' +
+          esc(fmtVal(row[c])) + '</td>';
+      }).join('') + '</tr>';
+    }).join('');
+    content.outerHTML =
+      '<div class="twrap"><table><thead><tr>' + thead + '</tr></thead><tbody>' + rows +
+      '</tbody></table></div><div class="drill-area" style="display:none"></div>';
+
+    // 点指标单元格 → 下方展开明细
+    Array.prototype.forEach.call(card.querySelectorAll('td.drillable'), function (td) {
+      td.addEventListener('click', function () {
+        var row = data[td.parentNode.rowIndex - 1];
+        drill(card, w, ann, row, td.getAttribute('data-m'));
+      });
+    });
+  }
+
+  function cardOf(el) {
+    while (el && !el.classList.contains('card')) el = el.parentNode;
+    return el;
+  }
+
+  /* 拼下钻查询（从 ext-drill 移植）：drillMembers→dimensions、行内值→equals、粒度→该桶范围 */
+  function buildDrill(w, ann, rowValues, measureName) {
+    var q = w.query, mi = ann.measures[measureName];
+    var times = ann.timeDimensions || {};
+    var nq = {
+      dimensions: [], measures: [], timeDimensions: [],
+      filters: JSON.parse(JSON.stringify(q.filters || [])), // 上下文自动继承
+      limit: 1000, // 请求不能带 rowLimit（实测网关拒绝 is not allowed）
+    };
+    if (q.timezone) nq.timezone = q.timezone;
+    if (q.segments && q.segments.length) nq.segments = q.segments.slice();
+
+    var handled = {}, badGran = null;
+    (q.timeDimensions || []).forEach(function (td) {
+      if (!td || !td.dimension) return;
+      handled[td.dimension] = true;
+      if (td.dateRange && td.dateRange.length) {
+        nq.timeDimensions.push({ dimension: td.dimension, dateRange: td.dateRange.slice() });
+      } else if (td.granularity) {
+        if (STD_GRAN.indexOf(td.granularity) === -1) { badGran = badGran || td.granularity; return; }
+        var range = bucketToRange(rowValues[td.dimension], td.granularity);
+        if (!range) { badGran = badGran || td.granularity; return; }
+        nq.timeDimensions.push({ dimension: td.dimension, dateRange: range });
+      } else {
+        var p = parseYMD(rowValues[td.dimension]);
+        if (p) nq.timeDimensions.push({ dimension: td.dimension, dateRange: [fmtYMD(p), fmtYMD(p)] });
+      }
+    });
+    if (badGran) { toast('时间粒度 ' + badGran + ' 暂不支持下钻'); return null; }
+
+    (q.dimensions || []).forEach(function (dim) { // 行内维度值 → equals filters
+      var v = rowValues[dim];
+      if (v !== undefined && v !== null && v !== '') {
+        nq.filters.push({ member: dim, operator: 'equals', values: [String(v)] });
+      }
+    });
+    (mi.drillMembers || []).forEach(function (m) { // drillMembers → dimensions；时间成员走原始列
+      if (times[m]) { if (!handled[m]) nq.timeDimensions.push({ dimension: m }); }
+      else nq.dimensions.push(m);
+    });
+    if (!nq.dimensions.length && !nq.timeDimensions.length) { toast('下钻声明为空'); return null; }
+    return nq;
+  }
+
+  function drill(card, w, ann, row, measureName) {
+    var area = card.querySelector('.drill-area');
+    var state = card.__drill || (card.__drill = { base: null, slices: [] }); // 行内值切片累积
+    var nq = buildDrill(w, ann, row, measureName);
+    if (!nq) return;
+    state.base = nq;
+    state.slices = [];
+    area.style.display = '';
+    runDrill(card, area, nq, []);
+  }
+
+  function runDrill(card, area, nq, slices) {
+    var q = JSON.parse(JSON.stringify(nq)); // base + 切片，不改 base
+    slices.forEach(function (s) {
+      q.filters.push({ member: s.member, operator: 'equals', values: [s.value] });
+    });
+    area.innerHTML = '<div class="drill-head"></div><div class="loading">加载中…</div>';
+    area.querySelector('.drill-head').innerHTML =
+      '<b>明细</b>' + slices.map(function (s, i) {
+        return ' <span class="chip"><b>' + esc(s.title) + '</b>=' + esc(s.value) +
+          '<button data-i="' + i + '">✕</button></span>';
+      }).join('');
+    Array.prototype.forEach.call(area.querySelectorAll('.chip button'), function (b) {
+      b.addEventListener('click', function () { // 切片可摘除
+        card.__drill.slices.splice(+b.getAttribute('data-i'), 1);
+        runDrill(card, area, nq, card.__drill.slices);
+      });
+    });
+    fetch(LOAD_URL, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: q }),
+    }).then(function (res) {
+      if (!res.ok) return res.text().then(function (t) {
+        throw new Error('下钻失败 HTTP ' + res.status + ': ' + t.slice(0, 200));
+      });
+      return res.json();
+    }).then(function (body) {
+      var rows = body.data || [];
+      var cols = Object.keys(rows[0] || {});
+      var html = rows.map(function (row) {
+        return '<tr>' + cols.map(function (c) {
+          var sliceable = q.dimensions.indexOf(c) >= 0;
+          return '<td' + (sliceable ? ' class="slicable" data-m="' + esc(c) + '"' : '') + '>' +
+            esc(fmtVal(row[c])) + '</td>';
+        }).join('') + '</tr>';
+      }).join('');
+      area.querySelector('.loading,.error,.twrap,.empty').outerHTML = rows.length
+        ? '<div class="twrap"><table><tbody>' + html + '</tbody></table></div>'
+        : '<div class="empty" style="color:rgba(0,0,0,.45);padding:12px;text-align:center">无明细数据</div>';
+      Array.prototype.forEach.call(area.querySelectorAll('td.slicable'), function (td) {
+        td.addEventListener('click', function () { // 行内值可点 → 加 filter 切片
+          card.__drill.slices.push({
+            member: td.getAttribute('data-m'),
+            value: rows[td.parentNode.rowIndex - 1][td.getAttribute('data-m')],
+            title: memberTitle(body.annotation, td.getAttribute('data-m')),
+          });
+          runDrill(card, area, nq, card.__drill.slices);
+        });
+      });
+    }).catch(function (e) {
+      area.querySelector('.loading,.error,.twrap,.empty').outerHTML =
+        '<div class="error">' + esc(e.message) + '</div>';
+    });
+  }
+
+  /* ---------- CSV（客户端生成，BOM 兼容 Excel 中文，§10.4） ---------- */
+
+  function exportCsv(card, w) {
+    var cache = card.__loaded;
+    if (!cache) { toast('数据尚未加载完成'); return; }
+    var cols = widgetColumns(w.query);
+    var q = function (s) { return '"' + String(s == null ? '' : s).replace(/"/g, '""') + '"'; };
+    var lines = [cols.map(function (c) { return q(memberTitle(cache.ann, c)); }).join(',')];
+    cache.data.forEach(function (row) {
+      lines.push(cols.map(function (c) { return q(row[c]); }).join(','));
+    });
+    var blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = w.title + '.csv';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  /* ---------- KPI 数值卡（viz=number，参考官方 Orders Overview 顶部数字卡） ---------- */
+
+  function renderNumber(content, w, body) {
+    var ann = body.annotation, row0 = body.data[0] || {};
+    var nums = w.query.measures.map(function (m) {
+      var t = (ann.measures && ann.measures[m] && (ann.measures[m].shortTitle || ann.measures[m].title)) || m;
+      var v = row0[m];
+      var txt = typeof v === 'number' ? v.toLocaleString('zh-CN') : (v == null ? '—' : String(v));
+      return '<div class="kpi"><div class="kpi-v">' + esc(txt) + '</div>' +
+        '<div class="kpi-t">' + esc(t) + '</div></div>';
+    }).join('');
+    content.outerHTML = '<div class="kpiwrap">' + nums + '</div>';
+  }
+
+  /* ---------- ECharts（bar/line/pie，§10） ---------- */
+
+  function renderChart(card, content, w, body) {
+    if (typeof echarts === 'undefined') throw new Error('echarts.min.js 未加载（/embed/static 路由）');
+    var ann = body.annotation, data = body.data;
+    var q = w.query;
+    var timeDim = (q.timeDimensions && q.timeDimensions[0] && q.timeDimensions[0].dimension) || null;
+    var dim = timeDim || (q.dimensions && q.dimensions[0]) || null;
+    var mInfo = function (name) {
+      return (ann.measures && ann.measures[name] && (ann.measures[name].shortTitle || ann.measures[name].title)) || name;
+    };
+    var option;
+    if (w.viz === 'pie') { // 饼图：维度做扇区，取第一个度量
+      var mName = q.measures[0];
+      option = {
+        tooltip: { trigger: 'item' },
+        legend: { bottom: 0, type: 'scroll' },
+        series: [{
+          type: 'pie', radius: ['30%', '62%'],
+          data: data.map(function (row) {
+            return { name: String(dim ? (row[dim] == null ? '(空)' : fmtVal(row[dim])) : '合计'),
+                     value: Number(row[mName]) || 0 };
+          }),
+          label: { formatter: '{b}: {d}%' },
+        }],
+      };
+    } else {
+      var cats, series;
+      if (dim) {
+        cats = data.map(function (row) { // x 轴：时间维度优先
+          return String(row[dim] == null ? '(空)' : fmtVal(row[dim]));
+        });
+        series = q.measures.map(function (m) {
+          return { name: mInfo(m), type: w.viz,
+                   data: data.map(function (row) { return Number(row[m]) || 0; }) };
+        });
+      } else { // 无维度（单行）：x = 度量名，值为该行各度量
+        var row0 = data[0] || {};
+        cats = q.measures.map(mInfo);
+        series = [{ name: '', type: w.viz,
+                    data: q.measures.map(function (m) { return Number(row0[m]) || 0; }) }];
+      }
+      option = {
+        tooltip: { trigger: 'axis' },
+        legend: q.measures.length > 1 ? { bottom: 0 } : undefined,
+        grid: { left: 60, right: 24, top: 24, bottom: q.measures.length > 1 ? 48 : 28 },
+        xAxis: { type: 'category', data: cats },
+        yAxis: { type: 'value' },
+        series: series,
+      };
+    }
+    content.outerHTML = '<div class="chart"></div>';
+    var div = card.querySelector('.chart');
+    var chart = echarts.init(div);
+    chart.setOption(option);
+    charts.push(chart);
+  }
+
+  window.addEventListener('resize', function () {
+    charts.forEach(function (c) { c.resize(); });
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,187 @@
+# 缴款书事实 cube —— 源表 UNE_PAYBOOK（通知书，7255 行）
+# P2 核实结论（docs/cube-dataqa-topic/01-design.md §5）：
+#   原指标体系的 une_paybook_new / une_paybook_high / fne_paybook_full_high
+#   三表 Oracle 均不存在（user_tables 查证 0 行）——只建本 cube，不建 high/full。
+#   FNE_PAYBOOK（631 行，无 FSTATE）非口径源；FNE_QRY_PAYBOOK（1158 行）为查询表。
+# join 键验证（7255 行 100% 匹配）：
+#   FAGENIDCODE → agency.agency_code（FAB_AGEN FISFINAL=1 内唯一）
+#   FRGNCODE   → region.code（AFA_AUTH_REGION.FCODE 全表唯一，仅 4 个区划值）
+# 口径分布实测：FSTATE 1正常 3585 / 2作废 979 / 3已缴款 2691；
+#   FBUSTYPE 1直缴 5444 / 2汇缴 1791 / 4、6 为扩展值（16+4 笔，口径度量不覆盖）
+# 日期列验证：FDATE/FPAYDATE/FEFFDATE/FCONFIRMDATE 全表 0 非法（YYYY-MM-DD）
+cubes:
+  - name: paybook
+    title: 缴款书
+    description: |
+      财政缴款书事实表（UNE_PAYBOOK，单表）。按 fstate 状态口径拆分为
+      待缴款/已缴款/作废/过期未缴度量，按 fbusinesstype 拆分直缴/汇缴金额。
+      原指标来源：data-analysis-topic 缴款主题 une_paybook_new（Oracle 实表为
+      UNE_PAYBOOK，见文件头核实结论）。
+    public: true
+    meta:
+      ai_context: >-
+        状态口径用 state 维度或各状态度量（pending_count/paid_count/void_count/
+        expired_count）；直缴汇缴用 bus_type 或 direct_pay_amt/collect_pay_amt。
+        按时间分析默认用 fill_date（填制日期）；缴款确认后用 confirm_date。
+        expired_count 含 SYSDATE 动态过滤，不参与预聚合命中。
+
+    sql_table: UNE_PAYBOOK
+
+    joins:
+      - name: agency
+        sql: "{CUBE}.\"FAGENIDCODE\" = {agency}.\"FAGENIDCODE\""
+        relationship: many_to_one
+      - name: region
+        sql: "{CUBE}.\"FRGNCODE\" = {region}.\"FCODE\""
+        relationship: many_to_one
+
+    measures:
+      - name: count
+        title: 缴款书数
+        type: count
+      - name: total_amount
+        title: 金额合计(元)
+        description: sum(FTOTALAMT)
+        sql: "{CUBE}.\"FTOTALAMT\""
+        type: sum
+      - name: avg_amount
+        title: 平均单笔金额(元)
+        description: avg(FTOTALAMT)
+        sql: "{CUBE}.\"FTOTALAMT\""
+        type: avg
+      - name: pending_count
+        title: 待缴款数
+        description: FSTATE='1'（正常未缴）
+        sql: "{CUBE}.\"FID\""
+        type: count
+        filters:
+          - sql: "{CUBE}.\"FSTATE\" = '1'"
+      - name: paid_count
+        title: 已缴款数
+        description: FSTATE='3'（已缴款确认）
+        sql: "{CUBE}.\"FID\""
+        type: count
+        filters:
+          - sql: "{CUBE}.\"FSTATE\" = '3'"
+      - name: void_count
+        title: 作废数
+        description: FSTATE='2'
+        sql: "{CUBE}.\"FID\""
+        type: count
+        filters:
+          - sql: "{CUBE}.\"FSTATE\" = '2'"
+      - name: expired_count
+        title: 过期未缴数
+        description: >-
+          FSTATE='1' 且 FEFFDATE<今天。过滤器含 SYSDATE（每次求值变化），
+          不参与预聚合命中——P6 回归时不得误判为预聚合缺陷。
+        sql: "{CUBE}.\"FID\""
+        type: count
+        filters:
+          - sql: "{CUBE}.\"FSTATE\" = '1' AND {CUBE}.\"FEFFDATE\" < TO_CHAR(SYSDATE, 'YYYY-MM-DD')"
+      - name: direct_pay_amt
+        title: 直缴金额(元)
+        description: FBUSTYPE='1' 的 FTOTALAMT 合计
+        sql: "{CUBE}.\"FTOTALAMT\""
+        type: sum
+        filters:
+          - sql: "{CUBE}.\"FBUSTYPE\" = '1'"
+      - name: collect_pay_amt
+        title: 汇缴金额(元)
+        description: FBUSTYPE='2' 的 FTOTALAMT 合计
+        sql: "{CUBE}.\"FTOTALAMT\""
+        type: sum
+        filters:
+          - sql: "{CUBE}.\"FBUSTYPE\" = '2'"
+
+    dimensions:
+      - name: fid
+        title: 缴款书ID
+        sql: "{CUBE}.\"FID\""
+        type: string
+        primary_key: true
+        public: false    # 技术主键不对外
+      - name: state
+        title: 缴款书状态
+        description: 1 正常 / 2 作废 / 3 已缴款确认（4 电子转纸质票据已去掉）
+        sql: "{CUBE}.\"FSTATE\""
+        type: string
+      - name: bus_type
+        title: 业务类型
+        description: 1 直缴 / 2 汇缴（另有 4/6 扩展值，口径度量不覆盖）
+        sql: "{CUBE}.\"FBUSTYPE\""
+        type: string
+      - name: region_code
+        title: 区划编码
+        description: FRGNCODE 关联 region.code（已验证唯一）
+        sql: "{CUBE}.\"FRGNCODE\""
+        type: string
+      - name: agency_code
+        title: 单位识别码
+        description: FAGENIDCODE 关联 agency.agency_code（已验证 100% 匹配）
+        sql: "{CUBE}.\"FAGENIDCODE\""
+        type: string
+      - name: pay_code
+        title: 缴款码
+        description: FPAYCODE，为银行缴款用的
+        sql: "{CUBE}.\"FPAYCODE\""
+        type: string
+      - name: payer_name
+        title: 缴款人名称
+        description: FPAYERNAME，敏感字段——mask 只露末2字（docs/11 脱敏）
+        sql: "{CUBE}.\"FPAYERNAME\""
+        type: string
+        mask:
+          sql: "CONCAT('**', SUBSTR({CUBE}.\"FPAYERNAME\", -2))"
+      - name: fill_date
+        title: 填制日期
+        description: FDATE（VARCHAR2 'YYYY-MM-DD'）转日期，时间分析默认维度
+        sql: "TO_DATE({CUBE}.\"FDATE\", 'YYYY-MM-DD')"
+        type: time
+      - name: pay_date
+        title: 缴款日期
+        description: FPAYDATE（VARCHAR2 'YYYY-MM-DD'）转日期
+        sql: "TO_DATE({CUBE}.\"FPAYDATE\", 'YYYY-MM-DD')"
+        type: time
+      - name: eff_date
+        title: 缴款书有效期
+        description: FEFFDATE（VARCHAR2 'YYYY-MM-DD'）转日期；expired_count 依赖此列
+        sql: "TO_DATE({CUBE}.\"FEFFDATE\", 'YYYY-MM-DD')"
+        type: time
+      - name: confirm_date
+        title: 缴款确认日期
+        description: FCONFIRMDATE（VARCHAR2 'YYYY-MM-DD'）转日期，FSTATE=3 时有值
+        sql: "TO_DATE({CUBE}.\"FCONFIRMDATE\", 'YYYY-MM-DD')"
+        type: time
+
+# 行级权限：access_policy 双互补策略（声明式，P2 最终方案）
+# ——有区划属性走 row_level 过滤、无属性走 allow_all 放行，实测四种场景通过；
+# 完整过程见 docs/cube-dataqa-topic/03-行级权限记录.md。
+# 硬语义：策略存在 = 白名单制，每种用户状态必须至少命中一条策略。
+# 脱敏（P3 升级，docs/11 语义）：member_level excludes + member_masking includes
+# → payer_name 对所有人脱敏（单独 mask 不生效，须与 member_level 同策略配合）。
+
+    access_policy:
+      # 有区划属性：按行收窄
+      - group: "*"
+        conditions:
+          - if: "{ securityContext.region_code }"
+        member_level:
+          excludes: [payer_name]
+        member_masking:
+          includes: [payer_name]
+        row_level:
+          filters:
+            - member: region_code
+              operator: equals
+              values: ["{ securityContext.region_code }"]
+      # 无区划属性：显式放行全表（allow_all）
+      - group: "*"
+        conditions:
+          - if: "{ not securityContext.region_code }"
+        member_level:
+          excludes: [payer_name]
+        member_masking:
+          includes: [payer_name]
+        row_level:
+          allow_all: true

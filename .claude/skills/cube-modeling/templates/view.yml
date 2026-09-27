@@ -1,0 +1,30 @@
+# ============================================================
+# view 交付面骨架 —— 从 bill_kpi_view 验证过的成品抽出（2026-09 验证）
+# 用法：拷贝到 conf/model/views/<短名>_view.yml，替换全部 <...> 占位符。
+# 职责：消费方（BI/前端/REST API）统一从这里查；cube 层只留原料
+# ============================================================
+views:
+  - name: <短名>_view            # 成员在 API 里的名字是 <view名>.<成员名>
+    title: <中文标题>
+    description: 口径：<一句话公式>；消费方统一从这里查
+    cubes:
+      - join_path: <cube名>      # 根 cube 直接写名字；跨 cube 用点号 base.line_items
+        includes:                # 精确列举交付成员（推荐）；全量用 "*" + excludes
+          - <维度1>
+          - <维度2>
+          - <指标1>
+        excludes:
+          - <原料成员>           # ⚠️ view 不继承 cube 的 public:false——
+                                 # cube 上隐藏的成员在 view 里会重新可查，
+                                 # 必须在这里显式 excludes 挡住
+    # view 内可覆盖成员元数据（对象形式）：
+    #   - name: <成员>
+    #     title: <中文覆盖名>
+    #     format: percent_1
+    # 治理参数：
+    #   default_filters:            # 对每个查询强制生效（租户/单位隔离）
+    #     - member: <维度>
+    #       operator: equals
+    #       values: ["<值>"]
+    #   folders: <成员逻辑分组>      # view 成员归组
+    #   meta.ai_context: <给 AI 的视图上下文，不暴露 UI>

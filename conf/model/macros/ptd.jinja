@@ -1,0 +1,21 @@
+{#- PTD（period-to-date）宏 —— docs/12 §5 官方 recipe（P3 实测宏 import）。
+    用法（cube yml 内）：
+      {%- import 'macros/ptd.jinja' as ptd -%}
+      measures:
+        ...其他度量...
+      {{ ptd.to_date_measures("total_amount", '{CUBE}."FTOTALAMT"') }}
+      {{ ptd.to_date_measures("count", type="count") }}
+    宏在编译期生成度量（每个周期一个 rolling_window: to_date 成员），
+    加一个周期 = 改 periods 默认列表一处。宏本身不减少成员数，省掉源码重复。-#}
+{%- macro to_date_measures(name, sql='', type='sum', periods=['week', 'month', 'quarter', 'year'], title='') -%}
+{%- for period in periods %}
+      - name: {{ name | safe }}_{{ period | safe }}_to_date
+        {% if sql %}sql: |-
+          {{ sql | indent(10) | safe }}
+        {% endif %}type: {{ type | safe }}
+        {% if title %}title: {{ (title ~ '(' ~ period ~ ')') | safe }}{% endif %}
+        rolling_window:
+          type: to_date
+          granularity: {{ period | safe }}
+{% endfor -%}
+{%- endmacro -%}

@@ -1,0 +1,12 @@
+[
+  { "name": "全口径状态汇总", "query": { "measures": ["paybook.count", "paybook.pending_count", "paybook.paid_count", "paybook.void_count"] } },
+  { "name": "过期未缴", "query": { "measures": ["paybook.expired_count"] } },
+  { "name": "直缴汇缴金额", "query": { "measures": ["paybook.direct_pay_amt", "paybook.collect_pay_amt", "paybook.total_amount"] } },
+  { "name": "平均单笔金额", "query": { "measures": ["paybook.avg_amount"] } },
+  { "name": "按区划分组", "query": { "measures": ["paybook.count"], "dimensions": ["paybook.region_code"] } },
+  { "name": "按区划名称分组(传递join)", "query": { "measures": ["paybook.count"], "dimensions": ["region.name"] } },
+  { "name": "按单位分组", "query": { "measures": ["paybook.count", "paybook.total_amount"], "dimensions": ["agency.name"], "limit": 10 } },
+  { "name": "按填制月份分组", "query": { "measures": ["paybook.count"], "dimensions": ["paybook.fill_date.month"] } },
+  { "name": "按状态和业务类型交叉", "query": { "measures": ["paybook.count", "paybook.total_amount"], "dimensions": ["paybook.state", "paybook.bus_type"] } },
+  { "name": "2026年缴款趋势", "query": { "measures": ["paybook.count"], "timeDimensions": [{ "dimension": "paybook.fill_date", "dateRange": ["2026-01-01", "2026-12-31"], "granularity": "month" }] } }
+]

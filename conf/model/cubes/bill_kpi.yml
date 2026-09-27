@@ -1,0 +1,107 @@
+cubes:
+  - name: bill_kpi
+    title: 票据库存可用时间
+    description: 口径：单位票据库存余量(份) / 月均使用量(份/月)
+    meta:
+      ai_context: >-          # 给 AI/智能体的口径上下文，不暴露在 UI
+        月均使用量 = 季度用量 ÷ 3。单位以"单位名称"为键（申请单的识别码大多为 NULL）。
+        FAB_AGEN 同码多行，关联前必须 GROUP BY 去重。交付面为 bill_kpi_view，
+        消费方从 view 查；cube 层原子聚合为原料（public: false）。
+    data_source: default
+
+    # 按"票据×单位"粒度预先聚合，避免跨表 join 后比值不可加的问题。
+    # 单位以"单位名称"为键：库存侧经 FAGENIDCODE 关联去重后的 FAB_AGEN 取名
+    # （FAB_AGEN 同码多行，不去重会把库存行翻倍）；用量侧直接用申请单的
+    # FAGENNAME（申请单的 FAGENIDCODE 大多为 NULL）。粒度由两侧 UNION 驱动，
+    # 保证"有用量但无库存记录"的单位不丢失
+    sql_table: >
+      (
+        SELECT
+          b."FID"       AS "FBILLID",
+          b."FBILLCODE" AS "FBILLCODE",
+          b."FBILLNAME" AS "FBILLNAME",
+          G."FAGENNAME" AS "FAGENNAME",
+          NVL(S."STOCK_SUM", 0) AS "STOCK_SUM",
+          NVL(U."USE_Q", 0)     AS "USE_Q"
+        FROM "FAB_BILL" b
+        JOIN (
+          SELECT s."FBILLID", a."FAGENNAME"
+          FROM "FAB_AGEN_BILL" s
+          LEFT JOIN (
+            SELECT "FAGENIDCODE", MAX("FAGENNAME") AS "FAGENNAME"
+            FROM "FAB_AGEN"
+            GROUP BY "FAGENIDCODE"
+          ) a ON a."FAGENIDCODE" = s."FAGENIDCODE"
+          UNION
+          SELECT u."FBILLID", ap."FAGENNAME"
+          FROM "FAB_AGEN_APPLY_USEBILL" u
+          JOIN "FAB_AGEN_APPLY" ap ON ap."FID" = u."FAPPLYID"
+          WHERE ap."FAGENNAME" IS NOT NULL
+        ) G ON G."FBILLID" = b."FID"
+        LEFT JOIN (
+          SELECT s."FBILLID", a."FAGENNAME", SUM(s."FSTOCKCHKNUM") AS "STOCK_SUM"
+          FROM "FAB_AGEN_BILL" s
+          LEFT JOIN (
+            SELECT "FAGENIDCODE", MAX("FAGENNAME") AS "FAGENNAME"
+            FROM "FAB_AGEN"
+            GROUP BY "FAGENIDCODE"
+          ) a ON a."FAGENIDCODE" = s."FAGENIDCODE"
+          GROUP BY s."FBILLID", a."FAGENNAME"
+        ) S ON S."FBILLID" = G."FBILLID" AND S."FAGENNAME" = G."FAGENNAME"
+        LEFT JOIN (
+          SELECT ap."FAGENNAME", u."FBILLID", SUM(u."FINVOICENUM") AS "USE_Q"
+          FROM "FAB_AGEN_APPLY_USEBILL" u
+          JOIN "FAB_AGEN_APPLY" ap ON ap."FID" = u."FAPPLYID"
+          WHERE ap."FAGENNAME" IS NOT NULL
+          GROUP BY ap."FAGENNAME", u."FBILLID"
+        ) U ON U."FBILLID" = G."FBILLID" AND U."FAGENNAME" = G."FAGENNAME"
+      )
+
+    dimensions:
+      - name: fbillid
+        title: 票据ID
+        sql: "{CUBE}.\"FBILLID\""
+        type: string
+        primaryKey: true
+        public: false    # 技术主键不对外；消费方用票据编码识别，view 里也 excludes
+      - name: fbillcode
+        title: 票据编码
+        sql: "{CUBE}.\"FBILLCODE\""
+        type: string
+      - name: fbillname
+        title: 票据名称
+        sql: "{CUBE}.\"FBILLNAME\""
+        type: string
+      - name: fagenname
+        title: 单位名称
+        sql: "{CUBE}.\"FAGENNAME\""
+        type: string
+
+    measures:
+      - name: stockSum
+        title: 库存余量(份)
+        sql: "{CUBE}.\"STOCK_SUM\""
+        type: sum
+        public: false
+
+      - name: quarterlyUsage
+        title: 季度用量(份)
+        sql: "{CUBE}.\"USE_Q\""
+        type: sum
+        public: false
+
+      - name: monthlyUsage
+        title: 月均使用量(份/月)
+        description: 季度用量 / 3
+        sql: "{CUBE}.\"USE_Q\" / 3.0"
+        type: sum
+        public: false
+
+      # 比值指标：官方 calculated measure 写法，{度量名} 引用会被 Cube 展开为
+      # 完整聚合表达式（SUM(...)），保证按任意维度切分（票据/编码等）时比值都正确。
+      # 注意：不能用 {CUBE}.成员 形式——会渲染成裸列引用报 ORA-00904
+      - name: availMonths
+        title: 票据申领库存可用时间(月)
+        description: 库存余量(份) / 月均使用量(份/月)
+        sql: "{stockSum} / NULLIF({monthlyUsage}, 0)"
+        type: number

@@ -1,0 +1,240 @@
+{
+  "savedAt": "2026-09-23T09:33:03.481Z",
+  "results": [
+    {
+      "name": "退付-总量",
+      "query": {
+        "measures": [
+          "backpay_view.count",
+          "backpay_view.total_amt",
+          "backpay_view.pay_amt"
+        ]
+      },
+      "resultSet": {
+        "data": [
+          {
+            "backpay_view.count": "325",
+            "backpay_view.total_amt": "452326.725",
+            "backpay_view.pay_amt": "878614.56"
+          }
+        ]
+      }
+    },
+    {
+      "name": "退付-退款方式分组",
+      "query": {
+        "measures": [
+          "backpay_view.count",
+          "backpay_view.total_amt"
+        ],
+        "dimensions": [
+          "backpay_view.pay_mode"
+        ],
+        "order": {
+          "backpay_view.count": "desc"
+        },
+        "limit": 5
+      },
+      "resultSet": {
+        "data": [
+          {
+            "backpay_view.pay_mode": "柜台缴款",
+            "backpay_view.count": "311",
+            "backpay_view.total_amt": "451274.715"
+          },
+          {
+            "backpay_view.pay_mode": "自助终端",
+            "backpay_view.count": "13",
+            "backpay_view.total_amt": "1052"
+          },
+          {
+            "backpay_view.pay_mode": "网上缴款",
+            "backpay_view.count": "1",
+            "backpay_view.total_amt": "0.01"
+          }
+        ]
+      }
+    },
+    {
+      "name": "退付-退库标志分组",
+      "query": {
+        "measures": [
+          "backpay_view.count",
+          "backpay_view.total_amt"
+        ],
+        "dimensions": [
+          "backpay_view.is_confirm"
+        ],
+        "order": {
+          "backpay_view.count": "desc"
+        },
+        "limit": 5
+      },
+      "resultSet": {
+        "data": [
+          {
+            "backpay_view.is_confirm": "0",
+            "backpay_view.count": "277",
+            "backpay_view.total_amt": "449617.085"
+          },
+          {
+            "backpay_view.is_confirm": "1",
+            "backpay_view.count": "48",
+            "backpay_view.total_amt": "2709.64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "退付-按申请日期分组",
+      "query": {
+        "measures": [
+          "backpay_view.count",
+          "backpay_view.total_amt"
+        ],
+        "dimensions": [
+          "backpay_view.apply_date"
+        ],
+        "order": {
+          "backpay_view.apply_date": "asc"
+        },
+        "limit": 10
+      },
+      "resultSet": {
+        "data": [
+          {
+            "backpay_view.apply_date": "2022-03-31T00:00:00.000",
+            "backpay_view.count": "1",
+            "backpay_view.total_amt": "50"
+          },
+          {
+            "backpay_view.apply_date": "2022-04-01T00:00:00.000",
+            "backpay_view.count": "1",
+            "backpay_view.total_amt": "50"
+          },
+          {
+            "backpay_view.apply_date": "2022-04-02T00:00:00.000",
+            "backpay_view.count": "3",
+            "backpay_view.total_amt": "220"
+          },
+          {
+            "backpay_view.apply_date": "2022-04-08T00:00:00.000",
+            "backpay_view.count": "1",
+            "backpay_view.total_amt": "50"
+          },
+          {
+            "backpay_view.apply_date": "2022-04-28T00:00:00.000",
+            "backpay_view.count": "1",
+            "backpay_view.total_amt": "50"
+          },
+          {
+            "backpay_view.apply_date": "2022-05-05T00:00:00.000",
+            "backpay_view.count": "2",
+            "backpay_view.total_amt": "150"
+          },
+          {
+            "backpay_view.apply_date": "2022-06-14T00:00:00.000",
+            "backpay_view.count": "1",
+            "backpay_view.total_amt": "0.15"
+          },
+          {
+            "backpay_view.apply_date": "2022-08-18T00:00:00.000",
+            "backpay_view.count": "2",
+            "backpay_view.total_amt": "25.22"
+          },
+          {
+            "backpay_view.apply_date": "2022-08-19T00:00:00.000",
+            "backpay_view.count": "10",
+            "backpay_view.total_amt": "1036.12"
+          },
+          {
+            "backpay_view.apply_date": "2022-08-22T00:00:00.000",
+            "backpay_view.count": "8",
+            "backpay_view.total_amt": "876.76"
+          }
+        ]
+      }
+    },
+    {
+      "name": "退付-区划与单位下钻",
+      "query": {
+        "measures": [
+          "backpay_view.count",
+          "backpay_view.total_amt"
+        ],
+        "dimensions": [
+          "backpay_view.rgn_name",
+          "backpay_view.agen_name"
+        ],
+        "order": {
+          "backpay_view.total_amt": "desc"
+        },
+        "limit": 10
+      },
+      "resultSet": {
+        "data": [
+          {
+            "backpay_view.rgn_name": "云南省本级",
+            "backpay_view.agen_name": "云南发展改革委员会",
+            "backpay_view.count": "55",
+            "backpay_view.total_amt": "427238.115"
+          },
+          {
+            "backpay_view.rgn_name": "云南省本级",
+            "backpay_view.agen_name": "测试云南医疗单位0729",
+            "backpay_view.count": "18",
+            "backpay_view.total_amt": "4070.23"
+          },
+          {
+            "backpay_view.rgn_name": "云南省本级",
+            "backpay_view.agen_name": "云南通用测试单位0801",
+            "backpay_view.count": "34",
+            "backpay_view.total_amt": "3384.99"
+          },
+          {
+            "backpay_view.rgn_name": "云南省本级",
+            "backpay_view.agen_name": "测试云南测试环境",
+            "backpay_view.count": "64",
+            "backpay_view.total_amt": "2432.3"
+          },
+          {
+            "backpay_view.rgn_name": "云南省本级",
+            "backpay_view.agen_name": "云南通用测试单位1128",
+            "backpay_view.count": "10",
+            "backpay_view.total_amt": "2281.98"
+          },
+          {
+            "backpay_view.rgn_name": "云南省本级",
+            "backpay_view.agen_name": "云南医保测试单位改名",
+            "backpay_view.count": "16",
+            "backpay_view.total_amt": "1610.56"
+          },
+          {
+            "backpay_view.rgn_name": "云南省本级",
+            "backpay_view.agen_name": "通用单位168",
+            "backpay_view.count": "14",
+            "backpay_view.total_amt": "1410.94"
+          },
+          {
+            "backpay_view.rgn_name": "云南省本级",
+            "backpay_view.agen_name": "测试测试环境0115",
+            "backpay_view.count": "5",
+            "backpay_view.total_amt": "1410"
+          },
+          {
+            "backpay_view.rgn_name": "云南省本级",
+            "backpay_view.agen_name": "测试1125",
+            "backpay_view.count": "3",
+            "backpay_view.total_amt": "1257.98"
+          },
+          {
+            "backpay_view.rgn_name": "云南省本级",
+            "backpay_view.agen_name": "测试云南通用测试单位0720",
+            "backpay_view.count": "15",
+            "backpay_view.total_amt": "1069.79"
+          }
+        ]
+      }
+    }
+  ]
+}

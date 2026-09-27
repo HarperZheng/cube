@@ -1,0 +1,67 @@
+# 入库明细—— P4（docs/cube-dataqa-topic/01-design.md §5 主子表处理原则）
+# 明细表一行 = 入库单下的单个票种段（FPID 关联 UBE_STOCK_IN.FID，实测 413 全匹配）。
+# 本表无区划/单位列：区划属性经 belongs_to join 主表传递；行级权限不单独
+# 声明（无区划列可过滤）——join 查询时经主表策略交集生效（docs/11）。
+# 敏感字段：无。
+cubes:
+  - name: stock_in_item
+    title: 领票入库明细
+    description: |
+      领票入库的分票种明细（UBE_STOCK_IN_ITEM，550 行）。
+      每行 = 一张入库单下的单个票种段。区划/单位经 join stock_in 获取。
+    meta:
+      ai_context: >-
+        明细粒度为"入库单×票种段"（FPID 关联 UBE_STOCK_IN.FID）。入库金额
+        用 total_amount（sum FAMT），票种分析按 bill_code/batch_code 分组；
+        票号段起止用 bill_no1/bill_no2。区划/单位属性经 join stock_in 获取。
+
+    sql_table: UBE_STOCK_IN_ITEM
+
+    joins:
+      # belongs_to 主表（P4 沿用 cbill_item 同款模式）
+      - name: stock_in
+        sql: "{CUBE}.\"FPID\" = {stock_in}.\"FID\""
+        relationship: many_to_one
+
+    measures:
+      - name: count
+        title: 明细行数
+        type: count
+      - name: total_amount
+        title: 入库金额(元)
+        description: sum(FAMT)（明细粒度金额，主表无金额列）
+        sql: "{CUBE}.\"FAMT\""
+        type: sum
+      - name: total_number
+        title: 入库数量(份)
+        description: sum(FNUMBER)
+        sql: "{CUBE}.\"FNUMBER\""
+        type: sum
+
+    dimensions:
+      - name: fid
+        title: 明细ID
+        sql: "{CUBE}.\"FID\""
+        type: string
+        primary_key: true
+        public: false    # 技术主键不对外
+      - name: bill_code
+        title: 票种ID
+        description: FBILLID 关联 bill_type.id（入库明细的票种）
+        sql: "{CUBE}.\"FBILLID\""
+        type: string
+      - name: batch_code
+        title: 票据批次代码
+        description: FBILLBATCHCODE（成员名短名避 11g 30 字符上限）
+        sql: "{CUBE}.\"FBILLBATCHCODE\""
+        type: string
+      - name: bill_no1
+        title: 票号起
+        description: FBILLNO1（票号段起始）
+        sql: "{CUBE}.\"FBILLNO1\""
+        type: string
+      - name: bill_no2
+        title: 票号止
+        description: FBILLNO2（票号段截止）
+        sql: "{CUBE}.\"FBILLNO2\""
+        type: string

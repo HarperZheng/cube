@@ -1,0 +1,233 @@
+# 可疑票据（监管）—— P4（docs/cube-dataqa-topic/01-design.md §5）
+# P4 核实定案：FBE_SUSPICIOUS（可疑票据单据，19194 行）自含完整状态流转
+# （FSTATUS 单据状态 0-3 + FRESULT 处理结果），整改信息已内含——**只建
+# suspicious 一个 cube**；FBE_RECTIFY_NOTICE（1 行）/FBE_RECTIFY_SUSPICIOUS
+# （4 行）几乎空表，无口径价值不建（未来有数据再补）。
+# P4 核实结论（db.js 直查）：
+#   FID 主键；FDATE 2023-12-29~2026-09-01（FBUSDATE 2024-04-30~）；
+#   口径分布实测：FSTATUS 0 未通知=19067 / 1 待说明=88 / 3 已处理=39（无 2）；
+#   FRESULT 0 可疑中=19156 / 1 解除可疑=23 / 3=15（注释只写 0/1/2，实测有 3
+#   无 2，字典外取值原样分组）；FBILLAMT 8807 亿（0 未通知占绝大部分）；
+#   join 键：FAGENIDCODE→FAB_AGEN.FAGENIDCODE（FISFINAL=1）100% 匹配；
+#   FRGNID→AFA_AUTH_REGION.ID 100% 匹配（FRGNID 是 GUID 不是区划编码，
+#   sql 内 LEFT JOIN 字典翻译出 REGION_CODE，N:1 无行倍增风险，
+#   与 agency 字典翻译同款）；FBILLID→FAB_BILL.FID 100% 匹配。
+#   区划粒度：530000=19001 / 530100=110 / 530102=46 / 530702=37。
+# 敏感字段脱敏（P3 起标准项）：payer_name（交款人）无空值 → mask 只露末2字；
+#   详细描述 FDESCRIPTION/FDETAILDESCRIPTION 不建维度。
+# 11g 30 字符约束：成员名均短（suspicious__suspicious_count=27 等）。
+cubes:
+  - name: suspicious
+    title: 可疑票据
+    description: |
+      可疑票据单据（FBE_SUSPICIOUS，单表 19194 行，监管主题）。
+      每行 = 一条可疑票据记录，FSTATUS 单据状态 + FRESULT 处理结果自含
+      完整状态流转；整改通知家族（FBE_RECTIFY_NOTICE 1 行）空表未建。
+    meta:
+      ai_context: >-
+        可疑票据数用 suspicious_count；状态口径用 status 维度或
+        pending_count（FSTATUS IN '0','1' 未通知+待说明）/
+        processed_count（'3' 已处理）；处理结果用 result 维度或
+        cleared_count（FRESULT='1' 解除可疑）；金额用 total_amt
+        （票据金额合计，未通知占绝大部分）。按时间分析用 compiled_date
+        （编制日期）；开票日期用 bill_date（FBUSDATE）。单位名称走
+        agen_name，缴款人 payer_name 已脱敏（只露末2字）。按单位去重
+        计数用 agen_cnt（可疑单位数，全状态）/ proc_agen_cnt（已处理）/
+        pend_agen_cnt（待处理）。有异常用票的核销单数用 wo_cnt
+        （count_distinct FWRITEOFFID，只给总数不做核销单属性下钻）。
+
+    sql: |
+      SELECT s."FID", s."FBILLNO", s."FBILLID", s."FBILLCODE", s."FBILLNAME",
+             s."FAGENIDCODE", s."FAGENCODE", s."FAGENNAME", s."FPAYERNAME",
+             s."FSTATUS", s."FRESULT", s."FBILLAMT",
+             s."FDATE", s."FBUSDATE", s."FDESCRIPTION",
+             s."FNOTICEDATE", s."FREPLYDATE", s."FRESULTDATE",
+             s."FWRITEOFFID",
+             r."FCODE" AS "REGION_CODE"
+      FROM FBE_SUSPICIOUS s
+      LEFT JOIN AFA_AUTH_REGION r ON r."ID" = s."FRGNID"
+
+    joins:
+      - name: agency
+        sql: "{CUBE}.\"FAGENIDCODE\" = {agency}.\"FAGENIDCODE\""
+        relationship: many_to_one
+      - name: region
+        sql: "{CUBE}.\"REGION_CODE\" = {region}.\"FCODE\""
+        relationship: many_to_one
+      - name: bill_type
+        sql: "{CUBE}.\"FBILLID\" = {bill_type}.\"FID\""
+        relationship: many_to_one
+
+    measures:
+      - name: count
+        title: 可疑记录数
+        type: count
+      - name: suspicious_count
+        title: 可疑票据数
+        description: count_distinct(FID)（FID 主键，等价 count）
+        sql: "{CUBE}.\"FID\""
+        type: countDistinct
+        drill_members: [suspicious.bill_no, suspicious.agen_name,
+                        suspicious.payer_name, suspicious.status, suspicious.result]
+      - name: pending_count
+        title: 待处理数
+        description: FSTATUS IN ('0','1')（未通知 + 待说明）
+        sql: "{CUBE}.\"FID\""
+        type: count
+        filters:
+          - sql: "{CUBE}.\"FSTATUS\" IN ('0','1')"
+      - name: processed_count
+        title: 已处理数
+        description: FSTATUS='3'（已处理）
+        sql: "{CUBE}.\"FID\""
+        type: count
+        filters:
+          - sql: "{CUBE}.\"FSTATUS\" = '3'"
+      - name: cleared_count
+        title: 解除可疑数
+        description: FRESULT='1'（解除可疑）
+        sql: "{CUBE}.\"FID\""
+        type: count
+        filters:
+          - sql: "{CUBE}.\"FRESULT\" = '1'"
+      - name: agen_cnt
+        title: 可疑单位数(去重)
+        description: count_distinct(FAGENIDCODE)，出现可疑票据的单位数（全状态）
+        sql: "{CUBE}.\"FAGENIDCODE\""
+        type: countDistinct
+      - name: proc_agen_cnt
+        title: 已处理单位数(去重)
+        description: count_distinct(FAGENIDCODE)，FSTATUS='3' 已处理的单位数
+        sql: "{CUBE}.\"FAGENIDCODE\""
+        type: countDistinct
+        filters:
+          - sql: "{CUBE}.\"FSTATUS\" = '3'"
+      - name: pend_agen_cnt
+        title: 待处理单位数(去重)
+        description: count_distinct(FAGENIDCODE)，FSTATUS IN ('0','1') 未通知+待说明的单位数
+        sql: "{CUBE}.\"FAGENIDCODE\""
+        type: countDistinct
+        filters:
+          - sql: "{CUBE}.\"FSTATUS\" IN ('0','1')"
+      # 2026-09-23 加（智能问数 序号 9 有异常用票的核销单数，方案已拍板：
+      # 维度+度量不建 join，避免 suspicious→writeoff→agency 与 suspicious→agency 成环）。
+      # 前提已核实：FWRITEOFFID 5567/19194 非空（29%）、35 个核销单、
+      # matchkey→FBE_WRITEOFF.FID 100%。
+      - name: wo_cnt
+        title: 有异常用票的核销单数(去重)
+        description: count_distinct(FWRITEOFFID)，关联到审验单的可疑票据覆盖的核销单数
+        sql: "{CUBE}.\"FWRITEOFFID\""
+        type: countDistinct
+      - name: total_amt
+        title: 票据金额(元)
+        description: sum(FBILLAMT)；未通知状态占绝大部分（8807 亿）
+        sql: "{CUBE}.\"FBILLAMT\""
+        type: sum
+
+    dimensions:
+      - name: fid
+        title: 可疑单ID
+        sql: "{CUBE}.\"FID\""
+        type: string
+        primary_key: true
+        public: false    # 技术主键不对外
+      - name: bill_no
+        title: 票据号
+        description: FBILLNO
+        sql: "{CUBE}.\"FBILLNO\""
+        type: string
+      - name: status
+        title: 单据状态
+        description: 0 未通知 / 1 待说明 / 2 待审核 / 3 已处理（实测无 2）
+        sql: "{CUBE}.\"FSTATUS\""
+        type: string
+      - name: result
+        title: 处理结果
+        description: 0 可疑中 / 1 解除可疑 / 2 标记违规（实测有 3 无 2，字典外取值原样分组）
+        sql: "{CUBE}.\"FRESULT\""
+        type: string
+      - name: agen_name
+        title: 单位名称
+        description: FAGENNAME（单位名，非个人敏感字段）
+        sql: "{CUBE}.\"FAGENNAME\""
+        type: string
+      - name: agen_code
+        title: 单位编码
+        description: FAGENCODE（关联键是 FAGENIDCODE，本列仅展示）
+        sql: "{CUBE}.\"FAGENCODE\""
+        type: string
+      - name: payer_name
+        title: 交款人名称
+        description: FPAYERNAME，敏感字段——mask 只露末2字（docs/11 脱敏）
+        sql: "{CUBE}.\"FPAYERNAME\""
+        type: string
+        mask:
+          sql: "CONCAT('**', SUBSTR({CUBE}.\"FPAYERNAME\", -2))"
+      - name: region_code
+        title: 区划编码
+        description: FRGNID 经 AFA_AUTH_REGION 翻译为 FCODE（sql 内 LEFT JOIN）
+        sql: "{CUBE}.\"REGION_CODE\""
+        type: string
+      - name: agency_code
+        title: 单位识别码
+        description: FAGENIDCODE 关联 agency.agency_code（已验证 100% 匹配）
+        sql: "{CUBE}.\"FAGENIDCODE\""
+        type: string
+      - name: writeoff_id
+        title: 核销单ID
+        description: FWRITEOFFID 关联 writeoff.fid（5567/19194 非空，matchkey 100%）；技术键不公开，核销单计数走 wo_cnt
+        sql: "{CUBE}.\"FWRITEOFFID\""
+        type: string
+        public: false    # 技术键不对外，未建 join（避免 agency 多路径成环）
+      - name: bill_id
+        title: 票种ID
+        description: FBILLID 关联 bill_type.id（已验证 100% 匹配）
+        sql: "{CUBE}.\"FBILLID\""
+        type: string
+        public: false    # 技术外键不对外，票种名称走 bill_type join
+      - name: bill_name
+        title: 票据名称
+        description: FBILLNAME（源表冗余列）
+        sql: "{CUBE}.\"FBILLNAME\""
+        type: string
+      - name: compiled_date
+        title: 编制日期
+        description: FDATE（VARCHAR2 'YYYY-MM-DD'）转日期，时间分析默认维度
+        sql: "TO_DATE({CUBE}.\"FDATE\", 'YYYY-MM-DD')"
+        type: time
+      - name: bill_date
+        title: 开票日期
+        description: FBUSDATE（VARCHAR2 'YYYY-MM-DD'）转日期
+        sql: "TO_DATE({CUBE}.\"FBUSDATE\", 'YYYY-MM-DD')"
+        type: time
+      - name: description
+        title: 可疑描述
+        description: FDESCRIPTION（可疑描述说明）
+        sql: "{CUBE}.\"FDESCRIPTION\""
+        type: string
+
+# 行级权限：access_policy 双互补策略（与 paybook/cbill 同款）；
+# 脱敏语义同 cbill：member_level excludes payer_name + member_masking
+# includes payer_name → payer_name 对所有人脱敏。
+    access_policy:
+      - group: "*"
+        conditions:
+          - if: "{ securityContext.region_code }"
+        member_level:
+          excludes: [payer_name]
+        member_masking:
+          includes: [payer_name]
+        row_level:
+          filters:
+            - member: region_code
+              operator: equals
+              values: ["{ securityContext.region_code }"]
+      - group: "*"
+        conditions:
+          - if: "{ not securityContext.region_code }"
+        member_level:
+          excludes: [payer_name]
+        member_masking:
+          includes: [payer_name]
+        row_level:
+          allow_all: true

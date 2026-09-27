@@ -1,0 +1,4 @@
+# Cube 动态数据模型 Python 依赖（conf/model/globals.py 所需）
+# 注：当前 cubejs/cube 基础镜像无 pip，也不自动安装 requirements.txt，
+#     依赖已在 Dockerfile 中固化安装（见 Dockerfile 的 python 依赖层）
+oracledb

@@ -1,0 +1,38 @@
+[
+  {
+    "name": "按单位汇总-可用时间（交付视图）",
+    "query": {
+      "measures": ["bill_kpi_view.availMonths", "bill_kpi_view.stockSum", "bill_kpi_view.monthlyUsage"],
+      "dimensions": ["bill_kpi_view.fbillname"],
+      "filters": [
+        { "member": "bill_kpi_view.stockSum", "operator": "gt", "values": ["0"] }
+      ],
+      "order": { "bill_kpi_view.fbillname": "asc" },
+      "limit": 50
+    }
+  },
+  {
+    "name": "按票据+单位粒度-库存量（交付视图）",
+    "query": {
+      "measures": ["bill_kpi_view.stockSum", "bill_kpi_view.quarterlyUsage"],
+      "dimensions": ["bill_kpi_view.fbillname", "bill_kpi_view.fbillcode"],
+      "order": { "bill_kpi_view.stockSum": "desc" },
+      "limit": 20
+    }
+  },
+  {
+    "name": "全区汇总-总可用月（交付视图）",
+    "query": {
+      "measures": ["bill_kpi_view.availMonths", "bill_kpi_view.stockSum"],
+      "limit": 5
+    }
+  },
+  {
+    "name": "cube 层-KPI 直查（比值指标在任意维度切分下正确）",
+    "query": {
+      "measures": ["bill_kpi.availMonths"],
+      "dimensions": ["bill_kpi.fbillname"],
+      "limit": 20
+    }
+  }
+]

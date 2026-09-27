@@ -1,0 +1,306 @@
+{%- import 'macros/ptd.jinja' as ptd -%}
+# 开票主表（按月分表动态 UNION）—— P3（docs/cube-dataqa-topic/01-design.md §5）
+# 表名由 globals.py 的 monthly_tables('UNE_CBILL') 编译期枚举（正则 6 位数字后缀 +
+# 过滤未来空表），排除 UNE_CBILL（主表）/UNE_CBILL_2019（年表，0 行）/
+# UNE_CBILL_20250307（日表）/BACK2/BACK3040（备份）/TMP/TEMP/DAY_TMP（临时）。
+# P3 核实结论（db.js 跨月实测，202302~202609 共 47 个月有数，合计 32317 行）：
+#   FID 跨月 100% 唯一（32317=32317）；FDATE 零非法（2023-02-02~2026-09-18）；
+#   FRGNCODE/FAGENIDCODE 无空值；join 键 100% 匹配：
+#   FAGENIDCODE→agency.FAGENIDCODE（FAB_AGEN FISFINAL=1）、FBILLID→bill_type.id（FAB_BILL FID）。
+# 口径分布实测：FSTATE 1正常 31591 / 2作废 726；
+#   FBUSTYPE 1常规开票 25665 / 2电子转纸质 2608 / 3冲销开票 2149 / 4直缴转开票 1895（无 5/6）；
+#   FISINVOICE 全 1（全是开票业务）；FISINCOME 1收入业务 27562 / 0非收入 4755。
+# 敏感字段脱敏（P3 起标准项，docs/11 mask）：payer_name 100% 覆盖 → mask 只露末2字；
+#   payer_tel（26615 笔）/payer_no（202 笔，付款人账号）不建维度，不对外暴露。
+# 命名：源表注释"电脑票"为源系统内部叫法，消费方用业务语言"开票"。
+# 11g 约束（P3 踩坑）：Oracle 11g 标识符上限 30 字符——Cube 生成的 SQL 别名含
+#   cube 前缀（cbill__成员名），成员名过长（如 total_amount_year_to_date）报
+#   ORA-00972 identifier is too long；to_date 系列度量用短名 amt_*_to_date。
+cubes:
+  - name: cbill
+    title: 开票
+    description: |
+      开票主表，按月分表 UNE_CBILL_YYYYMM 的 UNION ALL（编译期动态枚举）。
+      每行 = 一张开票记录（FID 跨月唯一，已验证 32317=32317）。
+      原指标来源：data-analysis-topic 用票主题 une_cbill（去重口径主表）。
+    public: true
+    meta:
+      ai_context: >-
+        开票笔数用 receipt_count（count_distinct fid，跨月唯一已验证）；金额用
+        total_amount（冲销开票为负数，合计已含冲抵）；状态口径用 state 维度或
+        normal_count/void_count；业务口径用 bus_type 维度或 regular_amt/
+        ebill_paper_amt/offset_amt/direct_transfer_amt；收入业务口径用
+        income_amt。按时间分析默认用 bill_date（开票日期）；按月分组可用
+        bill_month（从物理分表名提取）。按单位去重的用票单位数用 agen_cnt
+        （count_distinct FAGENIDCODE）。日均开票数量用 daily_avg（有单日均：
+        笔数÷有开票天数），分母天数用 date_cnt；冲红数用 red_cnt
+        （FSTATE='1' AND FTOTALAMT<0，比冲销开票 FBUSTYPE=3 口径宽）。
+        缴款人类型用 payer_type 维度（FPAYERTYPE，取值 1/2 语义待业务确认，
+        "向企业开具"过滤口径需业务拍板后按词典使用）。
+
+    sql: |
+      {%- set tables = monthly_tables('UNE_CBILL') %}
+      {%- set cols = monthly_columns('UNE_CBILL') %}
+      {%- for t in tables %}
+      {%- set ym = t[-6:] %}
+      SELECT {{ cols | join(', ') | safe }},
+             TO_DATE('{{ (ym[:4] ~ '-' ~ ym[4:] ~ '-01') | safe }}', 'YYYY-MM-DD') AS "BILL_MONTH"
+      FROM {{ t | safe }}
+      {%- if not loop.last %} UNION ALL {% endif %}
+      {%- endfor %}
+
+    joins:
+      - name: agency
+        sql: "{CUBE}.\"FAGENIDCODE\" = {agency}.\"FAGENIDCODE\""
+        relationship: many_to_one
+      - name: bill_type
+        sql: "{CUBE}.\"FBILLID\" = {bill_type}.\"FID\""
+        relationship: many_to_one
+      # 反向 join（P3 补，与 cbill_item → cbill 组成一对有向边，无多路径歧义）：
+      # 供 drill_members 原生下钻用——主表度量点击单元格返回明细字段
+      # （docs/02-measures drill_members 可含 join cube 维度）。
+      - name: cbill_item
+        sql: "{CUBE}.\"FID\" = {cbill_item}.\"FPID\""
+        relationship: one_to_many
+
+    measures:
+      - name: count
+        title: 开票记录数
+        type: count
+      - name: receipt_count
+        title: 开票笔数(去重)
+        description: count_distinct(FID)，对应原指标"去重"口径（FID 跨月唯一已验证）
+        sql: "{CUBE}.\"FID\""
+        type: countDistinct
+        drill_members: [cbill.bill_no, cbill_item.item_name, cbill_item.item_code]
+      - name: total_amount
+        title: 金额合计(元)
+        description: sum(FTOTALAMT)；冲销开票（FBUSTYPE=3）金额为负数，合计已含冲抵
+        sql: "{CUBE}.\"FTOTALAMT\""
+        type: sum
+      - name: avg_amount
+        title: 平均单笔金额(元)
+        description: avg(FTOTALAMT)
+        sql: "{CUBE}.\"FTOTALAMT\""
+        type: avg
+      - name: normal_count
+        title: 正常数
+        description: FSTATE='1'（正常）
+        sql: "{CUBE}.\"FID\""
+        type: count
+        filters:
+          - sql: "{CUBE}.\"FSTATE\" = '1'"
+      - name: void_count
+        title: 作废数
+        description: FSTATE='2'
+        sql: "{CUBE}.\"FID\""
+        type: count
+        filters:
+          - sql: "{CUBE}.\"FSTATE\" = '2'"
+      - name: income_amt
+        title: 收入业务金额(元)
+        description: FISINCOME=1（收入业务）的 FTOTALAMT 合计
+        sql: "{CUBE}.\"FTOTALAMT\""
+        type: sum
+        filters:
+          - sql: "{CUBE}.\"FISINCOME\" = 1"
+      - name: regular_amt
+        title: 常规开票金额(元)
+        description: FBUSTYPE='1'（常规开票）的 FTOTALAMT 合计
+        sql: "{CUBE}.\"FTOTALAMT\""
+        type: sum
+        filters:
+          - sql: "{CUBE}.\"FBUSTYPE\" = '1'"
+      - name: ebill_paper_amt
+        title: 电子转纸质金额(元)
+        description: FBUSTYPE='2'（电子转纸质）的 FTOTALAMT 合计
+        sql: "{CUBE}.\"FTOTALAMT\""
+        type: sum
+        filters:
+          - sql: "{CUBE}.\"FBUSTYPE\" = '2'"
+      - name: offset_amt
+        title: 冲销开票金额(元)
+        description: FBUSTYPE='3'（冲销开票）的 FTOTALAMT 合计，为负数
+        sql: "{CUBE}.\"FTOTALAMT\""
+        type: sum
+        filters:
+          - sql: "{CUBE}.\"FBUSTYPE\" = '3'"
+      - name: direct_transfer_amt
+        title: 直缴转开票金额(元)
+        description: FBUSTYPE='4'（直缴转开票）的 FTOTALAMT 合计
+        sql: "{CUBE}.\"FTOTALAMT\""
+        type: sum
+        filters:
+          - sql: "{CUBE}.\"FBUSTYPE\" = '4'"
+      - name: agen_cnt
+        title: 用票单位数(去重)
+        description: count_distinct(FAGENIDCODE)，按单位去重的开票单位数
+        sql: "{CUBE}.\"FAGENIDCODE\""
+        type: countDistinct
+      # 2026-09-23 加（智能问数 序号 3 日均开票 / 序号 4 冲红，口径已拍板）：
+      # daily_avg = 有单日均（笔数÷有开票天数，AskUserQuestion 拍板）；
+      # red_cnt = CSV SQL 口径（FSTATE='1' AND FTOTALAMT<0，比 FBUSTYPE=3 宽，
+      # 两口径 db.js 实测不等：202604 宽 29 笔 / 202609 宽 3 笔）。
+      - name: date_cnt
+        title: 开票天数(去重)
+        description: count_distinct(FDATE)，有开票记录的日期数——日均开票的分母（有单日均口径）
+        sql: "TO_DATE({CUBE}.\"FDATE\", 'YYYY-MM-DD')"
+        type: countDistinct
+      - name: daily_avg
+        title: 日均开票数量(份/天)
+        description: 开票笔数 ÷ 开票天数（有单日均，calculated measure，度量引用自动展开为聚合）
+        sql: "1.0 * {receipt_count} / NULLIF({date_cnt}, 0)"
+        type: number
+      - name: red_cnt
+        title: 冲红数
+        description: FSTATE='1' AND FTOTALAMT<0（正常状态金额为负）；比 FBUSTYPE=3 冲销开票宽，两口径已核实不等
+        sql: "{CUBE}.\"FID\""
+        type: count
+        filters:
+          - sql: "{CUBE}.\"FSTATE\" = '1' AND {CUBE}.\"FTOTALAMT\" < 0"
+{{ ptd.to_date_measures("amt", '{CUBE}."FTOTALAMT"', title='金额累计') }}
+
+    dimensions:
+      - name: fid
+        title: 开票ID
+        sql: "{CUBE}.\"FID\""
+        type: string
+        primary_key: true
+        public: false    # 技术主键不对外
+      - name: bill_month
+        title: 票款月份
+        description: 从物理分表名提取（YYYY-MM），时间维度
+        sql: "{CUBE}.\"BILL_MONTH\""
+        type: time
+      - name: bill_date
+        title: 开票日期
+        description: FDATE（VARCHAR2 'YYYY-MM-DD'）转日期，时间分析默认维度
+        sql: "TO_DATE({CUBE}.\"FDATE\", 'YYYY-MM-DD')"
+        type: time
+      - name: state
+        title: 票据状态
+        description: 1 正常 / 2 作废
+        sql: "{CUBE}.\"FSTATE\""
+        type: string
+      - name: bus_type
+        title: 业务类型
+        description: 1 常规开票 / 2 电子转纸质 / 3 冲销开票 / 4 直缴转开票
+        sql: "{CUBE}.\"FBUSTYPE\""
+        type: string
+      - name: is_income
+        title: 是否收入业务
+        description: 1 是 / 0 否（FISINCOME）
+        sql: "{CUBE}.\"FISINCOME\""
+        type: string
+      - name: bill_no
+        title: 票据号码
+        description: FBILLNO，对外展示用（非敏感）
+        sql: "{CUBE}.\"FBILLNO\""
+        type: string
+      - name: region_code
+        title: 区划编码
+        description: FRGNCODE 关联 region.code（已验证唯一）
+        sql: "{CUBE}.\"FRGNCODE\""
+        type: string
+      - name: agency_code
+        title: 单位识别码
+        description: FAGENIDCODE 关联 agency.agency_code（已验证 100% 匹配）
+        sql: "{CUBE}.\"FAGENIDCODE\""
+        type: string
+      - name: bill_id
+        title: 票种ID
+        description: FBILLID 关联 bill_type.id（已验证 100% 匹配）
+        sql: "{CUBE}.\"FBILLID\""
+        type: string
+        public: false    # 技术外键不对外，票种名称走 bill_type join
+      - name: payer_name
+        title: 缴款人名称
+        description: FPAYERNAME，敏感字段——mask 只露末2字（docs/11 脱敏）
+        sql: "{CUBE}.\"FPAYERNAME\""
+        type: string
+        mask:
+          sql: "CONCAT('**', SUBSTR({CUBE}.\"FPAYERNAME\", -2))"
+      # 2026-09-23 加（智能问数"向企业开具"，cube-ask 交接轻扩展）：
+      # FPAYERTYPE 缴款人类型，48/48 月表全有（monthly_columns 交集覆盖）。
+      # 取值语义待业务确认：本表注释无取值说明；异表 BS_PAYINFO_ERROR 同名
+      # 字段注释"1 个人 2 单位"，跨表取值未必一致（字典陷阱）；名称形态抽样
+      # （202603/202604）无区分度；分布 1 占 98.9%（202604 3567/3605），
+      # 202609 单一取值 1。按维度分组交付，不预设过滤口径。
+      - name: payer_type
+        title: 缴款人类型
+        description: FPAYERTYPE 缴款人类型，取值 1/2——语义待业务确认（向企业口径需业务拍板后按词典过滤）
+        sql: "{CUBE}.\"FPAYERTYPE\""
+        type: string
+      # 2026-09-23 加（轻扩展 收款方式，用户指定 UNE_CBILL.FRECMODE）：
+      # 表注释【收款方式】1：现金 2：转账 3：其它；16 字符月表全有（50/50），
+      # 无空值。分布实测：202604 1=3051/2=14/3=540；202609 1=25/2=31/3=18。
+      - name: rec_mode
+        title: 收款方式
+        description: FRECMODE 收款方式，1 现金 / 2 转账 / 3 其它
+        sql: "{CUBE}.\"FRECMODE\""
+        type: string
+
+# 行级权限：access_policy 双互补策略（与 paybook 同款，P2 最终方案）：
+# 有区划属性走 row_level 过滤、无属性走 allow_all 放行。
+# 硬语义：策略存在 = 白名单制，每种用户状态必须至少命中一条策略。
+# 脱敏（P3 实测语义，docs/11）：单独 mask 不生效——由 member_masking 激活，
+# 且必须与 member_level 同一条策略（member_level 成员→真实值；不在 member_level
+# 但在 member_masking→脱敏值）。member_level excludes payer_name +
+# member_masking includes payer_name → payer_name 对所有人脱敏。
+    access_policy:
+      - group: "*"
+        conditions:
+          - if: "{ securityContext.region_code }"
+        member_level:
+          excludes: [payer_name]
+        member_masking:
+          includes: [payer_name]
+        row_level:
+          filters:
+            - member: region_code
+              operator: equals
+              values: ["{ securityContext.region_code }"]
+      - group: "*"
+        conditions:
+          - if: "{ not securityContext.region_code }"
+        member_level:
+          excludes: [payer_name]
+        member_masking:
+          includes: [payer_name]
+        row_level:
+          allow_all: true
+
+# P6 预聚合（docs/cube-dataqa-topic/01-design.md §10 P6）：rollup 物化 45 张月表
+# 的 UNION ALL（全项目最重 SQL），partition_granularity: month 与物理分表对齐——
+# 查某月只触达该分区。成员按 regress/cbill.queries.json（12 条回归用例）反推。
+# dimensions 含 region_code：JWT 行级过滤在该维度上，不含则 JWT 查询永不命中。
+# 含 bill_type.name（join 维度）：按票种分组用例（回归 #9）可命中，构建期
+# LEFT JOIN fab_bill。amt_year_to_date（rolling window 宏度量）不进 rollup——
+# 窗口度量需全量时间范围物化，YTD 查询不走预聚合（dateRange 有界，代价可接受）。
+# 全部 measure 过滤为固定值（'1'/'2'/1/'3'/'4'），可命中（SYSDATE 边界在 paybook）。
+    pre_aggregations:
+      - name: main
+        measures:
+          - CUBE.count
+          - CUBE.receipt_count
+          - CUBE.total_amount
+          - CUBE.avg_amount
+          - CUBE.normal_count
+          - CUBE.void_count
+          - CUBE.income_amt
+          - CUBE.regular_amt
+          - CUBE.ebill_paper_amt
+          - CUBE.offset_amt
+          - CUBE.direct_transfer_amt
+          - CUBE.agen_cnt
+          - CUBE.date_cnt
+          - CUBE.red_cnt
+        dimensions:
+          - CUBE.state
+          - CUBE.bus_type
+          - CUBE.is_income
+          - CUBE.region_code
+          - bill_type.name
+        time_dimension: CUBE.bill_month
+        granularity: month
+        partition_granularity: month

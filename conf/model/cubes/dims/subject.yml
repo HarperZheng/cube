@@ -1,0 +1,45 @@
+# 收费科目维度 —— 源表 FAB_SUBJECT（3711 行，按年度存储 2020-2026）
+# FID 主键；科目与项目的关联关系待核实（FAB_ITEM 未直接含科目编码），
+# 暂不声明 join，供后续需要时接入
+cubes:
+  - name: subject
+    title: 收费科目
+    description: |
+      收费科目维度（按年度存储，year 维度区分年度版本）。
+      与收费项目（item）的关联关系待核实，暂不声明 join。
+    public: false    # 只通过 join 被事实 cube 引用
+    sql_table: FAB_SUBJECT
+
+    measures:
+      - name: count
+        title: 科目数
+        type: count
+
+    dimensions:
+      - name: id
+        title: 科目ID
+        sql: "{CUBE}.\"FID\""
+        type: string
+        primary_key: true
+        public: false
+      - name: year
+        title: 年度
+        description: 科目表按年度存储
+        sql: "{CUBE}.\"FYEAR\""
+        type: number
+      - name: code
+        title: 科目编码
+        sql: "{CUBE}.\"FSUBCODE\""
+        type: string
+      - name: name
+        title: 科目名称
+        sql: "{CUBE}.\"FSUBNAME\""
+        type: string
+      - name: level
+        title: 级次
+        sql: "{CUBE}.\"FLEVEL\""
+        type: number
+      - name: parent_code
+        title: 上级科目编码
+        sql: "{CUBE}.\"FPCODE\""
+        type: string

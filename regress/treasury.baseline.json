@@ -1,0 +1,250 @@
+{
+  "savedAt": "2026-09-24T01:15:50.142Z",
+  "results": [
+    {
+      "name": "缴库-主子表总量",
+      "query": {
+        "measures": [
+          "treasury_view.count",
+          "treasury_view.total_amt",
+          "treasury_view.item_count",
+          "treasury_view.item_amt"
+        ]
+      },
+      "resultSet": {
+        "data": [
+          {
+            "treasury_view.count": "20",
+            "treasury_view.total_amt": "33211",
+            "treasury_view.item_count": "24",
+            "treasury_view.item_amt": "33222"
+          }
+        ]
+      }
+    },
+    {
+      "name": "缴库-预算科目下钻",
+      "query": {
+        "measures": [
+          "treasury_view.item_count",
+          "treasury_view.item_amt"
+        ],
+        "dimensions": [
+          "treasury_view.sub_code",
+          "treasury_view.sub_name"
+        ],
+        "order": {
+          "treasury_view.item_amt": "desc"
+        },
+        "limit": 10
+      },
+      "resultSet": {
+        "data": [
+          {
+            "treasury_view.sub_code": "1030129",
+            "treasury_view.sub_name": "国家电影事业发展专项资金收入",
+            "treasury_view.item_count": "1",
+            "treasury_view.item_amt": "22222"
+          },
+          {
+            "treasury_view.sub_code": "103010201",
+            "treasury_view.sub_name": "中央农网还贷资金收入25",
+            "treasury_view.item_count": "9",
+            "treasury_view.item_amt": "3464"
+          },
+          {
+            "treasury_view.sub_code": "1030106",
+            "treasury_view.sub_name": "铁路建设基金收入",
+            "treasury_view.item_count": "3",
+            "treasury_view.item_amt": "2906"
+          },
+          {
+            "treasury_view.sub_code": "103010201",
+            "treasury_view.sub_name": "中央农网还贷资金收入",
+            "treasury_view.item_count": "6",
+            "treasury_view.item_amt": "2313"
+          },
+          {
+            "treasury_view.sub_code": "103042762",
+            "treasury_view.sub_name": "考试考务费",
+            "treasury_view.item_count": "1",
+            "treasury_view.item_amt": "2000"
+          },
+          {
+            "treasury_view.sub_code": "103040111",
+            "treasury_view.sub_name": "机动车号牌工本费",
+            "treasury_view.item_count": "2",
+            "treasury_view.item_amt": "303"
+          },
+          {
+            "treasury_view.sub_code": "103010201001",
+            "treasury_view.sub_name": "农网还贷资金收入",
+            "treasury_view.item_count": "1",
+            "treasury_view.item_amt": "11"
+          },
+          {
+            "treasury_view.sub_code": "103040102",
+            "treasury_view.sub_name": "外国人证件费",
+            "treasury_view.item_count": "1",
+            "treasury_view.item_amt": "3"
+          }
+        ]
+      }
+    },
+    {
+      "name": "缴库-缴库状态分组",
+      "query": {
+        "measures": [
+          "treasury_view.count",
+          "treasury_view.total_amt"
+        ],
+        "dimensions": [
+          "treasury_view.status"
+        ],
+        "order": {
+          "treasury_view.count": "desc"
+        },
+        "limit": 5
+      },
+      "resultSet": {
+        "data": [
+          {
+            "treasury_view.status": "0",
+            "treasury_view.count": "13",
+            "treasury_view.total_amt": "10276"
+          },
+          {
+            "treasury_view.status": "9",
+            "treasury_view.count": "6",
+            "treasury_view.total_amt": "711"
+          },
+          {
+            "treasury_view.status": null,
+            "treasury_view.count": "1",
+            "treasury_view.total_amt": "22224"
+          }
+        ]
+      }
+    },
+    {
+      "name": "缴库-执收单位主数据下钻(agency join)",
+      "query": {
+        "measures": [
+          "treasury_view.count",
+          "treasury_view.total_amt"
+        ],
+        "dimensions": [
+          "treasury_view.chg_agen_name",
+          "treasury_view.name"
+        ],
+        "order": {
+          "treasury_view.count": "desc"
+        },
+        "limit": 10
+      },
+      "resultSet": {
+        "data": [
+          {
+            "treasury_view.chg_agen_name": "开票点001",
+            "treasury_view.name": "发展改革委员会",
+            "treasury_view.count": "9",
+            "treasury_view.total_amt": "5870"
+          },
+          {
+            "treasury_view.chg_agen_name": "001",
+            "treasury_view.name": "测试测试环境0115",
+            "treasury_view.count": "4",
+            "treasury_view.total_amt": "600"
+          },
+          {
+            "treasury_view.chg_agen_name": "测试云南测试环境",
+            "treasury_view.name": "测试测试环境0115",
+            "treasury_view.count": "2",
+            "treasury_view.total_amt": "26224"
+          },
+          {
+            "treasury_view.chg_agen_name": "001测试收款",
+            "treasury_view.name": null,
+            "treasury_view.count": "1",
+            "treasury_view.total_amt": "6"
+          },
+          {
+            "treasury_view.chg_agen_name": "云南一通用单位0303",
+            "treasury_view.name": "一通用单位0303",
+            "treasury_view.count": "1",
+            "treasury_view.total_amt": "11"
+          },
+          {
+            "treasury_view.chg_agen_name": "测试公安局",
+            "treasury_view.name": null,
+            "treasury_view.count": "1",
+            "treasury_view.total_amt": "300"
+          },
+          {
+            "treasury_view.chg_agen_name": "开票点002",
+            "treasury_view.name": "发展改革委员会",
+            "treasury_view.count": "1",
+            "treasury_view.total_amt": "100"
+          },
+          {
+            "treasury_view.chg_agen_name": "云南体育彩票中心",
+            "treasury_view.name": "体育彩票中心",
+            "treasury_view.count": "1",
+            "treasury_view.total_amt": "100"
+          }
+        ]
+      }
+    },
+    {
+      "name": "缴库-银行与账户下钻",
+      "query": {
+        "measures": [
+          "treasury_view.count",
+          "treasury_view.total_amt"
+        ],
+        "dimensions": [
+          "treasury_view.pay_bank_code",
+          "treasury_view.rec_bank_name"
+        ],
+        "order": {
+          "treasury_view.total_amt": "desc"
+        },
+        "limit": 5
+      },
+      "resultSet": {
+        "data": [
+          {
+            "treasury_view.pay_bank_code": "0105",
+            "treasury_view.rec_bank_name": "建设银行昆明城北支行",
+            "treasury_view.count": "3",
+            "treasury_view.total_amt": "26235"
+          },
+          {
+            "treasury_view.pay_bank_code": "0105",
+            "treasury_view.rec_bank_name": "云南省中国人民银行国库账户开户",
+            "treasury_view.count": "14",
+            "treasury_view.total_amt": "6570"
+          },
+          {
+            "treasury_view.pay_bank_code": "0318",
+            "treasury_view.rec_bank_name": "国家金库云南省分库",
+            "treasury_view.count": "1",
+            "treasury_view.total_amt": "300"
+          },
+          {
+            "treasury_view.pay_bank_code": "0105",
+            "treasury_view.rec_bank_name": "中国人民银行国库账号",
+            "treasury_view.count": "1",
+            "treasury_view.total_amt": "100"
+          },
+          {
+            "treasury_view.pay_bank_code": "0100",
+            "treasury_view.rec_bank_name": "国家金库云南省分库",
+            "treasury_view.count": "1",
+            "treasury_view.total_amt": "6"
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "publicId": "0tbFQboLFSX",
+  "title": "我的看板",
+  "createdAt": "2026-09-26T06:47:06.903Z",
+  "updatedAt": "2026-09-26T06:47:06.903Z",
+  "widgets": [
+    {
+      "id": "w1",
+      "title": "各单位票据核销情况（已核销份数）",
+      "viz": "bar",
+      "layout": {
+        "width": "full"
+      },
+      "query": {
+        "measures": [
+          "writeoff_view.inv_num"
+        ],
+        "dimensions": [
+          "writeoff_view.name"
+        ],
+        "filters": [
+          {
+            "member": "writeoff_view.state",
+            "operator": "equals",
+            "values": [
+              "2"
+            ]
+          }
+        ],
+        "timeDimensions": [],
+        "order": {
+          "writeoff_view.inv_num": "desc"
+        },
+        "limit": 100
+      }
+    }
+  ]
+}

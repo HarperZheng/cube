@@ -1,0 +1,22 @@
+views:
+  - name: bill_kpi_view
+    title: 票据库存可用时间（交付视图）
+    description: 口径：单位票据库存余量(份) / 月均使用量(份/月)；消费方统一从这里查
+    meta:
+      ai_context: >-
+        票据库存可用时间的交付视图。可搭配维度 fbillname/fbillcode/fagenname 查询；
+        availMonths 为比值指标（库存余量/月均使用量），null 表示无用量。
+    cubes:
+      - join_path: bill_kpi
+        # 只暴露业务成员；fbillid 是技术主键，已 public: false，这里也挡一道
+        # （view 不继承 public 标志，必须显式 excludes）
+        includes:
+          - fbillcode
+          - fbillname
+          - fagenname
+          - stockSum
+          - quarterlyUsage
+          - monthlyUsage
+          - availMonths
+        excludes:
+          - fbillid

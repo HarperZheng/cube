@@ -1,0 +1,98 @@
+# 出库（领票出库）—— P4（docs/cube-dataqa-topic/01-design.md §5）
+# 表名勘误（P4 核实）：设计写的 fbe_stock_out 在 Oracle 不存在，实际为 UBE_STOCK_OUT
+# （出库，992 行），同 cbill 的"设计表名是 ClickHouse 侧叫法"勘误模式。
+# P4 核实结论（db.js 直查）：
+#   FID 100% 唯一（992=992）；FDATE 2019-08-27~2026-09-20；
+#   FRGNCODE/FAGENIDCODE 无空值；FAGENIDCODE 可直接 join agency；
+#   口径分布实测：FCHANGESTATE 61=870 / 2=104 / 4=14 / 1=4（存在复合码，
+#   61 等为字典外取值，按 state 维度原样分组，不做翻译假设）。
+#   主表无金额列（金额/票号段在明细 _item）；也无 FBILLID（票种在明细）。
+# 敏感字段：无（操作人 FOPERATOR 不建维度）。
+# 命名：源表注释"出库"，业务语言一致。
+cubes:
+  - name: stock_out
+    title: 领票出库
+    description: |
+      领票出库主表（UBE_STOCK_OUT，单表 992 行）。每行 = 一张出库单。
+      明细（票种/票号段/金额）走 stock_out_item（FPID 关联本表 FID）。
+    meta:
+      ai_context: >-
+        出库单数用 out_count（count）；状态口径用 state 维度（实测分布
+        61=870/2=104/4=14/1=4，存在字典外复合码）。金额与票号段在
+        stock_out_item（明细），经 join 或两步查询获取；单票下钻用
+        bill_no + out_date 组合（票号跨日期不唯一）。
+
+    sql_table: UBE_STOCK_OUT
+
+    joins:
+      - name: agency
+        sql: "{CUBE}.\"FAGENIDCODE\" = {agency}.\"FAGENIDCODE\""
+        relationship: many_to_one
+      # 反向 join（与 stock_out_item → stock_out 组成一对有向边，无多路径歧义）：
+      # 供 drill_members 原生下钻——P4 主子表沿用 cbill/cbill_item 模式
+      - name: stock_out_item
+        sql: "{CUBE}.\"FID\" = {stock_out_item}.\"FPID\""
+        relationship: one_to_many
+
+    measures:
+      - name: count
+        title: 出库记录数
+        type: count
+      - name: out_count
+        title: 出库单数
+        description: count_distinct(FID)（FID 100% 唯一已验证，等价 count）
+        sql: "{CUBE}.\"FID\""
+        type: countDistinct
+        drill_members: [stock_out.bill_no, stock_out.out_date,
+                        stock_out_item.bill_code, stock_out_item.bill_no1, stock_out_item.bill_no2]
+
+    dimensions:
+      - name: fid
+        title: 出库单ID
+        sql: "{CUBE}.\"FID\""
+        type: string
+        primary_key: true
+        public: false    # 技术主键不对外
+      - name: bill_no
+        title: 出库单号
+        description: FNO（跨日期不唯一，"单票"要 bill_no + out_date 组合）
+        sql: "{CUBE}.\"FNO\""
+        type: string
+      - name: out_date
+        title: 出库日期
+        description: FDATE（VARCHAR2 'YYYY-MM-DD'）转日期，时间分析默认维度
+        sql: "TO_DATE({CUBE}.\"FDATE\", 'YYYY-MM-DD')"
+        type: time
+      - name: state
+        title: 出库状态
+        description: FCHANGESTATE；实测分布 61=870 / 2 未通过=104 / 4 已写卡=14 / 1 审核通过=4（存在复合码，字典外取值原样分组）
+        sql: "{CUBE}.\"FCHANGESTATE\""
+        type: string
+      - name: region_code
+        title: 区划编码
+        description: FRGNCODE 关联 region.code
+        sql: "{CUBE}.\"FRGNCODE\""
+        type: string
+      - name: agency_code
+        title: 单位识别码
+        description: FAGENIDCODE 关联 agency.agency_code
+        sql: "{CUBE}.\"FAGENIDCODE\""
+        type: string
+
+# 行级权限：access_policy 双互补策略（与 paybook/cbill 同款）。
+# 明细 cube（stock_out_item）无区划列、不声明策略——行级权限在
+# join 查询时跨成员取交集（docs/11）经主表生效。
+    access_policy:
+      - group: "*"
+        conditions:
+          - if: "{ securityContext.region_code }"
+        row_level:
+          filters:
+            - member: region_code
+              operator: equals
+              values: ["{ securityContext.region_code }"]
+      - group: "*"
+        conditions:
+          - if: "{ not securityContext.region_code }"
+        row_level:
+          allow_all: true

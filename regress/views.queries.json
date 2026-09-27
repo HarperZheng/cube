@@ -1,0 +1,74 @@
+[
+  {
+    "name": "缴款书视图-全口径与区划下钻",
+    "query": {
+      "measures": ["paybook_view.total_amount", "paybook_view.paid_count"],
+      "dimensions": ["paybook_view.region_name"],
+      "limit": 10
+    }
+  },
+  {
+    "name": "用票视图-两口径并存（多事实）",
+    "query": {
+      "measures": ["usage_view.receipt_count", "usage_view.item_count"],
+      "dimensions": ["usage_view.bill_type_name"],
+      "order": {"usage_view.receipt_count": "desc"},
+      "limit": 5
+    }
+  },
+  {
+    "name": "领票视图-五事实单查询",
+    "query": {
+      "measures": ["outbound_view.out_count", "outbound_view.in_count", "outbound_view.apply_count", "outbound_view.stock_count", "outbound_view.total_amount"]
+    }
+  },
+  {
+    "name": "审验视图-主子表三事实",
+    "query": {
+      "measures": ["writeoff_view.writeoff_count", "writeoff_view.item_amt", "writeoff_view.face_amt"]
+    }
+  },
+  {
+    "name": "监管视图-区划下钻",
+    "query": {
+      "measures": ["superv_view.suspicious_count"],
+      "dimensions": ["superv_view.region_name"],
+      "limit": 10
+    }
+  },
+  {
+    "name": "单位管理视图-区划与行业下钻",
+    "query": {
+      "measures": ["agen_view.count"],
+      "dimensions": ["agen_view.region_name", "agen_view.industry_name"],
+      "limit": 5
+    }
+  },
+  {
+    "name": "用票视图-按月分组",
+    "query": {
+      "measures": ["usage_view.receipt_count"],
+      "dimensions": ["usage_view.bill_month"],
+      "order": {"usage_view.bill_month": "asc"},
+      "limit": 5
+    }
+  },
+  {
+    "name": "用票视图-日均与冲红",
+    "query": {
+      "measures": ["usage_view.daily_avg", "usage_view.date_cnt", "usage_view.red_cnt"]
+    }
+  },
+  {
+    "name": "领票视图-库存份数",
+    "query": {
+      "measures": ["outbound_view.stock_qty", "outbound_view.stock_count"]
+    }
+  },
+  {
+    "name": "监管视图-核销单数",
+    "query": {
+      "measures": ["superv_view.wo_cnt"]
+    }
+  }
+]

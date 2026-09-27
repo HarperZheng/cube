@@ -1,0 +1,34 @@
+# 单位管理交付视图—— P5（docs/cube-dataqa-topic/01-design.md §9）
+# 维度 cube 的交付面：单位 + 区划。join_path 钉死（agency→region 直连）。
+# 同名冲突规避：region join 用 prefix: true（region_name/region_level）。
+views:
+  - name: agen_view
+    title: 单位管理（交付视图）
+    description: 单位快照（FISFINAL=1）+ 区划下钻；消费方统一从这里查
+    meta:
+      ai_context: >-
+        单位管理交付视图。单位数用 count（FISFINAL=1 最新快照）；
+        分类用 industry_name（行业）/ type_code（单位类型）；
+        票据代理单位用 is_ticket_agen；区划下钻走 region_name。
+    cubes:
+      - join_path: agency
+        includes:
+          - count
+          - agency_code
+          - name
+          - code
+          - type_code
+          - sort_code
+          - industry_code
+          - industry_name
+          - is_ticket_agen
+          - is_leaf
+          - level_code
+        excludes:
+          - id               # 技术主键（view 不继承 public:false，显式挡）
+      - join_path: agency.region
+        prefix: true         # region.name 与 agency.name 冲突 → region_name
+        includes:
+          - name
+          - level
+          - is_leaf

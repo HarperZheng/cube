@@ -1,0 +1,67 @@
+# 审验交付视图—— P5（docs/cube-dataqa-topic/01-design.md §9，多事实视图）
+# 票据审验全口径：writeoff（主表）+ writeoff_income（收入明细）+
+# writeoff_billitem（票据明细）三事实并存，主子表经反向 one_to_many 传递。
+# 同名冲突规避（count/payable_amt 两 cube 都有）：主表为基准不前缀，
+# 明细只暴露不冲突成员；全部不前缀——prefix 爆 11g 30 字符上限。
+# 主题名称背景：writeoff 表前缀与业务名"审验"错位，见 docs 10。
+views:
+  - name: writeoff_view
+    title: 票据审验（交付视图）
+    description: 审验全口径 + 收入/票据明细 + 单位下钻；消费方统一从这里查
+    meta:
+      ai_context: >-
+        票据审验交付视图。审验单数用 writeoff_count；状态口径用
+        audited_count（已审验）/ unaudited_count（未审验）；审验结果用
+        check_result 维度或 good_count（良好）/ qualified_count（合格）；
+        金额用 payable_amt（应缴）/ real_amt（实缴）/ owe_amt（欠缴）。
+        收入明细用 item_amt（实收）/ paid_amt（已缴）/ unpaid_amt（未缴），
+        项目名称走 item_name；票据明细用 inv_num（开票份数）/ face_amt
+        （票面金额），票据名称走 bill_name。按时间分析走 compiled_date。
+        单位下钻走 name/industry_name。按单位去重计数用 aud_agen_cnt
+        （已审验单位数）/ good_agen_cnt（良好单位数）。
+    cubes:
+      - join_path: writeoff
+        includes:
+          - writeoff_count
+          - audited_count
+          - unaudited_count
+          - good_count
+          - qualified_count
+          - aud_agen_cnt
+          - good_agen_cnt
+          - payable_amt
+          - real_amt
+          - owe_amt
+          - no
+          - state
+          - check_result
+          - writeoff_type
+          - compiled_date
+        excludes:
+          - fid              # 技术主键
+          - region_code      # 行级权限维度
+          - agency_code      # 关联键
+          - data_source
+          - check_type
+          - begin_date
+          - end_date
+          - bill_total
+          - bill_invalid
+      - join_path: writeoff.writeoff_income
+        includes:
+          - item_amt
+          - paid_amt
+          - unpaid_amt
+          - item_name
+          - item_code
+      - join_path: writeoff.writeoff_billitem
+        includes:
+          - inv_num
+          - face_amt
+          - bill_name
+          - bill_no1
+          - bill_no2
+      - join_path: writeoff.agency
+        includes:
+          - name
+          - industry_name

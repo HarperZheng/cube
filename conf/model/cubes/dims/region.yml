@@ -1,0 +1,60 @@
+# 区划维度 —— 源表 AFA_AUTH_REGION（191 行）
+# FCODE 已验证全表唯一（191=191），事实表按 FRGNCODE 关联此列安全
+cubes:
+  - name: region
+    title: 区划
+    description: |
+      行政区划维度。事实表的 region_code（FRGNCODE）关联本 cube 的 code 维度。
+      预算级次（FBGTLEVEL）与树级次（FLEVEL）区分：树级次为区划树深度，
+      预算级次为财政预算管理层级。
+    public: false    # 只通过 join 被事实 cube 引用
+    sql_table: AFA_AUTH_REGION
+
+    measures:
+      - name: count
+        title: 区划数
+        type: count
+
+    meta:
+      ai_context: >-
+        区划编码为 53xx 开头的云南区划码。查询按区划名称分组时用 name；
+        按层级汇总（省/市/县）时结合 level 或 parent_id。
+
+    dimensions:
+      - name: id
+        title: 区划ID
+        sql: "{CUBE}.\"ID\""
+        type: string
+        primary_key: true
+        public: false
+      - name: code
+        title: 区划编码
+        description: 事实表 FRGNCODE 关联键（已验证唯一）
+        sql: "{CUBE}.\"FCODE\""
+        type: string
+      - name: name
+        title: 区划名称
+        sql: "{CUBE}.\"FNAME\""
+        type: string
+      - name: parent_id
+        title: 父级区划ID
+        sql: "{CUBE}.\"FPARENTID\""
+        type: string
+      - name: level
+        title: 区划树级次
+        sql: "{CUBE}.\"FLEVEL\""
+        type: number
+      - name: is_leaf
+        title: 是否叶子
+        description: 1 是 / 0 否
+        sql: "{CUBE}.\"FISLEAF\""
+        type: string
+      - name: is_enabled
+        title: 是否启用
+        description: 1 启用 / 0 未启用
+        sql: "{CUBE}.\"FISENABLED\""
+        type: string
+      - name: bgt_level
+        title: 预算级次
+        sql: "{CUBE}.\"FBGTLEVEL\""
+        type: string

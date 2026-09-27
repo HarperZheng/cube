@@ -1,0 +1,18 @@
+# view_groups—— P5（docs/cube-dataqa-topic/01-design.md §9.2）
+# AI 代理/前端按分组快速发现视图（/v1/meta 顶层返回 viewGroups）。
+# 原 ticket_cuv/ticket_verification 两幽灵 view 已由 writeoff_view 替代（P4.5）。
+view_groups:
+  - name: fiscal_payment
+    title: 财政缴款
+    description: 缴款书、用票相关视图
+    includes:
+      - paybook_view
+      - usage_view
+  - name: ticket_mgmt
+    title: 票据管理
+    description: 领票、审验、监管、单位管理视图
+    includes:
+      - outbound_view
+      - writeoff_view
+      - superv_view
+      - agen_view

@@ -1,0 +1,55 @@
+# 收入日结交付视图—— 新增主题③（用户指定三表核心之一）
+# 单事实视图：daybook（+agency 行业下钻）。收款金额两口径并存
+# （income_amt 严格收入 / net_amt 净额），时间轴两列并存
+# （received_date 收入日期严格口径 / pay_date 缴款日期）。
+views:
+  - name: daybook_view
+    title: 收入日结（交付视图）
+    description: 收入日结全口径（严格收入/净额两口径）+ 收入类别/单位/区划/收款账户下钻；消费方统一从这里查
+    meta:
+      ai_context: >-
+        收入日结交付视图。收款金额（严格收入口径）用 income_amt，支出方向
+        金额用 expense_amt，净额用 net_amt——两口径并存，切分维度时注意
+        口径差异。时间轴默认用 received_date（收入日期，严格口径）；
+        缴款日期用 pay_date。收入类别用 income_sort/income_sort_name；
+        收入类型用 im_type；收支方向过滤用 io_direction（1 收入/-1 支出）。
+        收入单位用 im_agen_code/im_agen_name；执收单位用
+        chg_agen_code/chg_agen_name；收入区划用 im_rgn_code/im_rgn_name。
+        收款银行编码用 pay_bank_code、代理银行名称用 pay_bank_name；
+        收款单位名称用 acct_name、账号用 acct、开户行用 acct_bank。
+        项目用 item_code/item_name。
+    cubes:
+      - join_path: daybook
+        includes:
+          - count
+          - income_amt
+          - expense_amt
+          - net_amt
+          - im_type
+          - io_direction
+          - data_type
+          - income_sort
+          - income_sort_name
+          - im_agen_code
+          - im_agen_name
+          - chg_agen_code
+          - chg_agen_name
+          - im_rgn_code
+          - im_rgn_name
+          - chg_rgn_code
+          - pay_bank_code
+          - pay_bank_name
+          - acct_name
+          - acct
+          - acct_bank
+          - acct_type
+          - received_date
+          - pay_date
+          - item_code
+          - item_name
+        excludes:
+          - fid              # 技术主键
+      - join_path: daybook.agency
+        includes:
+          - name
+          - industry_name

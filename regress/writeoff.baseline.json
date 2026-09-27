@@ -1,0 +1,685 @@
+{
+  "savedAt": "2026-09-23T07:43:26.155Z",
+  "results": [
+    {
+      "name": "审验单总数与记录数",
+      "query": {
+        "measures": [
+          "writeoff.count",
+          "writeoff.writeoff_count"
+        ]
+      },
+      "resultSet": {
+        "data": [
+          {
+            "writeoff.count": "333",
+            "writeoff.writeoff_count": "333"
+          }
+        ]
+      }
+    },
+    {
+      "name": "审验状态口径",
+      "query": {
+        "measures": [
+          "writeoff.audited_count",
+          "writeoff.unaudited_count"
+        ]
+      },
+      "resultSet": {
+        "data": [
+          {
+            "writeoff.audited_count": "330",
+            "writeoff.unaudited_count": "2"
+          }
+        ]
+      }
+    },
+    {
+      "name": "审验结果口径",
+      "query": {
+        "measures": [
+          "writeoff.good_count",
+          "writeoff.qualified_count"
+        ]
+      },
+      "resultSet": {
+        "data": [
+          {
+            "writeoff.good_count": "264",
+            "writeoff.qualified_count": "66"
+          }
+        ]
+      }
+    },
+    {
+      "name": "主表金额三项",
+      "query": {
+        "measures": [
+          "writeoff.payable_amt",
+          "writeoff.real_amt",
+          "writeoff.owe_amt"
+        ]
+      },
+      "resultSet": {
+        "data": [
+          {
+            "writeoff.payable_amt": "1238129895193.12",
+            "writeoff.real_amt": "1237956009093.27",
+            "writeoff.owe_amt": "6607091216.7947"
+          }
+        ]
+      }
+    },
+    {
+      "name": "按区划分组",
+      "query": {
+        "measures": [
+          "writeoff.writeoff_count"
+        ],
+        "dimensions": [
+          "writeoff.region_code"
+        ]
+      },
+      "resultSet": {
+        "data": [
+          {
+            "writeoff.region_code": "530000",
+            "writeoff.writeoff_count": "314"
+          },
+          {
+            "writeoff.region_code": "530100",
+            "writeoff.writeoff_count": "10"
+          },
+          {
+            "writeoff.region_code": "530702",
+            "writeoff.writeoff_count": "6"
+          },
+          {
+            "writeoff.region_code": "530102",
+            "writeoff.writeoff_count": "3"
+          }
+        ]
+      }
+    },
+    {
+      "name": "按单位分组（agency join）",
+      "query": {
+        "measures": [
+          "writeoff.writeoff_count"
+        ],
+        "dimensions": [
+          "agency.name"
+        ],
+        "limit": 10
+      },
+      "resultSet": {
+        "data": [
+          {
+            "agency.name": "测试测试环境0115",
+            "writeoff.writeoff_count": "64"
+          },
+          {
+            "agency.name": "通用测试单位0801",
+            "writeoff.writeoff_count": "44"
+          },
+          {
+            "agency.name": "医保测试单位改名",
+            "writeoff.writeoff_count": "29"
+          },
+          {
+            "agency.name": "发展改革委员会",
+            "writeoff.writeoff_count": "29"
+          },
+          {
+            "agency.name": "云南测试单位",
+            "writeoff.writeoff_count": "23"
+          },
+          {
+            "agency.name": "智能核销测试测试单位1",
+            "writeoff.writeoff_count": "19"
+          },
+          {
+            "agency.name": "通用单位168",
+            "writeoff.writeoff_count": "18"
+          },
+          {
+            "agency.name": "测试医疗单位0729",
+            "writeoff.writeoff_count": "14"
+          },
+          {
+            "agency.name": "智能核销昆明市本级单位",
+            "writeoff.writeoff_count": "10"
+          },
+          {
+            "agency.name": "丽江市发展委员中心",
+            "writeoff.writeoff_count": "6"
+          }
+        ]
+      }
+    },
+    {
+      "name": "按编制月份分组",
+      "query": {
+        "measures": [
+          "writeoff.writeoff_count"
+        ],
+        "dimensions": [
+          "writeoff.compiled_date.month"
+        ],
+        "order": {
+          "writeoff.compiled_date.month": "asc"
+        }
+      },
+      "resultSet": {
+        "data": [
+          {
+            "writeoff.compiled_date.month": "2021-06-01T00:00:00.000",
+            "writeoff.writeoff_count": "1",
+            "writeoff.compiled_date": "2021-06-01T00:00:00.000"
+          },
+          {
+            "writeoff.compiled_date.month": "2021-10-01T00:00:00.000",
+            "writeoff.writeoff_count": "1",
+            "writeoff.compiled_date": "2021-10-01T00:00:00.000"
+          },
+          {
+            "writeoff.compiled_date.month": "2021-11-01T00:00:00.000",
+            "writeoff.writeoff_count": "1",
+            "writeoff.compiled_date": "2021-11-01T00:00:00.000"
+          },
+          {
+            "writeoff.compiled_date.month": "2022-04-01T00:00:00.000",
+            "writeoff.writeoff_count": "2",
+            "writeoff.compiled_date": "2022-04-01T00:00:00.000"
+          },
+          {
+            "writeoff.compiled_date.month": "2022-05-01T00:00:00.000",
+            "writeoff.writeoff_count": "2",
+            "writeoff.compiled_date": "2022-05-01T00:00:00.000"
+          },
+          {
+            "writeoff.compiled_date.month": "2022-07-01T00:00:00.000",
+            "writeoff.writeoff_count": "6",
+            "writeoff.compiled_date": "2022-07-01T00:00:00.000"
+          },
+          {
+            "writeoff.compiled_date.month": "2022-08-01T00:00:00.000",
+            "writeoff.writeoff_count": "6",
+            "writeoff.compiled_date": "2022-08-01T00:00:00.000"
+          },
+          {
+            "writeoff.compiled_date.month": "2022-10-01T00:00:00.000",
+            "writeoff.writeoff_count": "8",
+            "writeoff.compiled_date": "2022-10-01T00:00:00.000"
+          },
+          {
+            "writeoff.compiled_date.month": "2022-11-01T00:00:00.000",
+            "writeoff.writeoff_count": "4",
+            "writeoff.compiled_date": "2022-11-01T00:00:00.000"
+          },
+          {
+            "writeoff.compiled_date.month": "2022-12-01T00:00:00.000",
+            "writeoff.writeoff_count": "1",
+            "writeoff.compiled_date": "2022-12-01T00:00:00.000"
+          },
+          {
+            "writeoff.compiled_date.month": "2023-01-01T00:00:00.000",
+            "writeoff.writeoff_count": "2",
+            "writeoff.compiled_date": "2023-01-01T00:00:00.000"
+          },
+          {
+            "writeoff.compiled_date.month": "2023-02-01T00:00:00.000",
+            "writeoff.writeoff_count": "2",
+            "writeoff.compiled_date": "2023-02-01T00:00:00.000"
+          },
+          {
+            "writeoff.compiled_date.month": "2023-03-01T00:00:00.000",
+            "writeoff.writeoff_count": "9",
+            "writeoff.compiled_date": "2023-03-01T00:00:00.000"
+          },
+          {
+            "writeoff.compiled_date.month": "2023-04-01T00:00:00.000",
+            "writeoff.writeoff_count": "3",
+            "writeoff.compiled_date": "2023-04-01T00:00:00.000"
+          },
+          {
+            "writeoff.compiled_date.month": "2023-05-01T00:00:00.000",
+            "writeoff.writeoff_count": "23",
+            "writeoff.compiled_date": "2023-05-01T00:00:00.000"
+          },
+          {
+            "writeoff.compiled_date.month": "2023-06-01T00:00:00.000",
+            "writeoff.writeoff_count": "10",
+            "writeoff.compiled_date": "2023-06-01T00:00:00.000"
+          },
+          {
+            "writeoff.compiled_date.month": "2023-07-01T00:00:00.000",
+            "writeoff.writeoff_count": "11",
+            "writeoff.compiled_date": "2023-07-01T00:00:00.000"
+          },
+          {
+            "writeoff.compiled_date.month": "2023-08-01T00:00:00.000",
+            "writeoff.writeoff_count": "7",
+            "writeoff.compiled_date": "2023-08-01T00:00:00.000"
+          },
+          {
+            "writeoff.compiled_date.month": "2023-09-01T00:00:00.000",
+            "writeoff.writeoff_count": "22",
+            "writeoff.compiled_date": "2023-09-01T00:00:00.000"
+          },
+          {
+            "writeoff.compiled_date.month": "2023-10-01T00:00:00.000",
+            "writeoff.writeoff_count": "4",
+            "writeoff.compiled_date": "2023-10-01T00:00:00.000"
+          },
+          {
+            "writeoff.compiled_date.month": "2023-11-01T00:00:00.000",
+            "writeoff.writeoff_count": "5",
+            "writeoff.compiled_date": "2023-11-01T00:00:00.000"
+          },
+          {
+            "writeoff.compiled_date.month": "2023-12-01T00:00:00.000",
+            "writeoff.writeoff_count": "1",
+            "writeoff.compiled_date": "2023-12-01T00:00:00.000"
+          },
+          {
+            "writeoff.compiled_date.month": "2024-01-01T00:00:00.000",
+            "writeoff.writeoff_count": "10",
+            "writeoff.compiled_date": "2024-01-01T00:00:00.000"
+          },
+          {
+            "writeoff.compiled_date.month": "2024-02-01T00:00:00.000",
+            "writeoff.writeoff_count": "7",
+            "writeoff.compiled_date": "2024-02-01T00:00:00.000"
+          },
+          {
+            "writeoff.compiled_date.month": "2024-03-01T00:00:00.000",
+            "writeoff.writeoff_count": "34",
+            "writeoff.compiled_date": "2024-03-01T00:00:00.000"
+          },
+          {
+            "writeoff.compiled_date.month": "2024-04-01T00:00:00.000",
+            "writeoff.writeoff_count": "14",
+            "writeoff.compiled_date": "2024-04-01T00:00:00.000"
+          },
+          {
+            "writeoff.compiled_date.month": "2024-05-01T00:00:00.000",
+            "writeoff.writeoff_count": "7",
+            "writeoff.compiled_date": "2024-05-01T00:00:00.000"
+          },
+          {
+            "writeoff.compiled_date.month": "2024-06-01T00:00:00.000",
+            "writeoff.writeoff_count": "4",
+            "writeoff.compiled_date": "2024-06-01T00:00:00.000"
+          },
+          {
+            "writeoff.compiled_date.month": "2024-07-01T00:00:00.000",
+            "writeoff.writeoff_count": "3",
+            "writeoff.compiled_date": "2024-07-01T00:00:00.000"
+          },
+          {
+            "writeoff.compiled_date.month": "2024-08-01T00:00:00.000",
+            "writeoff.writeoff_count": "5",
+            "writeoff.compiled_date": "2024-08-01T00:00:00.000"
+          },
+          {
+            "writeoff.compiled_date.month": "2024-09-01T00:00:00.000",
+            "writeoff.writeoff_count": "4",
+            "writeoff.compiled_date": "2024-09-01T00:00:00.000"
+          },
+          {
+            "writeoff.compiled_date.month": "2024-10-01T00:00:00.000",
+            "writeoff.writeoff_count": "2",
+            "writeoff.compiled_date": "2024-10-01T00:00:00.000"
+          },
+          {
+            "writeoff.compiled_date.month": "2024-11-01T00:00:00.000",
+            "writeoff.writeoff_count": "8",
+            "writeoff.compiled_date": "2024-11-01T00:00:00.000"
+          },
+          {
+            "writeoff.compiled_date.month": "2024-12-01T00:00:00.000",
+            "writeoff.writeoff_count": "13",
+            "writeoff.compiled_date": "2024-12-01T00:00:00.000"
+          },
+          {
+            "writeoff.compiled_date.month": "2025-01-01T00:00:00.000",
+            "writeoff.writeoff_count": "2",
+            "writeoff.compiled_date": "2025-01-01T00:00:00.000"
+          },
+          {
+            "writeoff.compiled_date.month": "2025-02-01T00:00:00.000",
+            "writeoff.writeoff_count": "11",
+            "writeoff.compiled_date": "2025-02-01T00:00:00.000"
+          },
+          {
+            "writeoff.compiled_date.month": "2025-03-01T00:00:00.000",
+            "writeoff.writeoff_count": "10",
+            "writeoff.compiled_date": "2025-03-01T00:00:00.000"
+          },
+          {
+            "writeoff.compiled_date.month": "2025-04-01T00:00:00.000",
+            "writeoff.writeoff_count": "12",
+            "writeoff.compiled_date": "2025-04-01T00:00:00.000"
+          },
+          {
+            "writeoff.compiled_date.month": "2025-05-01T00:00:00.000",
+            "writeoff.writeoff_count": "3",
+            "writeoff.compiled_date": "2025-05-01T00:00:00.000"
+          },
+          {
+            "writeoff.compiled_date.month": "2025-06-01T00:00:00.000",
+            "writeoff.writeoff_count": "4",
+            "writeoff.compiled_date": "2025-06-01T00:00:00.000"
+          },
+          {
+            "writeoff.compiled_date.month": "2025-07-01T00:00:00.000",
+            "writeoff.writeoff_count": "2",
+            "writeoff.compiled_date": "2025-07-01T00:00:00.000"
+          },
+          {
+            "writeoff.compiled_date.month": "2025-08-01T00:00:00.000",
+            "writeoff.writeoff_count": "6",
+            "writeoff.compiled_date": "2025-08-01T00:00:00.000"
+          },
+          {
+            "writeoff.compiled_date.month": "2025-09-01T00:00:00.000",
+            "writeoff.writeoff_count": "3",
+            "writeoff.compiled_date": "2025-09-01T00:00:00.000"
+          },
+          {
+            "writeoff.compiled_date.month": "2025-10-01T00:00:00.000",
+            "writeoff.writeoff_count": "3",
+            "writeoff.compiled_date": "2025-10-01T00:00:00.000"
+          },
+          {
+            "writeoff.compiled_date.month": "2025-12-01T00:00:00.000",
+            "writeoff.writeoff_count": "1",
+            "writeoff.compiled_date": "2025-12-01T00:00:00.000"
+          },
+          {
+            "writeoff.compiled_date.month": "2026-01-01T00:00:00.000",
+            "writeoff.writeoff_count": "14",
+            "writeoff.compiled_date": "2026-01-01T00:00:00.000"
+          },
+          {
+            "writeoff.compiled_date.month": "2026-03-01T00:00:00.000",
+            "writeoff.writeoff_count": "3",
+            "writeoff.compiled_date": "2026-03-01T00:00:00.000"
+          },
+          {
+            "writeoff.compiled_date.month": "2026-04-01T00:00:00.000",
+            "writeoff.writeoff_count": "2",
+            "writeoff.compiled_date": "2026-04-01T00:00:00.000"
+          },
+          {
+            "writeoff.compiled_date.month": "2026-05-01T00:00:00.000",
+            "writeoff.writeoff_count": "2",
+            "writeoff.compiled_date": "2026-05-01T00:00:00.000"
+          },
+          {
+            "writeoff.compiled_date.month": "2026-06-01T00:00:00.000",
+            "writeoff.writeoff_count": "8",
+            "writeoff.compiled_date": "2026-06-01T00:00:00.000"
+          },
+          {
+            "writeoff.compiled_date.month": "2026-08-01T00:00:00.000",
+            "writeoff.writeoff_count": "2",
+            "writeoff.compiled_date": "2026-08-01T00:00:00.000"
+          },
+          {
+            "writeoff.compiled_date.month": "2026-09-01T00:00:00.000",
+            "writeoff.writeoff_count": "3",
+            "writeoff.compiled_date": "2026-09-01T00:00:00.000"
+          }
+        ]
+      }
+    },
+    {
+      "name": "收入明细金额四项",
+      "query": {
+        "measures": [
+          "writeoff_income.count",
+          "writeoff_income.item_amt",
+          "writeoff_income.payable_amt",
+          "writeoff_income.paid_amt",
+          "writeoff_income.unpaid_amt"
+        ]
+      },
+      "resultSet": {
+        "data": [
+          {
+            "writeoff_income.count": "2044",
+            "writeoff_income.item_amt": "1238187419998.08",
+            "writeoff_income.payable_amt": "1238129964793.22",
+            "writeoff_income.paid_amt": "1237956014791.27",
+            "writeoff_income.unpaid_amt": "6945337162.5934"
+          }
+        ]
+      }
+    },
+    {
+      "name": "收入按项目名称分组",
+      "query": {
+        "measures": [
+          "writeoff_income.item_amt"
+        ],
+        "dimensions": [
+          "writeoff_income.item_name"
+        ],
+        "order": {
+          "writeoff_income.item_amt": "desc"
+        },
+        "limit": 10
+      },
+      "resultSet": {
+        "data": [
+          {
+            "writeoff_income.item_name": "地方农网还贷资金收入",
+            "writeoff_income.item_amt": "875775256902.22"
+          },
+          {
+            "writeoff_income.item_name": "铁路建设基金收入",
+            "writeoff_income.item_amt": "343850762831.82"
+          },
+          {
+            "writeoff_income.item_name": "农网还贷资金收入",
+            "writeoff_income.item_amt": "16169036423.49"
+          },
+          {
+            "writeoff_income.item_name": "国有重点煤炭企业生产用电、核工业铀扩散厂和堆化工厂生产用电农网还贷资金",
+            "writeoff_income.item_amt": "2255366280.21"
+          },
+          {
+            "writeoff_income.item_name": "电费",
+            "writeoff_income.item_amt": "50106995.2"
+          },
+          {
+            "writeoff_income.item_name": "民航发展基金收入",
+            "writeoff_income.item_amt": "31145327.26"
+          },
+          {
+            "writeoff_income.item_name": "农网还贷资金收入a",
+            "writeoff_income.item_amt": "29354662.83"
+          },
+          {
+            "writeoff_income.item_name": "高等学校住宿费",
+            "writeoff_income.item_amt": "16331091.14"
+          },
+          {
+            "writeoff_income.item_name": "体检费",
+            "writeoff_income.item_amt": "3005345.41"
+          },
+          {
+            "writeoff_income.item_name": "检查费",
+            "writeoff_income.item_amt": "2866689.49"
+          }
+        ]
+      }
+    },
+    {
+      "name": "票据明细开票份数与票面金额",
+      "query": {
+        "measures": [
+          "writeoff_billitem.count",
+          "writeoff_billitem.inv_num",
+          "writeoff_billitem.face_amt"
+        ]
+      },
+      "resultSet": {
+        "data": [
+          {
+            "writeoff_billitem.count": "2230",
+            "writeoff_billitem.inv_num": "30261",
+            "writeoff_billitem.face_amt": "1245028890489.24"
+          }
+        ]
+      }
+    },
+    {
+      "name": "票据明细按票据名称分组",
+      "query": {
+        "measures": [
+          "writeoff_billitem.inv_num",
+          "writeoff_billitem.face_amt"
+        ],
+        "dimensions": [
+          "writeoff_billitem.bill_name"
+        ],
+        "order": {
+          "writeoff_billitem.face_amt": "desc"
+        },
+        "limit": 10
+      },
+      "resultSet": {
+        "data": [
+          {
+            "writeoff_billitem.bill_name": "非税收入电子缴款书（电子）",
+            "writeoff_billitem.inv_num": "2558",
+            "writeoff_billitem.face_amt": "1221969945767.66"
+          },
+          {
+            "writeoff_billitem.bill_name": "云南非税缴款通知书（电子）",
+            "writeoff_billitem.inv_num": "1912",
+            "writeoff_billitem.face_amt": "16091707240.05"
+          },
+          {
+            "writeoff_billitem.bill_name": "云南机打票",
+            "writeoff_billitem.inv_num": "296",
+            "writeoff_billitem.face_amt": "6679641394.07"
+          },
+          {
+            "writeoff_billitem.bill_name": "云南省社会资金公益事业捐赠票据",
+            "writeoff_billitem.inv_num": "698",
+            "writeoff_billitem.face_amt": "105584071.38"
+          },
+          {
+            "writeoff_billitem.bill_name": "云南省社会团体会费统一票据（电子）",
+            "writeoff_billitem.inv_num": "275",
+            "writeoff_billitem.face_amt": "58341884.78"
+          },
+          {
+            "writeoff_billitem.bill_name": "住宅专项维修资金票据（电子）",
+            "writeoff_billitem.inv_num": "102",
+            "writeoff_billitem.face_amt": "33680299.82"
+          },
+          {
+            "writeoff_billitem.bill_name": "云南省行政事业单位资金往来结算票据（微机）",
+            "writeoff_billitem.inv_num": "245",
+            "writeoff_billitem.face_amt": "25098014.7"
+          },
+          {
+            "writeoff_billitem.bill_name": "行政事业单位资金往来结算票据（微机）",
+            "writeoff_billitem.inv_num": "38",
+            "writeoff_billitem.face_amt": "25057988.6"
+          },
+          {
+            "writeoff_billitem.bill_name": "测试-政府非税收入统一票据（电子）",
+            "writeoff_billitem.inv_num": "317",
+            "writeoff_billitem.face_amt": "15073804.83"
+          },
+          {
+            "writeoff_billitem.bill_name": "测试-云南省政府非税收入统一票据（电子）",
+            "writeoff_billitem.inv_num": "2875",
+            "writeoff_billitem.face_amt": "8021739.04"
+          }
+        ]
+      }
+    },
+    {
+      "name": "单票下钻（billitem belongs_to join）",
+      "query": {
+        "measures": [
+          "writeoff_billitem.count",
+          "writeoff_billitem.inv_num"
+        ],
+        "dimensions": [
+          "writeoff.no",
+          "writeoff_billitem.bill_name"
+        ],
+        "filters": [
+          {
+            "member": "writeoff.no",
+            "operator": "equals",
+            "values": [
+              "124045-23009"
+            ]
+          }
+        ]
+      },
+      "resultSet": {
+        "data": [
+          {
+            "writeoff.no": "124045-23009",
+            "writeoff_billitem.bill_name": "非税收入电子缴款书（电子）",
+            "writeoff_billitem.count": "30",
+            "writeoff_billitem.inv_num": "53"
+          },
+          {
+            "writeoff.no": "124045-23009",
+            "writeoff_billitem.bill_name": "测试-云南省政府非税收入统一票据（电子）",
+            "writeoff_billitem.count": "3",
+            "writeoff_billitem.inv_num": "120"
+          },
+          {
+            "writeoff.no": "124045-23009",
+            "writeoff_billitem.bill_name": "云南非税电子票",
+            "writeoff_billitem.count": "2",
+            "writeoff_billitem.inv_num": "15"
+          },
+          {
+            "writeoff.no": "124045-23009",
+            "writeoff_billitem.bill_name": "云南机打票",
+            "writeoff_billitem.count": "1",
+            "writeoff_billitem.inv_num": "10"
+          },
+          {
+            "writeoff.no": "124045-23009",
+            "writeoff_billitem.bill_name": "云南医疗门诊电子票",
+            "writeoff_billitem.count": "1",
+            "writeoff_billitem.inv_num": "1"
+          },
+          {
+            "writeoff.no": "124045-23009",
+            "writeoff_billitem.bill_name": "云南省财政电子票据（纸质）",
+            "writeoff_billitem.count": "1",
+            "writeoff_billitem.inv_num": "9"
+          },
+          {
+            "writeoff.no": "124045-23009",
+            "writeoff_billitem.bill_name": "云南省行政事业单位资金往来结算票据",
+            "writeoff_billitem.count": "1",
+            "writeoff_billitem.inv_num": "5"
+          },
+          {
+            "writeoff.no": "124045-23009",
+            "writeoff_billitem.bill_name": "云南非税缴款通知书（电子）",
+            "writeoff_billitem.count": "1",
+            "writeoff_billitem.inv_num": "5"
+          }
+        ]
+      }
+    }
+  ]
+}

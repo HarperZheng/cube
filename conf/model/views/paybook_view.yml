@@ -1,0 +1,50 @@
+# 缴款书交付视图—— P5（docs/cube-dataqa-topic/01-design.md §9）
+# 消费方（BI/前端/REST）统一从 view 查；cube 层只留原料。
+# join_path 钉死多路径（paybook→region 直连与经 agency 传递两条路，显式声明）。
+# 同名冲突规避：region join 用 prefix: true（region_name/region_level），
+# agency 不前缀（name/industry_name）——prefix 爆 11g 30 字符上限，能不用就不用。
+views:
+  - name: paybook_view
+    title: 缴款书（交付视图）
+    description: 缴款书全口径 + 单位/区划下钻；消费方统一从这里查
+    meta:
+      ai_context: >-
+        缴款书交付视图。总金额用 total_amount，状态口径用 pending_count
+        （待缴款）/ paid_count（已缴款）/ void_count（作废）；
+        直缴/汇缴用 direct_pay_amt/collect_pay_amt；过期用 expired_count。
+        单位下钻走 name/industry_name，区划下钻走 region_name。
+        payer_name 已脱敏（只露末2字）。
+    cubes:
+      - join_path: paybook
+        includes:
+          - count
+          - total_amount
+          - avg_amount
+          - pending_count
+          - paid_count
+          - void_count
+          - expired_count
+          - direct_pay_amt
+          - collect_pay_amt
+          - state
+          - bus_type
+          - pay_code
+          - payer_name
+          - fill_date
+          - pay_date
+          - eff_date
+          - confirm_date
+        excludes:
+          - fid              # 技术主键（view 不继承 public:false，显式挡）
+          - region_code      # 行级权限维度，消费方走 region_name
+          - agency_code      # 关联键，消费方走 name
+      - join_path: paybook.agency
+        includes:
+          - name
+          - industry_name
+      - join_path: paybook.region
+        prefix: true         # region.name 与 agency.name 冲突 → region_name
+        includes:
+          - name
+          - level
+          - is_leaf

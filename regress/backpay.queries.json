@@ -1,0 +1,44 @@
+[
+  {
+    "name": "退付-总量",
+    "query": {
+      "measures": ["backpay_view.count", "backpay_view.total_amt", "backpay_view.pay_amt"]
+    }
+  },
+  {
+    "name": "退付-退款方式分组",
+    "query": {
+      "measures": ["backpay_view.count", "backpay_view.total_amt"],
+      "dimensions": ["backpay_view.pay_mode"],
+      "order": {"backpay_view.count": "desc"},
+      "limit": 5
+    }
+  },
+  {
+    "name": "退付-退库标志分组",
+    "query": {
+      "measures": ["backpay_view.count", "backpay_view.total_amt"],
+      "dimensions": ["backpay_view.is_confirm"],
+      "order": {"backpay_view.count": "desc"},
+      "limit": 5
+    }
+  },
+  {
+    "name": "退付-按申请日期分组",
+    "query": {
+      "measures": ["backpay_view.count", "backpay_view.total_amt"],
+      "dimensions": ["backpay_view.apply_date"],
+      "order": {"backpay_view.apply_date": "asc"},
+      "limit": 10
+    }
+  },
+  {
+    "name": "退付-区划与单位下钻",
+    "query": {
+      "measures": ["backpay_view.count", "backpay_view.total_amt"],
+      "dimensions": ["backpay_view.rgn_name", "backpay_view.agen_name"],
+      "order": {"backpay_view.total_amt": "desc"},
+      "limit": 10
+    }
+  }
+]

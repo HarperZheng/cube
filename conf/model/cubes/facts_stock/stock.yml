@@ -1,0 +1,123 @@
+# 库存—— P4（docs/cube-dataqa-topic/01-design.md §5）
+# 源表（P4 核实）：V_UBR_STOCK（库存视图，488 行，7 列无 FID，在线库存，
+# 基本为 UBR_STOCK 的去 FID 视图）+ UBR_STOCK_OFFLINE（离线库存，190 行）——
+# 两者 3 列键（FRGNCODE/FAGENIDCODE/FBILLID）零重叠，UNION ALL 合并，
+# source 列区分在线/离线。
+# join 键核实：FBILLID → FAB_BILL.FID，offline 100% 匹配、视图 2/488 不匹配
+# （数据毛刺，LEFT JOIN 后 null）；FRGNCODE/FAGENIDCODE 两表无空值。
+# 粒度：区划×单位×票据段（视图无 FID，count 不去重即段数）。
+# 敏感字段：无。
+cubes:
+  - name: stock
+    title: 票据库存
+    description: |
+      票据库存 = V_UBR_STOCK（在线，488 段）+ UBR_STOCK_OFFLINE（离线，190 段）
+      的 UNION ALL。每行 = 一个区划×单位×票据的票号段。
+    meta:
+      ai_context: >-
+        库存段数用 stock_count（count，粒度为区划×单位×票据段）。库存份数
+        （票号段折算 Σ(止号-起号+1)）用 stock_qty。在线/离线
+        用 source 维度；票种分析按 bill_id 分组或走 bill_type join 取名称；
+        库存是存量快照（无时间维度），时间分析不适用。
+
+    sql: |
+      SELECT v."FRGNCODE", v."FAGENIDCODE", v."FBILLID",
+             v."FBILLBATCHCODE", v."FBILLNO1", v."FBILLNO2",
+             'online' AS "SRC",
+             v."FRGNCODE" || '|' || v."FAGENIDCODE" || '|' || v."FBILLID"
+               || '|' || v."FBILLNO1" || '|' || v."FBILLNO2" AS "SID"
+      FROM V_UBR_STOCK v
+      UNION ALL
+      SELECT o."FRGNCODE", o."FAGENIDCODE", o."FBILLID",
+             o."FBILLBATCHCODE", o."FBILLNO1", o."FBILLNO2",
+             'offline' AS "SRC",
+             o."FRGNCODE" || '|' || o."FAGENIDCODE" || '|' || o."FBILLID"
+               || '|' || o."FBILLNO1" || '|' || o."FBILLNO2" AS "SID"
+      FROM UBR_STOCK_OFFLINE o
+
+    joins:
+      - name: agency
+        sql: "{CUBE}.\"FAGENIDCODE\" = {agency}.\"FAGENIDCODE\""
+        relationship: many_to_one
+      - name: bill_type
+        sql: "{CUBE}.\"FBILLID\" = {bill_type}.\"FID\""
+        relationship: many_to_one
+
+    measures:
+      - name: count
+        title: 库存记录数
+        type: count
+      - name: stock_count
+        title: 库存段数
+        description: 粒度为区划×单位×票据段，count 即段数（视图无 FID 不去重）
+        sql: "{CUBE}.\"FBILLNO1\""
+        type: count
+        drill_members: [agency.name, bill_type.name, stock.bill_no1, stock.bill_no2]
+      # 2026-09-23 加（智能问数 序号 2 库存份数）：票号段折算份数。
+      # 前提已核实：677 行（V_UBR_STOCK 488 + UBR_STOCK_OFFLINE 190 减 1 重叠）
+      # TO_NUMBER 全部可转，0 行非数字票号（db.js REGEXP_LIKE 实测）。
+      - name: stock_qty
+        title: 库存份数(起止号折算)
+        description: sum(TO_NUMBER(FBILLNO2)-TO_NUMBER(FBILLNO1)+1)，票号段折算份数
+        sql: "TO_NUMBER({CUBE}.\"FBILLNO2\") - TO_NUMBER({CUBE}.\"FBILLNO1\") + 1"
+        type: sum
+
+    dimensions:
+      - name: fid
+        title: 库存段ID
+        description: 合成主键（5 列键拼接；源表视图无 FID，实测拼接键 488=488 / 190=190 全唯一）
+        sql: "{CUBE}.\"SID\""
+        type: string
+        primary_key: true
+        public: false    # 技术主键不对外
+      - name: bill_id
+        title: 票种ID
+        description: FBILLID 关联 bill_type.id（2/678 不匹配为数据毛刺，join 后 null）
+        sql: "{CUBE}.\"FBILLID\""
+        type: string
+      - name: batch_code
+        title: 票据批次代码
+        description: FBILLBATCHCODE
+        sql: "{CUBE}.\"FBILLBATCHCODE\""
+        type: string
+      - name: bill_no1
+        title: 票号起
+        description: FBILLNO1（票号段起始）
+        sql: "{CUBE}.\"FBILLNO1\""
+        type: string
+      - name: bill_no2
+        title: 票号止
+        description: FBILLNO2（票号段截止）
+        sql: "{CUBE}.\"FBILLNO2\""
+        type: string
+      - name: source
+        title: 库存来源
+        description: online 在线库存（V_UBR_STOCK）/ offline 离线库存（UBR_STOCK_OFFLINE）
+        sql: "{CUBE}.\"SRC\""
+        type: string
+      - name: region_code
+        title: 区划编码
+        description: FRGNCODE 关联 region.code
+        sql: "{CUBE}.\"FRGNCODE\""
+        type: string
+      - name: agency_code
+        title: 单位识别码
+        description: FAGENIDCODE 关联 agency.agency_code
+        sql: "{CUBE}.\"FAGENIDCODE\""
+        type: string
+
+# 行级权限：access_policy 双互补策略（与 paybook/cbill 同款）。
+    access_policy:
+      - group: "*"
+        conditions:
+          - if: "{ securityContext.region_code }"
+        row_level:
+          filters:
+            - member: region_code
+              operator: equals
+              values: ["{ securityContext.region_code }"]
+      - group: "*"
+        conditions:
+          - if: "{ not securityContext.region_code }"
+        row_level:
+          allow_all: true

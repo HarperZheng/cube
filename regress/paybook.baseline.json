@@ -1,0 +1,588 @@
+{
+  "savedAt": "2026-09-23T02:39:38.948Z",
+  "results": [
+    {
+      "name": "全口径状态汇总",
+      "query": {
+        "measures": [
+          "paybook.count",
+          "paybook.pending_count",
+          "paybook.paid_count",
+          "paybook.void_count"
+        ]
+      },
+      "resultSet": {
+        "data": [
+          {
+            "paybook.count": "7268",
+            "paybook.pending_count": "3594",
+            "paybook.paid_count": "2691",
+            "paybook.void_count": "983"
+          }
+        ]
+      }
+    },
+    {
+      "name": "过期未缴",
+      "query": {
+        "measures": [
+          "paybook.expired_count"
+        ]
+      },
+      "resultSet": {
+        "data": [
+          {
+            "paybook.expired_count": "3219"
+          }
+        ]
+      }
+    },
+    {
+      "name": "直缴汇缴金额",
+      "query": {
+        "measures": [
+          "paybook.direct_pay_amt",
+          "paybook.collect_pay_amt",
+          "paybook.total_amount"
+        ]
+      },
+      "resultSet": {
+        "data": [
+          {
+            "paybook.direct_pay_amt": "62928670.290368",
+            "paybook.collect_pay_amt": "137235329.790765",
+            "paybook.total_amount": "200164367.881133"
+          }
+        ]
+      }
+    },
+    {
+      "name": "平均单笔金额",
+      "query": {
+        "measures": [
+          "paybook.avg_amount"
+        ]
+      },
+      "resultSet": {
+        "data": [
+          {
+            "paybook.avg_amount": "27540.5019098972"
+          }
+        ]
+      }
+    },
+    {
+      "name": "按区划分组",
+      "query": {
+        "measures": [
+          "paybook.count"
+        ],
+        "dimensions": [
+          "paybook.region_code"
+        ]
+      },
+      "resultSet": {
+        "data": [
+          {
+            "paybook.region_code": "530000",
+            "paybook.count": "7218"
+          },
+          {
+            "paybook.region_code": "530100",
+            "paybook.count": "30"
+          },
+          {
+            "paybook.region_code": "530102",
+            "paybook.count": "16"
+          },
+          {
+            "paybook.region_code": "530702",
+            "paybook.count": "4"
+          }
+        ]
+      }
+    },
+    {
+      "name": "按区划名称分组(传递join)",
+      "query": {
+        "measures": [
+          "paybook.count"
+        ],
+        "dimensions": [
+          "region.name"
+        ]
+      },
+      "resultSet": {
+        "data": [
+          {
+            "region.name": "云南省本级",
+            "paybook.count": "7218"
+          },
+          {
+            "region.name": "昆明市本级",
+            "paybook.count": "30"
+          },
+          {
+            "region.name": "五华区",
+            "paybook.count": "16"
+          },
+          {
+            "region.name": "古城区",
+            "paybook.count": "4"
+          }
+        ]
+      }
+    },
+    {
+      "name": "按单位分组",
+      "query": {
+        "measures": [
+          "paybook.count",
+          "paybook.total_amount"
+        ],
+        "dimensions": [
+          "agency.name"
+        ],
+        "limit": 10
+      },
+      "resultSet": {
+        "data": [
+          {
+            "agency.name": "测试单位0831",
+            "paybook.count": "1301",
+            "paybook.total_amount": "203384.66"
+          },
+          {
+            "agency.name": "通用测试单位0801",
+            "paybook.count": "1299",
+            "paybook.total_amount": "590215.72"
+          },
+          {
+            "agency.name": "saas单位0927名称变更",
+            "paybook.count": "1163",
+            "paybook.total_amount": "1794282.860368"
+          },
+          {
+            "agency.name": "测试测试环境0115",
+            "paybook.count": "969",
+            "paybook.total_amount": "79658240.88"
+          },
+          {
+            "agency.name": "医保测试单位改名",
+            "paybook.count": "478",
+            "paybook.total_amount": "269285.89"
+          },
+          {
+            "agency.name": "通用单位168",
+            "paybook.count": "465",
+            "paybook.total_amount": "83273.322765"
+          },
+          {
+            "agency.name": "发展改革委员会",
+            "paybook.count": "394",
+            "paybook.total_amount": "114341869.74"
+          },
+          {
+            "agency.name": "考试院测试0615",
+            "paybook.count": "203",
+            "paybook.total_amount": "1363023.108"
+          },
+          {
+            "agency.name": "年结测试单位瀚高20241014",
+            "paybook.count": "161",
+            "paybook.total_amount": "76717"
+          },
+          {
+            "agency.name": "云南测试单位",
+            "paybook.count": "140",
+            "paybook.total_amount": "336230.51"
+          }
+        ]
+      }
+    },
+    {
+      "name": "按填制月份分组",
+      "query": {
+        "measures": [
+          "paybook.count"
+        ],
+        "dimensions": [
+          "paybook.fill_date.month"
+        ]
+      },
+      "resultSet": {
+        "data": [
+          {
+            "paybook.fill_date.month": "2023-01-01T00:00:00.000",
+            "paybook.count": "7",
+            "paybook.fill_date": "2023-01-01T00:00:00.000"
+          },
+          {
+            "paybook.fill_date.month": "2023-02-01T00:00:00.000",
+            "paybook.count": "26",
+            "paybook.fill_date": "2023-02-01T00:00:00.000"
+          },
+          {
+            "paybook.fill_date.month": "2023-03-01T00:00:00.000",
+            "paybook.count": "128",
+            "paybook.fill_date": "2023-03-01T00:00:00.000"
+          },
+          {
+            "paybook.fill_date.month": "2023-04-01T00:00:00.000",
+            "paybook.count": "48",
+            "paybook.fill_date": "2023-04-01T00:00:00.000"
+          },
+          {
+            "paybook.fill_date.month": "2023-05-01T00:00:00.000",
+            "paybook.count": "66",
+            "paybook.fill_date": "2023-05-01T00:00:00.000"
+          },
+          {
+            "paybook.fill_date.month": "2023-06-01T00:00:00.000",
+            "paybook.count": "323",
+            "paybook.fill_date": "2023-06-01T00:00:00.000"
+          },
+          {
+            "paybook.fill_date.month": "2023-07-01T00:00:00.000",
+            "paybook.count": "108",
+            "paybook.fill_date": "2023-07-01T00:00:00.000"
+          },
+          {
+            "paybook.fill_date.month": "2023-08-01T00:00:00.000",
+            "paybook.count": "52",
+            "paybook.fill_date": "2023-08-01T00:00:00.000"
+          },
+          {
+            "paybook.fill_date.month": "2023-09-01T00:00:00.000",
+            "paybook.count": "1190",
+            "paybook.fill_date": "2023-09-01T00:00:00.000"
+          },
+          {
+            "paybook.fill_date.month": "2023-10-01T00:00:00.000",
+            "paybook.count": "33",
+            "paybook.fill_date": "2023-10-01T00:00:00.000"
+          },
+          {
+            "paybook.fill_date.month": "2023-11-01T00:00:00.000",
+            "paybook.count": "68",
+            "paybook.fill_date": "2023-11-01T00:00:00.000"
+          },
+          {
+            "paybook.fill_date.month": "2023-12-01T00:00:00.000",
+            "paybook.count": "274",
+            "paybook.fill_date": "2023-12-01T00:00:00.000"
+          },
+          {
+            "paybook.fill_date.month": "2024-01-01T00:00:00.000",
+            "paybook.count": "45",
+            "paybook.fill_date": "2024-01-01T00:00:00.000"
+          },
+          {
+            "paybook.fill_date.month": "2024-02-01T00:00:00.000",
+            "paybook.count": "39",
+            "paybook.fill_date": "2024-02-01T00:00:00.000"
+          },
+          {
+            "paybook.fill_date.month": "2024-03-01T00:00:00.000",
+            "paybook.count": "103",
+            "paybook.fill_date": "2024-03-01T00:00:00.000"
+          },
+          {
+            "paybook.fill_date.month": "2024-04-01T00:00:00.000",
+            "paybook.count": "62",
+            "paybook.fill_date": "2024-04-01T00:00:00.000"
+          },
+          {
+            "paybook.fill_date.month": "2024-05-01T00:00:00.000",
+            "paybook.count": "192",
+            "paybook.fill_date": "2024-05-01T00:00:00.000"
+          },
+          {
+            "paybook.fill_date.month": "2024-06-01T00:00:00.000",
+            "paybook.count": "56",
+            "paybook.fill_date": "2024-06-01T00:00:00.000"
+          },
+          {
+            "paybook.fill_date.month": "2024-07-01T00:00:00.000",
+            "paybook.count": "89",
+            "paybook.fill_date": "2024-07-01T00:00:00.000"
+          },
+          {
+            "paybook.fill_date.month": "2024-08-01T00:00:00.000",
+            "paybook.count": "1562",
+            "paybook.fill_date": "2024-08-01T00:00:00.000"
+          },
+          {
+            "paybook.fill_date.month": "2024-09-01T00:00:00.000",
+            "paybook.count": "135",
+            "paybook.fill_date": "2024-09-01T00:00:00.000"
+          },
+          {
+            "paybook.fill_date.month": "2024-10-01T00:00:00.000",
+            "paybook.count": "372",
+            "paybook.fill_date": "2024-10-01T00:00:00.000"
+          },
+          {
+            "paybook.fill_date.month": "2024-11-01T00:00:00.000",
+            "paybook.count": "678",
+            "paybook.fill_date": "2024-11-01T00:00:00.000"
+          },
+          {
+            "paybook.fill_date.month": "2024-12-01T00:00:00.000",
+            "paybook.count": "358",
+            "paybook.fill_date": "2024-12-01T00:00:00.000"
+          },
+          {
+            "paybook.fill_date.month": "2025-01-01T00:00:00.000",
+            "paybook.count": "117",
+            "paybook.fill_date": "2025-01-01T00:00:00.000"
+          },
+          {
+            "paybook.fill_date.month": "2025-02-01T00:00:00.000",
+            "paybook.count": "57",
+            "paybook.fill_date": "2025-02-01T00:00:00.000"
+          },
+          {
+            "paybook.fill_date.month": "2025-03-01T00:00:00.000",
+            "paybook.count": "61",
+            "paybook.fill_date": "2025-03-01T00:00:00.000"
+          },
+          {
+            "paybook.fill_date.month": "2025-04-01T00:00:00.000",
+            "paybook.count": "57",
+            "paybook.fill_date": "2025-04-01T00:00:00.000"
+          },
+          {
+            "paybook.fill_date.month": "2025-05-01T00:00:00.000",
+            "paybook.count": "29",
+            "paybook.fill_date": "2025-05-01T00:00:00.000"
+          },
+          {
+            "paybook.fill_date.month": "2025-06-01T00:00:00.000",
+            "paybook.count": "85",
+            "paybook.fill_date": "2025-06-01T00:00:00.000"
+          },
+          {
+            "paybook.fill_date.month": "2025-07-01T00:00:00.000",
+            "paybook.count": "44",
+            "paybook.fill_date": "2025-07-01T00:00:00.000"
+          },
+          {
+            "paybook.fill_date.month": "2025-08-01T00:00:00.000",
+            "paybook.count": "15",
+            "paybook.fill_date": "2025-08-01T00:00:00.000"
+          },
+          {
+            "paybook.fill_date.month": "2025-09-01T00:00:00.000",
+            "paybook.count": "51",
+            "paybook.fill_date": "2025-09-01T00:00:00.000"
+          },
+          {
+            "paybook.fill_date.month": "2025-10-01T00:00:00.000",
+            "paybook.count": "71",
+            "paybook.fill_date": "2025-10-01T00:00:00.000"
+          },
+          {
+            "paybook.fill_date.month": "2025-11-01T00:00:00.000",
+            "paybook.count": "24",
+            "paybook.fill_date": "2025-11-01T00:00:00.000"
+          },
+          {
+            "paybook.fill_date.month": "2025-12-01T00:00:00.000",
+            "paybook.count": "44",
+            "paybook.fill_date": "2025-12-01T00:00:00.000"
+          },
+          {
+            "paybook.fill_date.month": "2026-01-01T00:00:00.000",
+            "paybook.count": "33",
+            "paybook.fill_date": "2026-01-01T00:00:00.000"
+          },
+          {
+            "paybook.fill_date.month": "2026-02-01T00:00:00.000",
+            "paybook.count": "11",
+            "paybook.fill_date": "2026-02-01T00:00:00.000"
+          },
+          {
+            "paybook.fill_date.month": "2026-03-01T00:00:00.000",
+            "paybook.count": "107",
+            "paybook.fill_date": "2026-03-01T00:00:00.000"
+          },
+          {
+            "paybook.fill_date.month": "2026-04-01T00:00:00.000",
+            "paybook.count": "150",
+            "paybook.fill_date": "2026-04-01T00:00:00.000"
+          },
+          {
+            "paybook.fill_date.month": "2026-05-01T00:00:00.000",
+            "paybook.count": "74",
+            "paybook.fill_date": "2026-05-01T00:00:00.000"
+          },
+          {
+            "paybook.fill_date.month": "2026-06-01T00:00:00.000",
+            "paybook.count": "94",
+            "paybook.fill_date": "2026-06-01T00:00:00.000"
+          },
+          {
+            "paybook.fill_date.month": "2026-07-01T00:00:00.000",
+            "paybook.count": "55",
+            "paybook.fill_date": "2026-07-01T00:00:00.000"
+          },
+          {
+            "paybook.fill_date.month": "2026-08-01T00:00:00.000",
+            "paybook.count": "14",
+            "paybook.fill_date": "2026-08-01T00:00:00.000"
+          },
+          {
+            "paybook.fill_date.month": "2026-09-01T00:00:00.000",
+            "paybook.count": "61",
+            "paybook.fill_date": "2026-09-01T00:00:00.000"
+          }
+        ]
+      }
+    },
+    {
+      "name": "按状态和业务类型交叉",
+      "query": {
+        "measures": [
+          "paybook.count",
+          "paybook.total_amount"
+        ],
+        "dimensions": [
+          "paybook.state",
+          "paybook.bus_type"
+        ]
+      },
+      "resultSet": {
+        "data": [
+          {
+            "paybook.state": "1",
+            "paybook.bus_type": "1",
+            "paybook.count": "2928",
+            "paybook.total_amount": "1632574.94"
+          },
+          {
+            "paybook.state": "3",
+            "paybook.bus_type": "1",
+            "paybook.count": "2329",
+            "paybook.total_amount": "60986280.740368"
+          },
+          {
+            "paybook.state": "2",
+            "paybook.bus_type": "2",
+            "paybook.count": "791",
+            "paybook.total_amount": "50047813.184"
+          },
+          {
+            "paybook.state": "1",
+            "paybook.bus_type": "2",
+            "paybook.count": "651",
+            "paybook.total_amount": "22057612.017465"
+          },
+          {
+            "paybook.state": "3",
+            "paybook.bus_type": "2",
+            "paybook.count": "357",
+            "paybook.total_amount": "65129904.5893"
+          },
+          {
+            "paybook.state": "2",
+            "paybook.bus_type": "1",
+            "paybook.count": "192",
+            "paybook.total_amount": "309814.61"
+          },
+          {
+            "paybook.state": "1",
+            "paybook.bus_type": "4",
+            "paybook.count": "12",
+            "paybook.total_amount": "277.04"
+          },
+          {
+            "paybook.state": "3",
+            "paybook.bus_type": "4",
+            "paybook.count": "4",
+            "paybook.total_amount": "78.76"
+          },
+          {
+            "paybook.state": "1",
+            "paybook.bus_type": "6",
+            "paybook.count": "3",
+            "paybook.total_amount": "10"
+          },
+          {
+            "paybook.state": "3",
+            "paybook.bus_type": "6",
+            "paybook.count": "1",
+            "paybook.total_amount": "2"
+          }
+        ]
+      }
+    },
+    {
+      "name": "2026年缴款趋势",
+      "query": {
+        "measures": [
+          "paybook.count"
+        ],
+        "timeDimensions": [
+          {
+            "dimension": "paybook.fill_date",
+            "dateRange": [
+              "2026-01-01",
+              "2026-12-31"
+            ],
+            "granularity": "month"
+          }
+        ]
+      },
+      "resultSet": {
+        "data": [
+          {
+            "paybook.fill_date.month": "2026-01-01T00:00:00.000",
+            "paybook.count": "33",
+            "paybook.fill_date": "2026-01-01T00:00:00.000"
+          },
+          {
+            "paybook.fill_date.month": "2026-02-01T00:00:00.000",
+            "paybook.count": "11",
+            "paybook.fill_date": "2026-02-01T00:00:00.000"
+          },
+          {
+            "paybook.fill_date.month": "2026-03-01T00:00:00.000",
+            "paybook.count": "107",
+            "paybook.fill_date": "2026-03-01T00:00:00.000"
+          },
+          {
+            "paybook.fill_date.month": "2026-04-01T00:00:00.000",
+            "paybook.count": "150",
+            "paybook.fill_date": "2026-04-01T00:00:00.000"
+          },
+          {
+            "paybook.fill_date.month": "2026-05-01T00:00:00.000",
+            "paybook.count": "74",
+            "paybook.fill_date": "2026-05-01T00:00:00.000"
+          },
+          {
+            "paybook.fill_date.month": "2026-06-01T00:00:00.000",
+            "paybook.count": "94",
+            "paybook.fill_date": "2026-06-01T00:00:00.000"
+          },
+          {
+            "paybook.fill_date.month": "2026-07-01T00:00:00.000",
+            "paybook.count": "55",
+            "paybook.fill_date": "2026-07-01T00:00:00.000"
+          },
+          {
+            "paybook.fill_date.month": "2026-08-01T00:00:00.000",
+            "paybook.count": "14",
+            "paybook.fill_date": "2026-08-01T00:00:00.000"
+          },
+          {
+            "paybook.fill_date.month": "2026-09-01T00:00:00.000",
+            "paybook.count": "61",
+            "paybook.fill_date": "2026-09-01T00:00:00.000"
+          }
+        ]
+      }
+    }
+  ]
+}

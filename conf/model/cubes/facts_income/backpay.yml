@@ -1,0 +1,137 @@
+# 退付（FNE_BACKPAY，325 行）—— 新增主题③（用户指定三表核心之一）
+# 覆盖：退库标志/退库时间/退款方式（用户指定）+ 区划/单位/金额。
+# ③-1 核实结论（db.js 实测）：
+#   325 行，FID 主键唯一；FAGENIDCODE→FAB_AGEN matchkey 100%；
+#   退付金额 FTOTALAMT 合计 452,326.725；缴款金额 FPAYAMT 合计 878,614.56；
+#   FRGNCODE 530000=322 / 530100=3，无空值。
+#   本表无 FSTATE 状态列——退库标志/退库时间映射经用户拍板（AskUserQuestion
+#   2026-09-23）：标志 FISCONFIRM+FISSEND 两建；时间 FFUNDSRECDATE+FAPPLYDATE
+#   两建、时间轴默认到账。
+# 口径分布实测：
+#   FISCONFIRM 是否确认 1=48 / 0=277（退付流程完成确认，退库标志-完成口径）；
+#   FISSEND 是否发送银行 1=123 / 0=202（流程中间态，退库标志-过程口径）；
+#   FPAYMODE 缴款方式（=退款方式）柜台缴款 311 / 网上缴款 1 / 自助终端 13；
+#   FAPPLYDATE 退付申请日期 325/325 全覆盖（2022-03-31~2026-08-05）；
+#   FFUNDSRECDATE 资金到账日期 322/325（3 笔空；48 笔已确认全部有值）。
+# 敏感字段（docs/11 脱敏标准项，本主题不建模）：FRECACCTNAME 收款人名称
+#   （退款收款人=原缴款人，个人敏感）/FRECACCT 收款人账号/FIDNO 身份证号/
+#   FPAYERTEL/FADDRESS/FRECACCTBANKNO 均不建维度、不对外暴露。
+cubes:
+  - name: backpay
+    title: 退付
+    description: |
+      退付表 FNE_BACKPAY，每行一笔退付申请（FID 唯一）。
+      退库标志用 is_confirm（完成确认）/is_send（流程中间态）；
+      退库时间用 funds_rec_date（资金到账，默认）/apply_date（申请日期）；
+      退款方式用 pay_mode（柜台缴款/网上缴款/自助终端文本值）。
+    public: true
+    meta:
+      ai_context: >-
+        退付。退库标志用 is_confirm（是否确认，1 已确认 48/325——退付流程
+        完成确认，"已退库"口径）或 is_send（是否发送银行，123/325——流程
+        中间态）；退库时间默认用 funds_rec_date（资金到账日期，3 笔空，
+        严格口径）或 apply_date（退付申请日期，全覆盖）；退款方式用 pay_mode
+        （柜台缴款/网上缴款/自助终端）。退付金额用 total_amt；缴款金额用
+        pay_amt。区划用 rgn_code/rgn_name（行级权限维度 rgn_code）；
+        单位用 agen_code/agen_name。
+
+    sql_table: FNE_BACKPAY
+
+    joins:
+      - name: agency
+        sql: "{CUBE}.\"FAGENIDCODE\" = {agency}.\"FAGENIDCODE\""
+        relationship: many_to_one
+
+    measures:
+      # drill_members（2026-09-24 补，用户拍板与 treasury 同款）：
+      # 点指标下钻明细——退付笔数/退付金额点击单元格返回明细字段。
+      - name: count
+        title: 退付笔数
+        drill_members: [backpay.apply_date, backpay.agen_name,
+                        backpay.pay_mode, backpay.rgn_name]
+        type: count
+      - name: total_amt
+        title: 退付金额(元)
+        description: sum(FTOTALAMT)，实测合计 452,326.725
+        drill_members: [backpay.apply_date, backpay.funds_rec_date,
+                        backpay.agen_name, backpay.pay_mode]
+        sql: "{CUBE}.\"FTOTALAMT\""
+        type: sum
+      - name: pay_amt
+        title: 缴款金额(元)
+        description: sum(FPAYAMT)，实测合计 878,614.56
+        sql: "{CUBE}.\"FPAYAMT\""
+        type: sum
+
+    dimensions:
+      - name: fid
+        title: 退付ID
+        sql: "{CUBE}.\"FID\""
+        type: string
+        primary_key: true
+        public: false    # 技术主键不对外
+      - name: rgn_code
+        title: 区划编码
+        description: FRGNCODE（行级权限维度），实测 530000=322 / 530100=3
+        sql: "{CUBE}.\"FRGNCODE\""
+        type: string
+      - name: rgn_name
+        title: 区划名称
+        description: FRGNNAME
+        sql: "{CUBE}.\"FRGNNAME\""
+        type: string
+      - name: agen_code
+        title: 单位编码
+        description: FAGENCODE
+        sql: "{CUBE}.\"FAGENCODE\""
+        type: string
+      - name: agen_name
+        title: 单位名称
+        description: FAGENNAME
+        sql: "{CUBE}.\"FAGENNAME\""
+        type: string
+      # 退库标志两建（AskUserQuestion 拍板 2026-09-23）：本表无 FSTATE，
+      # FISCONFIRM/FISSEND 两维度并存，按词典/问数场景选用。
+      - name: is_confirm
+        title: 是否确认(退库标志)
+        description: FISCONFIRM，1 已确认 / 0 未确认（实测 48/277）——退付流程完成确认，"已退库"口径
+        sql: "{CUBE}.\"FISCONFIRM\""
+        type: string
+      - name: is_send
+        title: 是否发送银行(退库标志)
+        description: FISSEND，1 已发送 / 0 未发送（实测 123/202）——流程中间态口径
+        sql: "{CUBE}.\"FISSEND\""
+        type: string
+      # 退库时间两建（AskUserQuestion 拍板 2026-09-23）：时间轴默认到账。
+      - name: funds_rec_date
+        title: 资金到账日期
+        description: FFUNDSRECDATE（VARCHAR2 'YYYY-MM-DD'）转日期，退库时间严格口径（3 笔空；48 笔已确认全部有值）——默认时间轴
+        sql: "TO_DATE({CUBE}.\"FFUNDSRECDATE\", 'YYYY-MM-DD')"
+        type: time
+      - name: apply_date
+        title: 退付申请日期
+        description: FAPPLYDATE（VARCHAR2 'YYYY-MM-DD'）转日期，325/325 全覆盖（2022-03-31~2026-08-05）
+        sql: "TO_DATE({CUBE}.\"FAPPLYDATE\", 'YYYY-MM-DD')"
+        type: time
+      - name: pay_mode
+        title: 退款方式
+        description: FPAYMODE 缴款方式（退款方式口径），柜台缴款 311 / 网上缴款 1 / 自助终端 13
+        sql: "{CUBE}.\"FPAYMODE\""
+        type: string
+
+# 行级权限：双互补策略（与 cbill/paybook/daybook/treasury 同款），
+# 区划维度用 rgn_code（FRGNCODE 无空值）。
+    access_policy:
+      - group: "*"
+        conditions:
+          - if: "{ securityContext.region_code }"
+        row_level:
+          filters:
+            - member: rgn_code
+              operator: equals
+              values: ["{ securityContext.region_code }"]
+      - group: "*"
+        conditions:
+          - if: "{ not securityContext.region_code }"
+        row_level:
+          allow_all: true

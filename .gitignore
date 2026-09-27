@@ -1,0 +1,25 @@
+# 机密与本地环境
+.env
+.env.*
+!.env.example
+.claude/settings.local.json
+
+# 运行时缓存（.cubestore 68M 预聚合二进制 / logs 37M 推理与桥日志）
+conf/.cubestore/
+logs/
+*.log
+
+# Python
+__pycache__/
+*.pyc
+
+# 临时 / 调试残留
+.tmp-*/
+regress/tmp-query.json
+query.json
+*.bak.*
+cube-repo/
+
+# 系统
+Thumbs.db
+.DS_Store

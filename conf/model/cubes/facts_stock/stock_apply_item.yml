@@ -1,0 +1,54 @@
+# 申领明细—— P4（docs/cube-dataqa-topic/01-design.md §5 主子表处理原则）
+# 明细表一行 = 申领单下的单个票种（FPID 关联 UBE_STOCK_APPLY.FID）。
+# P4 核实：count distinct FPID = 202（主表 201 行，明细 237 行）。belongs_to
+# join 为 LEFT JOIN，明细行 join 主表属性时为 null，不影响主表口径。
+# 本表无区划/单位列：区划属性经 belongs_to join 主表传递；行级权限不单独
+# 声明（无区划列可过滤）——join 查询时经主表策略交集生效（docs/11）。
+# 敏感字段：无。
+cubes:
+  - name: stock_apply_item
+    title: 领票申领明细
+    description: |
+      领票申领的分票种明细（UBE_STOCK_APPLY_ITEM，237 行）。
+      每行 = 一张申领单下的单个票种。区划/单位经 join stock_apply 获取。
+    meta:
+      ai_context: >-
+        明细粒度为"申领单×票种"（FPID 关联 UBE_STOCK_APPLY.FID）。审批数用
+        appr_num（sum FAPPROVENUM），票种分析按 bill_code 分组。
+        区划/单位/状态属性经 join stock_apply 获取（维度向下传）。
+
+    sql_table: UBE_STOCK_APPLY_ITEM
+
+    joins:
+      # belongs_to 主表（P4 沿用 cbill_item 同款模式）
+      - name: stock_apply
+        sql: "{CUBE}.\"FPID\" = {stock_apply}.\"FID\""
+        relationship: many_to_one
+
+    measures:
+      - name: count
+        title: 明细行数
+        type: count
+      - name: total_amount
+        title: 申领金额(元)
+        description: sum(FAMT)（明细粒度金额，主表无金额列）
+        sql: "{CUBE}.\"FAMT\""
+        type: sum
+      - name: appr_num
+        title: 审批数(份)
+        description: sum(FAPPROVENUM)（成员名短名避 11g 30 字符上限）
+        sql: "{CUBE}.\"FAPPROVENUM\""
+        type: sum
+
+    dimensions:
+      - name: fid
+        title: 明细ID
+        sql: "{CUBE}.\"FID\""
+        type: string
+        primary_key: true
+        public: false    # 技术主键不对外
+      - name: bill_code
+        title: 票种ID
+        description: FBILLID 关联 bill_type.id（申领明细的票种）
+        sql: "{CUBE}.\"FBILLID\""
+        type: string

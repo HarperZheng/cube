@@ -1,0 +1,40 @@
+services:
+  cube:
+    build: .
+    image: cube-oracle:local     # 构建出的镜像就叫这个
+    container_name: cube
+    ports:
+      - 4000:4000
+      - 15432:15432
+    env_file:
+      - .env
+    environment:
+      - CUBEJS_DEV_MODE=true
+      - TZ=Asia/Shanghai   # 容器日志中国时区（14 号日志规格 R2 拍板 9）；cubestore（Rust）是否吃 TZ 待冒烟
+    volumes:
+      - ./conf:/cube/conf
+      - ./preload.js:/preload.js
+      - ./agent:/cube/agent
+      - ./regress:/cube/regress
+      # drill 下钻增强（docs/cube-dataqa-topic/08 第五节）：挂载覆盖 playground
+      # 文件，镜像本身不动；index.html 是镜像原文件的副本+注入 script 标签
+      # （升级镜像后用 playground-ext/sync-index.sh 重新生成）
+      - ./playground-ext/index.html:/cube/node_modules/@cubejs-backend/server-core/playground/index.html:ro
+      - ./playground-ext/ext-drill.js:/cube/node_modules/@cubejs-backend/server-core/playground/ext-drill.js:ro
+      # chat 聊天窗（docs/cube-dataqa-topic/11 计划 C2）：同款挂载覆盖；
+      # 后台 chat 服务已下线（v2：host 桥 chat/chat_server.py 占 4100，见 11-v2 计划 §9.1）
+      - ./playground-ext/ext-chat.js:/cube/node_modules/@cubejs-backend/server-core/playground/ext-chat.js:ro
+      # 固化到看板（docs/cube-dataqa-topic/15）：同款单文件挂载；路由与存储由
+      # preload.js → conf/embed/embed-patch.js 承载，此处只注入创作面 JS
+      - ./playground-ext/ext-publish.js:/cube/node_modules/@cubejs-backend/server-core/playground/ext-publish.js:ro
+    networks:
+      - cube-net
+
+# 公司内网占用 172.18.0.0/16，Docker 网段若与其冲突，
+# 容器将无法访问内网 Oracle（172.18.163.68），故固定为不冲突网段
+networks:
+  cube-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.220.0/24

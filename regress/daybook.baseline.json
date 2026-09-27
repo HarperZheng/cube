@@ -1,0 +1,242 @@
+{
+  "savedAt": "2026-09-23T09:32:56.830Z",
+  "results": [
+    {
+      "name": "收入日结-三口径并存",
+      "query": {
+        "measures": [
+          "daybook_view.count",
+          "daybook_view.income_amt",
+          "daybook_view.expense_amt",
+          "daybook_view.net_amt"
+        ]
+      },
+      "resultSet": {
+        "data": [
+          {
+            "daybook_view.count": "697",
+            "daybook_view.income_amt": "30200711.05",
+            "daybook_view.expense_amt": "200",
+            "daybook_view.net_amt": "30200511.05"
+          }
+        ]
+      }
+    },
+    {
+      "name": "收入日结-收入类别下钻",
+      "query": {
+        "measures": [
+          "daybook_view.income_amt"
+        ],
+        "dimensions": [
+          "daybook_view.income_sort_name"
+        ],
+        "order": {
+          "daybook_view.income_amt": "desc"
+        },
+        "limit": 10
+      },
+      "resultSet": {
+        "data": [
+          {
+            "daybook_view.income_sort_name": "专项收入",
+            "daybook_view.income_amt": "29207974.9"
+          },
+          {
+            "daybook_view.income_sort_name": "政府性基金收入",
+            "daybook_view.income_amt": "989710.15"
+          },
+          {
+            "daybook_view.income_sort_name": "行政事业性收费收入",
+            "daybook_view.income_amt": "3026"
+          }
+        ]
+      }
+    },
+    {
+      "name": "收入日结-按收入日期分组",
+      "query": {
+        "measures": [
+          "daybook_view.income_amt"
+        ],
+        "dimensions": [
+          "daybook_view.received_date"
+        ],
+        "order": {
+          "daybook_view.received_date": "asc"
+        },
+        "limit": 10
+      },
+      "resultSet": {
+        "data": [
+          {
+            "daybook_view.received_date": "2023-02-02T00:00:00.000",
+            "daybook_view.income_amt": "202"
+          },
+          {
+            "daybook_view.received_date": "2023-02-03T00:00:00.000",
+            "daybook_view.income_amt": "22224"
+          },
+          {
+            "daybook_view.received_date": "2023-03-03T00:00:00.000",
+            "daybook_view.income_amt": "222"
+          },
+          {
+            "daybook_view.received_date": "2023-03-27T00:00:00.000",
+            "daybook_view.income_amt": "321"
+          },
+          {
+            "daybook_view.received_date": "2023-03-30T00:00:00.000",
+            "daybook_view.income_amt": "3300"
+          },
+          {
+            "daybook_view.received_date": "2023-04-18T00:00:00.000",
+            "daybook_view.income_amt": "222"
+          },
+          {
+            "daybook_view.received_date": "2023-04-19T00:00:00.000",
+            "daybook_view.income_amt": "311"
+          },
+          {
+            "daybook_view.received_date": "2023-04-20T00:00:00.000",
+            "daybook_view.income_amt": "2164"
+          },
+          {
+            "daybook_view.received_date": "2023-04-21T00:00:00.000",
+            "daybook_view.income_amt": "2489"
+          },
+          {
+            "daybook_view.received_date": "2023-05-30T00:00:00.000",
+            "daybook_view.income_amt": "800"
+          }
+        ]
+      }
+    },
+    {
+      "name": "收入日结-收入区划与单位下钻",
+      "query": {
+        "measures": [
+          "daybook_view.income_amt",
+          "daybook_view.count"
+        ],
+        "dimensions": [
+          "daybook_view.im_rgn_name",
+          "daybook_view.im_agen_name"
+        ],
+        "order": {
+          "daybook_view.income_amt": "desc"
+        },
+        "limit": 10
+      },
+      "resultSet": {
+        "data": [
+          {
+            "daybook_view.im_rgn_name": "中央",
+            "daybook_view.im_agen_name": "中央记账单位",
+            "daybook_view.income_amt": null,
+            "daybook_view.count": "1"
+          },
+          {
+            "daybook_view.im_rgn_name": "云南省本级",
+            "daybook_view.im_agen_name": "云南发展改革委员会",
+            "daybook_view.income_amt": "29539778.11",
+            "daybook_view.count": "144"
+          },
+          {
+            "daybook_view.im_rgn_name": "云南省本级",
+            "daybook_view.im_agen_name": "云南通用测试单位0801",
+            "daybook_view.income_amt": "437767.66",
+            "daybook_view.count": "102"
+          },
+          {
+            "daybook_view.im_rgn_name": "云南省本级",
+            "daybook_view.im_agen_name": "测试云南测试环境",
+            "daybook_view.income_amt": "125351.4",
+            "daybook_view.count": "62"
+          },
+          {
+            "daybook_view.im_rgn_name": "云南省本级",
+            "daybook_view.im_agen_name": "云南医保测试单位改名",
+            "daybook_view.income_amt": "23576.38",
+            "daybook_view.count": "37"
+          },
+          {
+            "daybook_view.im_rgn_name": "云南省本级",
+            "daybook_view.im_agen_name": "通用单位168",
+            "daybook_view.income_amt": "19921.7",
+            "daybook_view.count": "77"
+          },
+          {
+            "daybook_view.im_rgn_name": "云南省本级",
+            "daybook_view.im_agen_name": "发展改革委员会",
+            "daybook_view.income_amt": "9722",
+            "daybook_view.count": "28"
+          },
+          {
+            "daybook_view.im_rgn_name": "云南省本级",
+            "daybook_view.im_agen_name": "云南测试单位",
+            "daybook_view.income_amt": "7691.22",
+            "daybook_view.count": "34"
+          },
+          {
+            "daybook_view.im_rgn_name": "云南省本级",
+            "daybook_view.im_agen_name": "云南反算测试单位20250401",
+            "daybook_view.income_amt": "5013.2",
+            "daybook_view.count": "21"
+          },
+          {
+            "daybook_view.im_rgn_name": "云南省本级",
+            "daybook_view.im_agen_name": "云南一通用单位0303",
+            "daybook_view.income_amt": "4964",
+            "daybook_view.count": "17"
+          }
+        ]
+      }
+    },
+    {
+      "name": "收入日结-收款账户下钻",
+      "query": {
+        "measures": [
+          "daybook_view.income_amt"
+        ],
+        "dimensions": [
+          "daybook_view.acct_name",
+          "daybook_view.acct_bank"
+        ],
+        "order": {
+          "daybook_view.income_amt": "desc"
+        },
+        "limit": 5
+      },
+      "resultSet": {
+        "data": [
+          {
+            "daybook_view.acct_name": "云南省财政厅",
+            "daybook_view.acct_bank": "建设银行昆明城北支行",
+            "daybook_view.income_amt": "30170627.84"
+          },
+          {
+            "daybook_view.acct_name": "云南省财政厅非税收入收缴专户",
+            "daybook_view.acct_bank": "中国工商银行昆明正义支行",
+            "daybook_view.income_amt": "15569.95"
+          },
+          {
+            "daybook_view.acct_name": "财政厅",
+            "daybook_view.acct_bank": "建设银行昆明城北支行",
+            "daybook_view.income_amt": "9729.26"
+          },
+          {
+            "daybook_view.acct_name": "测试云南省中国人民银行国库账户",
+            "daybook_view.acct_bank": "云南省中国人民银行国库账户开户",
+            "daybook_view.income_amt": "4373"
+          },
+          {
+            "daybook_view.acct_name": "中国人民银行国库账户",
+            "daybook_view.acct_bank": "云南省中国人民银行国库账户开户",
+            "daybook_view.income_amt": "400"
+          }
+        ]
+      }
+    }
+  ]
+}

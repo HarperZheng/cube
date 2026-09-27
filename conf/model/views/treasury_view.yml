@@ -1,0 +1,57 @@
+# 缴库交付视图—— 新增主题③（用户指定三表核心之一）
+# 主子表两事实：treasury（缴库单主表）+ treasury_item（预算科目明细，
+# 经 one_to_many join）。明细度量 item_count/item_amt 与主表 count/total_amt
+# 不重名（多事实视图同款规避）；预算科目 sub_code/sub_name 只在明细。
+views:
+  - name: treasury_view
+    title: 缴库（交付视图）
+    description: 缴库单主表（银行/账户/预算级次/金额/状态）+ 预算科目明细；消费方统一从这里查
+    meta:
+      ai_context: >-
+        缴库交付视图。缴库单数用 count、缴库总金额用 total_amt；时间轴用
+        pay_date（缴款日期）；缴库状态用 status（实测 0=13/9=6/空1，语义
+        待业务确认）。付款银行编码用 pay_bank_code、付款行行号用 pay_bank_no；
+        收款银行编码用 rec_bank_code、开户行名称用 rec_bank_name；
+        国库收款账号用 rec_acct、账户名称用 rec_acct_name。预算级次用
+        sub_level/sub_level_name。归属区划用 belong_rgn_code；执收单位用
+        chg_agen_code/chg_agen_name；执收单位主数据名称/行业用
+        name/industry_name（agency join，FCHGAGENIDCODE 90% 匹配，
+        2 笔 miss 行该维度为 null）。预算科目下钻走明细：
+        treasury_item.sub_code/sub_name，明细份数/金额用
+        treasury_item.item_count/item_amt（4 笔孤儿明细不进主表侧查询）。
+    cubes:
+      - join_path: treasury
+        includes:
+          - count
+          - total_amt
+          - trans_no
+          - batch_no
+          - pay_date
+          - status
+          - pay_bank_code
+          - pay_bank_no
+          - rec_bank_code
+          - rec_bank_name
+          - rec_acct
+          - rec_acct_name
+          - rec_acct_type
+          - sub_level
+          - sub_level_name
+          - belong_rgn_code
+          - chg_rgn_code
+          - chg_agen_code
+          - chg_agen_name
+        excludes:
+          - fid              # 技术主键
+      - join_path: treasury.agency
+        includes:
+          - name
+          - industry_name
+      - join_path: treasury.treasury_item
+        includes:
+          - item_count
+          - item_amt
+          - sub_code
+          - sub_name
+        excludes:
+          - fid              # 技术主键

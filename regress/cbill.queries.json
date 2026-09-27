@@ -1,0 +1,275 @@
+[
+  {
+    "name": "全量记录数与去重笔数",
+    "query": {
+      "measures": [
+        "cbill.count",
+        "cbill.receipt_count"
+      ]
+    }
+  },
+  {
+    "name": "金额合计与均值",
+    "query": {
+      "measures": [
+        "cbill.total_amount",
+        "cbill.avg_amount"
+      ]
+    }
+  },
+  {
+    "name": "状态口径",
+    "query": {
+      "measures": [
+        "cbill.normal_count",
+        "cbill.void_count"
+      ]
+    }
+  },
+  {
+    "name": "业务金额口径",
+    "query": {
+      "measures": [
+        "cbill.regular_amt",
+        "cbill.ebill_paper_amt",
+        "cbill.offset_amt",
+        "cbill.direct_transfer_amt"
+      ]
+    }
+  },
+  {
+    "name": "收入业务金额",
+    "query": {
+      "measures": [
+        "cbill.income_amt"
+      ]
+    }
+  },
+  {
+    "name": "按票款月份分组",
+    "query": {
+      "measures": [
+        "cbill.receipt_count"
+      ],
+      "timeDimensions": [
+        {
+          "dimension": "cbill.bill_month",
+          "granularity": "month"
+        }
+      ],
+      "order": {
+        "cbill.bill_month": "asc"
+      }
+    }
+  },
+  {
+    "name": "按状态分组",
+    "query": {
+      "measures": [
+        "cbill.count"
+      ],
+      "dimensions": [
+        "cbill.state"
+      ]
+    }
+  },
+  {
+    "name": "按业务类型分组",
+    "query": {
+      "measures": [
+        "cbill.count"
+      ],
+      "dimensions": [
+        "cbill.bus_type"
+      ]
+    }
+  },
+  {
+    "name": "按票种名称分组(传递join)",
+    "query": {
+      "measures": [
+        "cbill.receipt_count"
+      ],
+      "dimensions": [
+        "bill_type.name"
+      ],
+      "limit": 10
+    }
+  },
+  {
+    "name": "年累计YTD(宏度量)",
+    "query": {
+      "measures": [
+        "cbill.amt_year_to_date"
+      ],
+      "timeDimensions": [
+        {
+          "dimension": "cbill.bill_date",
+          "dateRange": [
+            "2026-01-01",
+            "2026-12-31"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "按开票月份2026趋势",
+    "query": {
+      "measures": [
+        "cbill.total_amount"
+      ],
+      "timeDimensions": [
+        {
+          "dimension": "cbill.bill_date",
+          "granularity": "month",
+          "dateRange": [
+            "2026-01-01",
+            "2026-12-31"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "明细cube月表核对(泛化函数)",
+    "query": {
+      "measures": [
+        "cbill_item.count"
+      ],
+      "timeDimensions": [
+        {
+          "dimension": "cbill_item.bill_month",
+          "granularity": "month"
+        }
+      ],
+      "order": {
+        "cbill_item.bill_month": "asc"
+      }
+    }
+  },
+  {
+    "name": "下钻-票号查明细(belongs_to join)",
+    "query": {
+      "measures": [
+        "cbill_item.count",
+        "cbill_item.total_amount"
+      ],
+      "dimensions": [
+        "cbill_item.item_name"
+      ],
+      "filters": [
+        {
+          "member": "cbill.bill_no",
+          "operator": "equals",
+          "values": [
+            "0000000003"
+          ]
+        }
+      ],
+      "order": {
+        "cbill_item.item_name": "asc"
+      }
+    }
+  },
+  {
+    "name": "下钻-单票明细(bill_no+bill_month)",
+    "query": {
+      "measures": [
+        "cbill_item.count",
+        "cbill_item.total_amount"
+      ],
+      "dimensions": [
+        "cbill_item.item_name",
+        "cbill_item.item_code"
+      ],
+      "filters": [
+        {
+          "member": "cbill.bill_no",
+          "operator": "equals",
+          "values": [
+            "0000000003"
+          ]
+        },
+        {
+          "member": "cbill.bill_month",
+          "operator": "equals",
+          "values": [
+            "2025-01-01"
+          ]
+        }
+      ],
+      "order": {
+        "cbill_item.item_code": "asc"
+      }
+    }
+  },
+  {
+    "name": "下钻-作废票分项目(主表状态过滤)",
+    "query": {
+      "measures": [
+        "cbill_item.count",
+        "cbill_item.total_amount"
+      ],
+      "dimensions": [
+        "cbill_item.item_name"
+      ],
+      "filters": [
+        {
+          "member": "cbill.state",
+          "operator": "equals",
+          "values": [
+            "2"
+          ]
+        }
+      ],
+      "order": {
+        "cbill_item.item_name": "asc"
+      }
+    }
+  },
+  {
+    "name": "下钻-两步查询兜底(2026-09明细)",
+    "query": {
+      "measures": [
+        "cbill_item.item_count",
+        "cbill_item.total_amount"
+      ],
+      "dimensions": [
+        "cbill_item.item_name"
+      ],
+      "timeDimensions": [
+        {
+          "dimension": "cbill_item.created_date",
+          "dateRange": [
+            "2026-09-01",
+            "2026-09-30"
+          ]
+        }
+      ],
+      "order": {
+        "cbill_item.item_name": "asc"
+      }
+    }
+  },
+  {
+    "name": "日均开票与冲红(月切分)",
+    "query": {
+      "measures": [
+        "cbill.daily_avg",
+        "cbill.date_cnt",
+        "cbill.red_cnt",
+        "cbill.receipt_count"
+      ],
+      "timeDimensions": [
+        {
+          "dimension": "cbill.bill_month",
+          "dateRange": [
+            "2026-04-01",
+            "2026-04-30"
+          ]
+        }
+      ]
+    }
+  }
+]

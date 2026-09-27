@@ -1,0 +1,55 @@
+[
+  {
+    "name": "可疑票据总数与金额",
+    "query": {
+      "measures": ["suspicious.suspicious_count", "suspicious.total_amt"]
+    }
+  },
+  {
+    "name": "单据状态口径",
+    "query": {
+      "measures": ["suspicious.pending_count", "suspicious.processed_count", "suspicious.cleared_count"]
+    }
+  },
+  {
+    "name": "按区划分组（cube层）",
+    "query": {
+      "measures": ["suspicious.suspicious_count"],
+      "dimensions": ["suspicious.region_code"],
+      "limit": 10
+    }
+  },
+  {
+    "name": "按单位分组",
+    "query": {
+      "measures": ["suspicious.suspicious_count"],
+      "dimensions": ["suspicious.agen_name"],
+      "order": {"suspicious.suspicious_count": "desc"},
+      "limit": 10
+    }
+  },
+  {
+    "name": "按编制日期分组（近30天，month 粒度别名超11g上限不可用）",
+    "query": {
+      "measures": ["suspicious.suspicious_count"],
+      "dimensions": ["suspicious.compiled_date"],
+      "timeDimensions": [{"dimension": "suspicious.compiled_date", "dateRange": ["2026-08-24", "2026-09-23"]}],
+      "order": {"suspicious.compiled_date": "asc"},
+      "limit": 10
+    }
+  },
+  {
+    "name": "监管视图-区划下钻三口径",
+    "query": {
+      "measures": ["superv_view.suspicious_count", "superv_view.pending_count", "superv_view.processed_count"],
+      "dimensions": ["superv_view.region_name"],
+      "limit": 10
+    }
+  },
+  {
+    "name": "有异常用票的核销单数",
+    "query": {
+      "measures": ["suspicious.wo_cnt"]
+    }
+  }
+]

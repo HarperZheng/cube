@@ -1,0 +1,49 @@
+# 缴库单明细（FNE_AGEN_TREASURY_ITEM，28 行）—— 新增主题③（预算科目载体）
+# ③-1 核实结论（db.js grain 实测）：28 明细 / 24 distinct FPARENTID / 20 主表 /
+#   4 孤儿（FPARENTID 不在主表）/ 0 空值——经主表 treasury→treasury_item
+#   one_to_many join 查询时孤儿行不进结果（缴库单口径不受影响，存照）。
+# 命名：明细度量用 item_count/item_amt 避免与主表 count/total_amount（实际
+# total_amt）同名冲突（usage_view 多事实视图同款规避）。
+cubes:
+  - name: treasury_item
+    title: 缴库单明细
+    description: |
+      缴库单明细表 FNE_AGEN_TREASURY_ITEM，每行一条预算科目明细。
+      FPARENTID 关联主表 FID；4 笔孤儿行（主表外）不进主表侧查询。
+    public: true
+    meta:
+      ai_context: >-
+        缴库单明细（预算科目行）。明细份数用 item_count、明细金额用
+        item_amt；预算科目用 sub_code/sub_name。经主表 treasury 联查走
+        treasury.treasury_item 路径；孤儿明细行不进主表侧查询。
+
+    sql_table: FNE_AGEN_TREASURY_ITEM
+
+    measures:
+      - name: item_count
+        title: 明细份数
+        description: 明细行数（不去重，与主表缴库单数口径区分）
+        type: count
+      - name: item_amt
+        title: 明细金额(元)
+        description: sum(FAMT) 明细行金额合计
+        sql: "{CUBE}.\"FAMT\""
+        type: sum
+
+    dimensions:
+      - name: fid
+        title: 明细ID
+        sql: "{CUBE}.\"FID\""
+        type: string
+        primary_key: true
+        public: false    # 技术主键不对外
+      - name: sub_code
+        title: 预算科目编码
+        description: FSUBCODE
+        sql: "{CUBE}.\"FSUBCODE\""
+        type: string
+      - name: sub_name
+        title: 预算科目名称
+        description: FSUBNAME
+        sql: "{CUBE}.\"FSUBNAME\""
+        type: string

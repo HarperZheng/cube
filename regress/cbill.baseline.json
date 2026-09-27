@@ -1,0 +1,1112 @@
+{
+  "savedAt": "2026-09-23T08:43:13.582Z",
+  "results": [
+    {
+      "name": "全量记录数与去重笔数",
+      "query": {
+        "measures": [
+          "cbill.count",
+          "cbill.receipt_count"
+        ]
+      },
+      "resultSet": {
+        "data": [
+          {
+            "cbill.count": "32332",
+            "cbill.receipt_count": "32332"
+          }
+        ]
+      }
+    },
+    {
+      "name": "金额合计与均值",
+      "query": {
+        "measures": [
+          "cbill.total_amount",
+          "cbill.avg_amount"
+        ]
+      },
+      "resultSet": {
+        "data": [
+          {
+            "cbill.total_amount": "1219641751726.9",
+            "cbill.avg_amount": "37722434.48369724"
+          }
+        ]
+      }
+    },
+    {
+      "name": "状态口径",
+      "query": {
+        "measures": [
+          "cbill.normal_count",
+          "cbill.void_count"
+        ]
+      },
+      "resultSet": {
+        "data": [
+          {
+            "cbill.normal_count": "31606",
+            "cbill.void_count": "726"
+          }
+        ]
+      }
+    },
+    {
+      "name": "业务金额口径",
+      "query": {
+        "measures": [
+          "cbill.regular_amt",
+          "cbill.ebill_paper_amt",
+          "cbill.offset_amt",
+          "cbill.direct_transfer_amt"
+        ]
+      },
+      "resultSet": {
+        "data": [
+          {
+            "cbill.regular_amt": "19295844.19",
+            "cbill.ebill_paper_amt": "358809.89",
+            "cbill.offset_amt": "-533214.51",
+            "cbill.direct_transfer_amt": "1219622630287.3293"
+          }
+        ]
+      }
+    },
+    {
+      "name": "收入业务金额",
+      "query": {
+        "measures": [
+          "cbill.income_amt"
+        ]
+      },
+      "resultSet": {
+        "data": [
+          {
+            "cbill.income_amt": "18802126.28"
+          }
+        ]
+      }
+    },
+    {
+      "name": "按票款月份分组",
+      "query": {
+        "measures": [
+          "cbill.receipt_count"
+        ],
+        "timeDimensions": [
+          {
+            "dimension": "cbill.bill_month",
+            "granularity": "month"
+          }
+        ],
+        "order": {
+          "cbill.bill_month": "asc"
+        }
+      },
+      "resultSet": {
+        "data": [
+          {
+            "cbill.bill_month.month": "2023-02-01T00:00:00.000",
+            "cbill.receipt_count": "13",
+            "cbill.bill_month": "2023-02-01T00:00:00.000"
+          },
+          {
+            "cbill.bill_month.month": "2023-03-01T00:00:00.000",
+            "cbill.receipt_count": "244",
+            "cbill.bill_month": "2023-03-01T00:00:00.000"
+          },
+          {
+            "cbill.bill_month.month": "2023-04-01T00:00:00.000",
+            "cbill.receipt_count": "104",
+            "cbill.bill_month": "2023-04-01T00:00:00.000"
+          },
+          {
+            "cbill.bill_month.month": "2023-05-01T00:00:00.000",
+            "cbill.receipt_count": "378",
+            "cbill.bill_month": "2023-05-01T00:00:00.000"
+          },
+          {
+            "cbill.bill_month.month": "2023-06-01T00:00:00.000",
+            "cbill.receipt_count": "1989",
+            "cbill.bill_month": "2023-06-01T00:00:00.000"
+          },
+          {
+            "cbill.bill_month.month": "2023-07-01T00:00:00.000",
+            "cbill.receipt_count": "68",
+            "cbill.bill_month": "2023-07-01T00:00:00.000"
+          },
+          {
+            "cbill.bill_month.month": "2023-08-01T00:00:00.000",
+            "cbill.receipt_count": "3868",
+            "cbill.bill_month": "2023-08-01T00:00:00.000"
+          },
+          {
+            "cbill.bill_month.month": "2023-09-01T00:00:00.000",
+            "cbill.receipt_count": "1196",
+            "cbill.bill_month": "2023-09-01T00:00:00.000"
+          },
+          {
+            "cbill.bill_month.month": "2023-10-01T00:00:00.000",
+            "cbill.receipt_count": "52",
+            "cbill.bill_month": "2023-10-01T00:00:00.000"
+          },
+          {
+            "cbill.bill_month.month": "2023-11-01T00:00:00.000",
+            "cbill.receipt_count": "664",
+            "cbill.bill_month": "2023-11-01T00:00:00.000"
+          },
+          {
+            "cbill.bill_month.month": "2023-12-01T00:00:00.000",
+            "cbill.receipt_count": "1396",
+            "cbill.bill_month": "2023-12-01T00:00:00.000"
+          },
+          {
+            "cbill.bill_month.month": "2024-01-01T00:00:00.000",
+            "cbill.receipt_count": "86",
+            "cbill.bill_month": "2024-01-01T00:00:00.000"
+          },
+          {
+            "cbill.bill_month.month": "2024-02-01T00:00:00.000",
+            "cbill.receipt_count": "35",
+            "cbill.bill_month": "2024-02-01T00:00:00.000"
+          },
+          {
+            "cbill.bill_month.month": "2024-03-01T00:00:00.000",
+            "cbill.receipt_count": "644",
+            "cbill.bill_month": "2024-03-01T00:00:00.000"
+          },
+          {
+            "cbill.bill_month.month": "2024-04-01T00:00:00.000",
+            "cbill.receipt_count": "147",
+            "cbill.bill_month": "2024-04-01T00:00:00.000"
+          },
+          {
+            "cbill.bill_month.month": "2024-05-01T00:00:00.000",
+            "cbill.receipt_count": "1303",
+            "cbill.bill_month": "2024-05-01T00:00:00.000"
+          },
+          {
+            "cbill.bill_month.month": "2024-06-01T00:00:00.000",
+            "cbill.receipt_count": "165",
+            "cbill.bill_month": "2024-06-01T00:00:00.000"
+          },
+          {
+            "cbill.bill_month.month": "2024-07-01T00:00:00.000",
+            "cbill.receipt_count": "107",
+            "cbill.bill_month": "2024-07-01T00:00:00.000"
+          },
+          {
+            "cbill.bill_month.month": "2024-08-01T00:00:00.000",
+            "cbill.receipt_count": "922",
+            "cbill.bill_month": "2024-08-01T00:00:00.000"
+          },
+          {
+            "cbill.bill_month.month": "2024-09-01T00:00:00.000",
+            "cbill.receipt_count": "150",
+            "cbill.bill_month": "2024-09-01T00:00:00.000"
+          },
+          {
+            "cbill.bill_month.month": "2024-10-01T00:00:00.000",
+            "cbill.receipt_count": "363",
+            "cbill.bill_month": "2024-10-01T00:00:00.000"
+          },
+          {
+            "cbill.bill_month.month": "2024-11-01T00:00:00.000",
+            "cbill.receipt_count": "4682",
+            "cbill.bill_month": "2024-11-01T00:00:00.000"
+          },
+          {
+            "cbill.bill_month.month": "2024-12-01T00:00:00.000",
+            "cbill.receipt_count": "517",
+            "cbill.bill_month": "2024-12-01T00:00:00.000"
+          },
+          {
+            "cbill.bill_month.month": "2025-01-01T00:00:00.000",
+            "cbill.receipt_count": "464",
+            "cbill.bill_month": "2025-01-01T00:00:00.000"
+          },
+          {
+            "cbill.bill_month.month": "2025-02-01T00:00:00.000",
+            "cbill.receipt_count": "123",
+            "cbill.bill_month": "2025-02-01T00:00:00.000"
+          },
+          {
+            "cbill.bill_month.month": "2025-03-01T00:00:00.000",
+            "cbill.receipt_count": "114",
+            "cbill.bill_month": "2025-03-01T00:00:00.000"
+          },
+          {
+            "cbill.bill_month.month": "2025-04-01T00:00:00.000",
+            "cbill.receipt_count": "94",
+            "cbill.bill_month": "2025-04-01T00:00:00.000"
+          },
+          {
+            "cbill.bill_month.month": "2025-05-01T00:00:00.000",
+            "cbill.receipt_count": "92",
+            "cbill.bill_month": "2025-05-01T00:00:00.000"
+          },
+          {
+            "cbill.bill_month.month": "2025-06-01T00:00:00.000",
+            "cbill.receipt_count": "6226",
+            "cbill.bill_month": "2025-06-01T00:00:00.000"
+          },
+          {
+            "cbill.bill_month.month": "2025-07-01T00:00:00.000",
+            "cbill.receipt_count": "115",
+            "cbill.bill_month": "2025-07-01T00:00:00.000"
+          },
+          {
+            "cbill.bill_month.month": "2025-08-01T00:00:00.000",
+            "cbill.receipt_count": "81",
+            "cbill.bill_month": "2025-08-01T00:00:00.000"
+          },
+          {
+            "cbill.bill_month.month": "2025-09-01T00:00:00.000",
+            "cbill.receipt_count": "116",
+            "cbill.bill_month": "2025-09-01T00:00:00.000"
+          },
+          {
+            "cbill.bill_month.month": "2025-10-01T00:00:00.000",
+            "cbill.receipt_count": "197",
+            "cbill.bill_month": "2025-10-01T00:00:00.000"
+          },
+          {
+            "cbill.bill_month.month": "2025-11-01T00:00:00.000",
+            "cbill.receipt_count": "62",
+            "cbill.bill_month": "2025-11-01T00:00:00.000"
+          },
+          {
+            "cbill.bill_month.month": "2025-12-01T00:00:00.000",
+            "cbill.receipt_count": "35",
+            "cbill.bill_month": "2025-12-01T00:00:00.000"
+          },
+          {
+            "cbill.bill_month.month": "2026-01-01T00:00:00.000",
+            "cbill.receipt_count": "135",
+            "cbill.bill_month": "2026-01-01T00:00:00.000"
+          },
+          {
+            "cbill.bill_month.month": "2026-02-01T00:00:00.000",
+            "cbill.receipt_count": "19",
+            "cbill.bill_month": "2026-02-01T00:00:00.000"
+          },
+          {
+            "cbill.bill_month.month": "2026-03-01T00:00:00.000",
+            "cbill.receipt_count": "107",
+            "cbill.bill_month": "2026-03-01T00:00:00.000"
+          },
+          {
+            "cbill.bill_month.month": "2026-04-01T00:00:00.000",
+            "cbill.receipt_count": "3605",
+            "cbill.bill_month": "2026-04-01T00:00:00.000"
+          },
+          {
+            "cbill.bill_month.month": "2026-05-01T00:00:00.000",
+            "cbill.receipt_count": "103",
+            "cbill.bill_month": "2026-05-01T00:00:00.000"
+          },
+          {
+            "cbill.bill_month.month": "2026-06-01T00:00:00.000",
+            "cbill.receipt_count": "1322",
+            "cbill.bill_month": "2026-06-01T00:00:00.000"
+          },
+          {
+            "cbill.bill_month.month": "2026-07-01T00:00:00.000",
+            "cbill.receipt_count": "84",
+            "cbill.bill_month": "2026-07-01T00:00:00.000"
+          },
+          {
+            "cbill.bill_month.month": "2026-08-01T00:00:00.000",
+            "cbill.receipt_count": "71",
+            "cbill.bill_month": "2026-08-01T00:00:00.000"
+          },
+          {
+            "cbill.bill_month.month": "2026-09-01T00:00:00.000",
+            "cbill.receipt_count": "74",
+            "cbill.bill_month": "2026-09-01T00:00:00.000"
+          }
+        ]
+      }
+    },
+    {
+      "name": "按状态分组",
+      "query": {
+        "measures": [
+          "cbill.count"
+        ],
+        "dimensions": [
+          "cbill.state"
+        ]
+      },
+      "resultSet": {
+        "data": [
+          {
+            "cbill.state": "1",
+            "cbill.count": "31606"
+          },
+          {
+            "cbill.state": "2",
+            "cbill.count": "726"
+          }
+        ]
+      }
+    },
+    {
+      "name": "按业务类型分组",
+      "query": {
+        "measures": [
+          "cbill.count"
+        ],
+        "dimensions": [
+          "cbill.bus_type"
+        ]
+      },
+      "resultSet": {
+        "data": [
+          {
+            "cbill.bus_type": "1",
+            "cbill.count": "25679"
+          },
+          {
+            "cbill.bus_type": "2",
+            "cbill.count": "2608"
+          },
+          {
+            "cbill.bus_type": "3",
+            "cbill.count": "2149"
+          },
+          {
+            "cbill.bus_type": "4",
+            "cbill.count": "1896"
+          }
+        ]
+      }
+    },
+    {
+      "name": "按票种名称分组(传递join)",
+      "query": {
+        "measures": [
+          "cbill.receipt_count"
+        ],
+        "dimensions": [
+          "bill_type.name"
+        ],
+        "limit": 10
+      },
+      "resultSet": {
+        "data": [
+          {
+            "bill_type.name": "医疗门诊收费票据",
+            "cbill.receipt_count": "16686"
+          },
+          {
+            "bill_type.name": "测试-政府非税收入统一票据（电子）",
+            "cbill.receipt_count": "4674"
+          },
+          {
+            "bill_type.name": "医疗住院收费票据",
+            "cbill.receipt_count": "4041"
+          },
+          {
+            "bill_type.name": "非税收入电子缴款书（电子）",
+            "cbill.receipt_count": "1899"
+          },
+          {
+            "bill_type.name": "医疗门诊收费票据（机打）（新版）",
+            "cbill.receipt_count": "1810"
+          },
+          {
+            "bill_type.name": "非税电子票",
+            "cbill.receipt_count": "1149"
+          },
+          {
+            "bill_type.name": "行政事业单位资金往来结算票据",
+            "cbill.receipt_count": "514"
+          },
+          {
+            "bill_type.name": "行政事业往来纸质票",
+            "cbill.receipt_count": "241"
+          },
+          {
+            "bill_type.name": "社会资金公益事业捐赠票据",
+            "cbill.receipt_count": "237"
+          },
+          {
+            "bill_type.name": "行政事业单位资金往来结算票据（微机）",
+            "cbill.receipt_count": "203"
+          }
+        ]
+      }
+    },
+    {
+      "name": "年累计YTD(宏度量)",
+      "query": {
+        "measures": [
+          "cbill.amt_year_to_date"
+        ],
+        "timeDimensions": [
+          {
+            "dimension": "cbill.bill_date",
+            "dateRange": [
+              "2026-01-01",
+              "2026-12-31"
+            ]
+          }
+        ]
+      },
+      "resultSet": {
+        "data": [
+          {
+            "cbill.amt_year_to_date": "1397865.52"
+          }
+        ]
+      }
+    },
+    {
+      "name": "按开票月份2026趋势",
+      "query": {
+        "measures": [
+          "cbill.total_amount"
+        ],
+        "timeDimensions": [
+          {
+            "dimension": "cbill.bill_date",
+            "granularity": "month",
+            "dateRange": [
+              "2026-01-01",
+              "2026-12-31"
+            ]
+          }
+        ]
+      },
+      "resultSet": {
+        "data": [
+          {
+            "cbill.bill_date.month": "2026-01-01T00:00:00.000",
+            "cbill.total_amount": "603577.04",
+            "cbill.bill_date": "2026-01-01T00:00:00.000"
+          },
+          {
+            "cbill.bill_date.month": "2026-02-01T00:00:00.000",
+            "cbill.total_amount": "1915.04",
+            "cbill.bill_date": "2026-02-01T00:00:00.000"
+          },
+          {
+            "cbill.bill_date.month": "2026-03-01T00:00:00.000",
+            "cbill.total_amount": "24867.93",
+            "cbill.bill_date": "2026-03-01T00:00:00.000"
+          },
+          {
+            "cbill.bill_date.month": "2026-04-01T00:00:00.000",
+            "cbill.total_amount": "561388.4500000001",
+            "cbill.bill_date": "2026-04-01T00:00:00.000"
+          },
+          {
+            "cbill.bill_date.month": "2026-05-01T00:00:00.000",
+            "cbill.total_amount": "6866.02",
+            "cbill.bill_date": "2026-05-01T00:00:00.000"
+          },
+          {
+            "cbill.bill_date.month": "2026-06-01T00:00:00.000",
+            "cbill.total_amount": "142702.9",
+            "cbill.bill_date": "2026-06-01T00:00:00.000"
+          },
+          {
+            "cbill.bill_date.month": "2026-07-01T00:00:00.000",
+            "cbill.total_amount": "11612.72",
+            "cbill.bill_date": "2026-07-01T00:00:00.000"
+          },
+          {
+            "cbill.bill_date.month": "2026-08-01T00:00:00.000",
+            "cbill.total_amount": "3971.64",
+            "cbill.bill_date": "2026-08-01T00:00:00.000"
+          },
+          {
+            "cbill.bill_date.month": "2026-09-01T00:00:00.000",
+            "cbill.total_amount": "40963.78",
+            "cbill.bill_date": "2026-09-01T00:00:00.000"
+          }
+        ]
+      }
+    },
+    {
+      "name": "明细cube月表核对(泛化函数)",
+      "query": {
+        "measures": [
+          "cbill_item.count"
+        ],
+        "timeDimensions": [
+          {
+            "dimension": "cbill_item.bill_month",
+            "granularity": "month"
+          }
+        ],
+        "order": {
+          "cbill_item.bill_month": "asc"
+        }
+      },
+      "resultSet": {
+        "data": [
+          {
+            "cbill_item.bill_month.month": "2023-02-01T00:00:00.000",
+            "cbill_item.count": "13",
+            "cbill_item.bill_month": "2023-02-01T00:00:00.000"
+          },
+          {
+            "cbill_item.bill_month.month": "2023-03-01T00:00:00.000",
+            "cbill_item.count": "275",
+            "cbill_item.bill_month": "2023-03-01T00:00:00.000"
+          },
+          {
+            "cbill_item.bill_month.month": "2023-04-01T00:00:00.000",
+            "cbill_item.count": "111",
+            "cbill_item.bill_month": "2023-04-01T00:00:00.000"
+          },
+          {
+            "cbill_item.bill_month.month": "2023-05-01T00:00:00.000",
+            "cbill_item.count": "415",
+            "cbill_item.bill_month": "2023-05-01T00:00:00.000"
+          },
+          {
+            "cbill_item.bill_month.month": "2023-06-01T00:00:00.000",
+            "cbill_item.count": "2027",
+            "cbill_item.bill_month": "2023-06-01T00:00:00.000"
+          },
+          {
+            "cbill_item.bill_month.month": "2023-07-01T00:00:00.000",
+            "cbill_item.count": "75",
+            "cbill_item.bill_month": "2023-07-01T00:00:00.000"
+          },
+          {
+            "cbill_item.bill_month.month": "2023-08-01T00:00:00.000",
+            "cbill_item.count": "4216",
+            "cbill_item.bill_month": "2023-08-01T00:00:00.000"
+          },
+          {
+            "cbill_item.bill_month.month": "2023-09-01T00:00:00.000",
+            "cbill_item.count": "1274",
+            "cbill_item.bill_month": "2023-09-01T00:00:00.000"
+          },
+          {
+            "cbill_item.bill_month.month": "2023-10-01T00:00:00.000",
+            "cbill_item.count": "69",
+            "cbill_item.bill_month": "2023-10-01T00:00:00.000"
+          },
+          {
+            "cbill_item.bill_month.month": "2023-11-01T00:00:00.000",
+            "cbill_item.count": "1210",
+            "cbill_item.bill_month": "2023-11-01T00:00:00.000"
+          },
+          {
+            "cbill_item.bill_month.month": "2023-12-01T00:00:00.000",
+            "cbill_item.count": "2543",
+            "cbill_item.bill_month": "2023-12-01T00:00:00.000"
+          },
+          {
+            "cbill_item.bill_month.month": "2024-01-01T00:00:00.000",
+            "cbill_item.count": "86",
+            "cbill_item.bill_month": "2024-01-01T00:00:00.000"
+          },
+          {
+            "cbill_item.bill_month.month": "2024-02-01T00:00:00.000",
+            "cbill_item.count": "35",
+            "cbill_item.bill_month": "2024-02-01T00:00:00.000"
+          },
+          {
+            "cbill_item.bill_month.month": "2024-03-01T00:00:00.000",
+            "cbill_item.count": "660",
+            "cbill_item.bill_month": "2024-03-01T00:00:00.000"
+          },
+          {
+            "cbill_item.bill_month.month": "2024-04-01T00:00:00.000",
+            "cbill_item.count": "160",
+            "cbill_item.bill_month": "2024-04-01T00:00:00.000"
+          },
+          {
+            "cbill_item.bill_month.month": "2024-05-01T00:00:00.000",
+            "cbill_item.count": "2362",
+            "cbill_item.bill_month": "2024-05-01T00:00:00.000"
+          },
+          {
+            "cbill_item.bill_month.month": "2024-06-01T00:00:00.000",
+            "cbill_item.count": "179",
+            "cbill_item.bill_month": "2024-06-01T00:00:00.000"
+          },
+          {
+            "cbill_item.bill_month.month": "2024-07-01T00:00:00.000",
+            "cbill_item.count": "117",
+            "cbill_item.bill_month": "2024-07-01T00:00:00.000"
+          },
+          {
+            "cbill_item.bill_month.month": "2024-08-01T00:00:00.000",
+            "cbill_item.count": "1061",
+            "cbill_item.bill_month": "2024-08-01T00:00:00.000"
+          },
+          {
+            "cbill_item.bill_month.month": "2024-09-01T00:00:00.000",
+            "cbill_item.count": "151",
+            "cbill_item.bill_month": "2024-09-01T00:00:00.000"
+          },
+          {
+            "cbill_item.bill_month.month": "2024-10-01T00:00:00.000",
+            "cbill_item.count": "400",
+            "cbill_item.bill_month": "2024-10-01T00:00:00.000"
+          },
+          {
+            "cbill_item.bill_month.month": "2024-11-01T00:00:00.000",
+            "cbill_item.count": "4721",
+            "cbill_item.bill_month": "2024-11-01T00:00:00.000"
+          },
+          {
+            "cbill_item.bill_month.month": "2024-12-01T00:00:00.000",
+            "cbill_item.count": "770",
+            "cbill_item.bill_month": "2024-12-01T00:00:00.000"
+          },
+          {
+            "cbill_item.bill_month.month": "2025-01-01T00:00:00.000",
+            "cbill_item.count": "565",
+            "cbill_item.bill_month": "2025-01-01T00:00:00.000"
+          },
+          {
+            "cbill_item.bill_month.month": "2025-02-01T00:00:00.000",
+            "cbill_item.count": "150",
+            "cbill_item.bill_month": "2025-02-01T00:00:00.000"
+          },
+          {
+            "cbill_item.bill_month.month": "2025-03-01T00:00:00.000",
+            "cbill_item.count": "137",
+            "cbill_item.bill_month": "2025-03-01T00:00:00.000"
+          },
+          {
+            "cbill_item.bill_month.month": "2025-04-01T00:00:00.000",
+            "cbill_item.count": "100",
+            "cbill_item.bill_month": "2025-04-01T00:00:00.000"
+          },
+          {
+            "cbill_item.bill_month.month": "2025-05-01T00:00:00.000",
+            "cbill_item.count": "98",
+            "cbill_item.bill_month": "2025-05-01T00:00:00.000"
+          },
+          {
+            "cbill_item.bill_month.month": "2025-06-01T00:00:00.000",
+            "cbill_item.count": "6522",
+            "cbill_item.bill_month": "2025-06-01T00:00:00.000"
+          },
+          {
+            "cbill_item.bill_month.month": "2025-07-01T00:00:00.000",
+            "cbill_item.count": "120",
+            "cbill_item.bill_month": "2025-07-01T00:00:00.000"
+          },
+          {
+            "cbill_item.bill_month.month": "2025-08-01T00:00:00.000",
+            "cbill_item.count": "90",
+            "cbill_item.bill_month": "2025-08-01T00:00:00.000"
+          },
+          {
+            "cbill_item.bill_month.month": "2025-09-01T00:00:00.000",
+            "cbill_item.count": "125",
+            "cbill_item.bill_month": "2025-09-01T00:00:00.000"
+          },
+          {
+            "cbill_item.bill_month.month": "2025-10-01T00:00:00.000",
+            "cbill_item.count": "241",
+            "cbill_item.bill_month": "2025-10-01T00:00:00.000"
+          },
+          {
+            "cbill_item.bill_month.month": "2025-11-01T00:00:00.000",
+            "cbill_item.count": "62",
+            "cbill_item.bill_month": "2025-11-01T00:00:00.000"
+          },
+          {
+            "cbill_item.bill_month.month": "2025-12-01T00:00:00.000",
+            "cbill_item.count": "46",
+            "cbill_item.bill_month": "2025-12-01T00:00:00.000"
+          },
+          {
+            "cbill_item.bill_month.month": "2026-01-01T00:00:00.000",
+            "cbill_item.count": "155",
+            "cbill_item.bill_month": "2026-01-01T00:00:00.000"
+          },
+          {
+            "cbill_item.bill_month.month": "2026-02-01T00:00:00.000",
+            "cbill_item.count": "24",
+            "cbill_item.bill_month": "2026-02-01T00:00:00.000"
+          },
+          {
+            "cbill_item.bill_month.month": "2026-03-01T00:00:00.000",
+            "cbill_item.count": "113",
+            "cbill_item.bill_month": "2026-03-01T00:00:00.000"
+          },
+          {
+            "cbill_item.bill_month.month": "2026-04-01T00:00:00.000",
+            "cbill_item.count": "3635",
+            "cbill_item.bill_month": "2026-04-01T00:00:00.000"
+          },
+          {
+            "cbill_item.bill_month.month": "2026-05-01T00:00:00.000",
+            "cbill_item.count": "110",
+            "cbill_item.bill_month": "2026-05-01T00:00:00.000"
+          },
+          {
+            "cbill_item.bill_month.month": "2026-06-01T00:00:00.000",
+            "cbill_item.count": "1324",
+            "cbill_item.bill_month": "2026-06-01T00:00:00.000"
+          },
+          {
+            "cbill_item.bill_month.month": "2026-07-01T00:00:00.000",
+            "cbill_item.count": "85",
+            "cbill_item.bill_month": "2026-07-01T00:00:00.000"
+          },
+          {
+            "cbill_item.bill_month.month": "2026-08-01T00:00:00.000",
+            "cbill_item.count": "71",
+            "cbill_item.bill_month": "2026-08-01T00:00:00.000"
+          },
+          {
+            "cbill_item.bill_month.month": "2026-09-01T00:00:00.000",
+            "cbill_item.count": "76",
+            "cbill_item.bill_month": "2026-09-01T00:00:00.000"
+          }
+        ]
+      }
+    },
+    {
+      "name": "下钻-票号查明细(belongs_to join)",
+      "query": {
+        "measures": [
+          "cbill_item.count",
+          "cbill_item.total_amount"
+        ],
+        "dimensions": [
+          "cbill_item.item_name"
+        ],
+        "filters": [
+          {
+            "member": "cbill.bill_no",
+            "operator": "equals",
+            "values": [
+              "0000000003"
+            ]
+          }
+        ],
+        "order": {
+          "cbill_item.item_name": "asc"
+        }
+      },
+      "resultSet": {
+        "data": [
+          {
+            "cbill_item.item_name": "检查费",
+            "cbill_item.count": "2",
+            "cbill_item.total_amount": "-1782.76"
+          },
+          {
+            "cbill_item.item_name": "捐赠项目",
+            "cbill_item.count": "1",
+            "cbill_item.total_amount": "1000.66"
+          },
+          {
+            "cbill_item.item_name": "民航发展基金收入",
+            "cbill_item.count": "1",
+            "cbill_item.total_amount": "1"
+          },
+          {
+            "cbill_item.item_name": "水费",
+            "cbill_item.count": "2",
+            "cbill_item.total_amount": "11"
+          },
+          {
+            "cbill_item.item_name": "体检费",
+            "cbill_item.count": "2",
+            "cbill_item.total_amount": "1002.01"
+          },
+          {
+            "cbill_item.item_name": "铁路建设基金收入",
+            "cbill_item.count": "2",
+            "cbill_item.total_amount": "300"
+          },
+          {
+            "cbill_item.item_name": "团费",
+            "cbill_item.count": "1",
+            "cbill_item.total_amount": "100.36"
+          },
+          {
+            "cbill_item.item_name": "预收诉讼费",
+            "cbill_item.count": "1",
+            "cbill_item.total_amount": "100.66"
+          }
+        ]
+      }
+    },
+    {
+      "name": "下钻-单票明细(bill_no+bill_month)",
+      "query": {
+        "measures": [
+          "cbill_item.count",
+          "cbill_item.total_amount"
+        ],
+        "dimensions": [
+          "cbill_item.item_name",
+          "cbill_item.item_code"
+        ],
+        "filters": [
+          {
+            "member": "cbill.bill_no",
+            "operator": "equals",
+            "values": [
+              "0000000003"
+            ]
+          },
+          {
+            "member": "cbill.bill_month",
+            "operator": "equals",
+            "values": [
+              "2025-01-01"
+            ]
+          }
+        ],
+        "order": {
+          "cbill_item.item_code": "asc"
+        }
+      },
+      "resultSet": {
+        "data": [
+          {
+            "cbill_item.item_name": "铁路建设基金收入",
+            "cbill_item.item_code": "1030106001",
+            "cbill_item.count": "2",
+            "cbill_item.total_amount": "300"
+          },
+          {
+            "cbill_item.item_name": "检查费",
+            "cbill_item.item_code": "530002",
+            "cbill_item.count": "1",
+            "cbill_item.total_amount": "-1811.88"
+          }
+        ]
+      }
+    },
+    {
+      "name": "下钻-作废票分项目(主表状态过滤)",
+      "query": {
+        "measures": [
+          "cbill_item.count",
+          "cbill_item.total_amount"
+        ],
+        "dimensions": [
+          "cbill_item.item_name"
+        ],
+        "filters": [
+          {
+            "member": "cbill.state",
+            "operator": "equals",
+            "values": [
+              "2"
+            ]
+          }
+        ],
+        "order": {
+          "cbill_item.item_name": "asc"
+        }
+      },
+      "resultSet": {
+        "data": [
+          {
+            "cbill_item.item_name": "[]",
+            "cbill_item.count": "1",
+            "cbill_item.total_amount": "20"
+          },
+          {
+            "cbill_item.item_name": "地方农网还贷资金收入",
+            "cbill_item.count": "20",
+            "cbill_item.total_amount": "2000"
+          },
+          {
+            "cbill_item.item_name": "电话费",
+            "cbill_item.count": "1",
+            "cbill_item.total_amount": "123"
+          },
+          {
+            "cbill_item.item_name": "港口建设费收入",
+            "cbill_item.count": "3",
+            "cbill_item.total_amount": "10201.32"
+          },
+          {
+            "cbill_item.item_name": "挂号费",
+            "cbill_item.count": "1",
+            "cbill_item.total_amount": "50"
+          },
+          {
+            "cbill_item.item_name": "国家电影事业发展专项资金收入",
+            "cbill_item.count": "4",
+            "cbill_item.total_amount": "400"
+          },
+          {
+            "cbill_item.item_name": "国有重点煤炭企业生产用电、核工业铀扩散厂和堆化工厂生产用电农网还贷资金",
+            "cbill_item.count": "1",
+            "cbill_item.total_amount": "3"
+          },
+          {
+            "cbill_item.item_name": "化验费",
+            "cbill_item.count": "103",
+            "cbill_item.total_amount": "24570"
+          },
+          {
+            "cbill_item.item_name": "检查费",
+            "cbill_item.count": "196",
+            "cbill_item.total_amount": "34375.24"
+          },
+          {
+            "cbill_item.item_name": "捐赠物",
+            "cbill_item.count": "12",
+            "cbill_item.total_amount": "1200"
+          },
+          {
+            "cbill_item.item_name": "旅游发展基金收入",
+            "cbill_item.count": "4",
+            "cbill_item.total_amount": "150.66"
+          },
+          {
+            "cbill_item.item_name": "煤气费",
+            "cbill_item.count": "1",
+            "cbill_item.total_amount": "123"
+          },
+          {
+            "cbill_item.item_name": "民航发展基金收入",
+            "cbill_item.count": "8",
+            "cbill_item.total_amount": "1571.32"
+          },
+          {
+            "cbill_item.item_name": "农网还贷资金收入",
+            "cbill_item.count": "48",
+            "cbill_item.total_amount": "3684.77"
+          },
+          {
+            "cbill_item.item_name": "农网还贷资金收入a",
+            "cbill_item.count": "22",
+            "cbill_item.total_amount": "4612"
+          },
+          {
+            "cbill_item.item_name": "水费",
+            "cbill_item.count": "25",
+            "cbill_item.total_amount": "2131"
+          },
+          {
+            "cbill_item.item_name": "体检费",
+            "cbill_item.count": "385",
+            "cbill_item.total_amount": "48716.61"
+          },
+          {
+            "cbill_item.item_name": "铁路建设基金收入",
+            "cbill_item.count": "3",
+            "cbill_item.total_amount": "256"
+          },
+          {
+            "cbill_item.item_name": "乡村农网还贷资金收入",
+            "cbill_item.count": "25",
+            "cbill_item.total_amount": "2500"
+          }
+        ]
+      }
+    },
+    {
+      "name": "下钻-两步查询兜底(2026-09明细)",
+      "query": {
+        "measures": [
+          "cbill_item.item_count",
+          "cbill_item.total_amount"
+        ],
+        "dimensions": [
+          "cbill_item.item_name"
+        ],
+        "timeDimensions": [
+          {
+            "dimension": "cbill_item.created_date",
+            "dateRange": [
+              "2026-09-01",
+              "2026-09-30"
+            ]
+          }
+        ],
+        "order": {
+          "cbill_item.item_name": "asc"
+        }
+      },
+      "resultSet": {
+        "data": [
+          {
+            "cbill_item.item_name": "电话费",
+            "cbill_item.item_count": "5",
+            "cbill_item.total_amount": "3001.98"
+          },
+          {
+            "cbill_item.item_name": "港口建设费收入",
+            "cbill_item.item_count": "2",
+            "cbill_item.total_amount": "501"
+          },
+          {
+            "cbill_item.item_name": "挂号费",
+            "cbill_item.item_count": "1",
+            "cbill_item.total_amount": "20066"
+          },
+          {
+            "cbill_item.item_name": "检查费",
+            "cbill_item.item_count": "21",
+            "cbill_item.total_amount": "90"
+          },
+          {
+            "cbill_item.item_name": "捐赠项目",
+            "cbill_item.item_count": "3",
+            "cbill_item.total_amount": "3001.98"
+          },
+          {
+            "cbill_item.item_name": "旅游发展基金收入",
+            "cbill_item.item_count": "14",
+            "cbill_item.total_amount": "14"
+          },
+          {
+            "cbill_item.item_name": "农网还贷资金收入a",
+            "cbill_item.item_count": "2",
+            "cbill_item.total_amount": "1200"
+          },
+          {
+            "cbill_item.item_name": "体检费",
+            "cbill_item.item_count": "28",
+            "cbill_item.total_amount": "13088.82"
+          }
+        ]
+      }
+    },
+    {
+      "name": "日均开票与冲红(月切分)",
+      "query": {
+        "measures": [
+          "cbill.daily_avg",
+          "cbill.date_cnt",
+          "cbill.red_cnt",
+          "cbill.receipt_count"
+        ],
+        "timeDimensions": [
+          {
+            "dimension": "cbill.bill_month",
+            "dateRange": [
+              "2026-04-01",
+              "2026-04-30"
+            ]
+          }
+        ]
+      },
+      "resultSet": {
+        "data": [
+          {
+            "cbill.daily_avg": "200.277777777778",
+            "cbill.date_cnt": "18",
+            "cbill.red_cnt": "132",
+            "cbill.receipt_count": "3605"
+          }
+        ]
+      }
+    }
+  ]
+}

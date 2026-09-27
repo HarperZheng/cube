@@ -1,0 +1,52 @@
+# 领票交付视图—— P5（docs/cube-dataqa-topic/01-design.md §9，多事实视图）
+# 领票出入库全流程 + 库存：stock_out（出库）+ stock_out_item（出库明细）+
+# stock_in（入库）+ stock_apply（申领）+ stock（库存）五事实并存。
+# 同名冲突规避（bill_no/state/count 多 cube 都有）：各 cube 只暴露不冲突
+# 成员，冲突成员（明细金额走 stock_out_item，单号走 stock_out）只保留一份；
+# 全部不前缀——prefix 爆 11g 30 字符上限。
+views:
+  - name: outbound_view
+    title: 领票（交付视图）
+    description: 领票出入库全流程 + 库存；消费方统一从这里查
+    meta:
+      ai_context: >-
+        领票交付视图。出库用 out_count（出库单数），入库用 in_count，
+        申领用 apply_count（approve_count 已批 / rejected_count 驳回），
+        库存段数用 stock_count（online/offline 用 source 维度），
+        库存份数（起止号折算 Σ(止-起+1)）用 stock_qty。
+        出库明细金额用 total_amount（票种/票号段用 bill_code/bill_no1/bill_no2）。
+        单位下钻走 name/industry_name。单号下钻走 bill_no（出库口径）。
+    cubes:
+      - join_path: stock_out
+        includes:
+          - out_count
+          - bill_no
+          - out_date
+          - state
+      - join_path: stock_out.stock_out_item
+        includes:
+          - total_amount
+          - total_number
+          - bill_code
+          - batch_code
+          - bill_no1
+          - bill_no2
+      - join_path: stock_in
+        includes:
+          - in_count
+          - in_date
+      - join_path: stock_apply
+        includes:
+          - apply_count
+          - approve_count
+          - rejected_count
+          - apply_date
+      - join_path: stock
+        includes:
+          - stock_count
+          - stock_qty
+          - source
+      - join_path: stock_out.agency
+        includes:
+          - name
+          - industry_name

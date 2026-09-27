@@ -1,0 +1,71 @@
+# 收费项目维度 —— 源表 FAB_ITEM（1556 行，FISFINAL=1 为 1431 行）
+# 版本链：同 FITEMIDCODE 多行（有效期链）。已实测发现 3 个 FITEMIDCODE 被两个
+# 不同项目复用（数据毛刺，如 530020000027 同时是"国家开放大学收费"与"捐赠专用"，
+# 二者 FITEMCODE 不同），故组合键 (FITEMIDCODE, FITEMCODE) 去重（已验证全唯一），
+# 事实表 cbill_item 自带 FITEMCODE，按组合键关联可正确区分（202601 实测 155 行
+# 100% 匹配且 FITEMCODE 完全一致）。
+cubes:
+  - name: item
+    title: 收费项目
+    description: |
+      收费项目维度（FISFINAL=1 最新版本）。事实表按
+      (fitemidcode, fitemcode) 组合键关联本 cube，区分被复用的项目识别码。
+    public: false    # 只通过 join 被事实 cube 引用
+    meta:
+      ai_context: >-
+        item_idcode（FITEMIDCODE）为项目识别码，历史上存在极少数被复用的情况，
+        单独使用时需注意与 code（FITEMCODE）组合才唯一。
+
+    sql_table: >
+      (
+        SELECT i.*
+        FROM FAB_ITEM i
+        WHERE i."FISFINAL" = 1
+      )
+
+    measures:
+      - name: count
+        title: 项目数
+        type: count
+
+    dimensions:
+      - name: item_key
+        title: 项目组合键
+        description: (FITEMIDCODE, FITEMCODE) 组合，已验证全表唯一
+        sql: "{CUBE}.\"FITEMIDCODE\" || '-' || {CUBE}.\"FITEMCODE\""
+        type: string
+        primary_key: true
+        public: false
+      - name: item_idcode
+        title: 项目识别码
+        description: 历史上极少数被复用（3 个），与 code 组合才唯一
+        sql: "{CUBE}.\"FITEMIDCODE\""
+        type: string
+      - name: code
+        title: 项目业务码
+        sql: "{CUBE}.\"FITEMCODE\""
+        type: string
+      - name: name
+        title: 项目名称
+        sql: "{CUBE}.\"FITEMNAME\""
+        type: string
+      - name: catalog_code
+        title: 项目目录代码
+        sql: "{CUBE}.\"FCATALOGCODE\""
+        type: string
+      - name: funds_nature
+        title: 资金性质内码
+        sql: "{CUBE}.\"FFUNDSNATURE\""
+        type: string
+      - name: level_code
+        title: 层次码
+        sql: "{CUBE}.\"FLEVELCODE\""
+        type: string
+      - name: parent_idcode
+        title: 父级识别码
+        sql: "{CUBE}.\"FPIDCODE\""
+        type: string
+      - name: bgtlvl_code
+        title: 项目使用级次
+        sql: "{CUBE}.\"FBGTLVLCODE\""
+        type: string

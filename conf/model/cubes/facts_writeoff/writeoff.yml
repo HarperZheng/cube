@@ -1,0 +1,200 @@
+# 票据审验—— P4.5（docs/cube-dataqa-topic/01-design.md；设计原"ticket_cuv 领用核
+# / ticket_verification 核票"两 view 的实际落点，Oracle 实际主题为票据审验，
+# "核销"只是本表的 FWRITEOFFTYPE 属性列 1手动/2自动）
+# P4.5 核实（db.js 六件事，2026-09-21）：
+#   FBE_WRITEOFF（审验单主表，333 行）：FID 主键；FRGNCODE 区划直接存在
+#   （行级权限与 paybook 同款，无需 GUID 翻译）；FDATE 2021-06~2026-09；
+#   口径分布实测：FCHANGESTATE 0=1 / 1=2 / 2=330（注释只写 1/2，实测有 0，
+#   字典外取值原样分组）；FCHECKRESULT 1 良好=264 / 2 合格=66 / null=3
+#   （注释写 1/2/3/4，实测只有 1/2/null——注释取值不全）；
+#   join 键：FAGENIDCODE→FAB_AGEN 100% 匹配（matchkey 实测）。
+#   粒度：一单一行。
+# 敏感字段：FLINKTEL/FLINKMOBILENO/FLINKMAN 不建维度。
+# FBILLTOTAL/FBILLCOUNT 是 VARCHAR2，不建 sum 度量，只留维度。
+cubes:
+  - name: writeoff
+    title: 票据审验
+    description: |
+      票据审验单（FBE_WRITEOFF，单表 333 行）。每行 = 一张审验单，
+      FCHANGESTATE 审验状态 + FCHECKRESULT 审验结果；明细（收入/票据）
+      走 writeoff_income / writeoff_billitem。
+    meta:
+      ai_context: >-
+        审验单数用 writeoff_count；状态口径用 state 维度或
+        audited_count（'2' 已审验）/ unaudited_count（'1' 未审验）；
+        审验结果用 check_result 维度或 good_count（'1' 良好）；
+        金额用 payable_amt（应缴）/ real_amt（实缴）/ owe_amt（欠缴）。
+        按时间分析用 compiled_date（编制日期）。单位名称走 agency join。
+        按单位去重计数用 aud_agen_cnt（已审验单位数）/ good_agen_cnt
+        （良好单位数）。
+
+    sql_table: FBE_WRITEOFF
+
+    joins:
+      - name: agency
+        sql: "{CUBE}.\"FAGENIDCODE\" = {agency}.\"FAGENIDCODE\""
+        relationship: many_to_one
+      # 反向 one_to_many（主表侧，供明细下钻，与 cbill/stock_out 同款）
+      - name: writeoff_income
+        sql: "{CUBE}.\"FID\" = {writeoff_income}.\"FPID\""
+        relationship: one_to_many
+      - name: writeoff_billitem
+        sql: "{CUBE}.\"FID\" = {writeoff_billitem}.\"FPID\""
+        relationship: one_to_many
+
+    measures:
+      - name: count
+        title: 审验记录数
+        type: count
+      - name: writeoff_count
+        title: 审验单数
+        description: count_distinct(FID)（FID 主键，等价 count）
+        sql: "{CUBE}.\"FID\""
+        type: countDistinct
+        drill_members: [writeoff.no, writeoff.check_result, writeoff.state]
+      - name: audited_count
+        title: 已审验数
+        description: FCHANGESTATE='2'（已审验，实测 330/333）
+        sql: "{CUBE}.\"FID\""
+        type: count
+        filters:
+          - sql: "{CUBE}.\"FCHANGESTATE\" = '2'"
+      - name: unaudited_count
+        title: 未审验数
+        description: FCHANGESTATE='1'（未审验；另有 0=1 行字典外取值）
+        sql: "{CUBE}.\"FID\""
+        type: count
+        filters:
+          - sql: "{CUBE}.\"FCHANGESTATE\" = '1'"
+      - name: good_count
+        title: 良好数
+        description: FCHECKRESULT='1'（审验结果 良好）
+        sql: "{CUBE}.\"FID\""
+        type: count
+        filters:
+          - sql: "{CUBE}.\"FCHECKRESULT\" = '1'"
+      - name: qualified_count
+        title: 合格数
+        description: FCHECKRESULT='2'（审验结果 合格；另有 null=3 行）
+        sql: "{CUBE}.\"FID\""
+        type: count
+        filters:
+          - sql: "{CUBE}.\"FCHECKRESULT\" = '2'"
+      - name: aud_agen_cnt
+        title: 已审验单位数(去重)
+        description: count_distinct(FAGENIDCODE)，FCHANGESTATE='2' 已审验的单位数
+        sql: "{CUBE}.\"FAGENIDCODE\""
+        type: countDistinct
+        filters:
+          - sql: "{CUBE}.\"FCHANGESTATE\" = '2'"
+      - name: good_agen_cnt
+        title: 良好单位数(去重)
+        description: count_distinct(FAGENIDCODE)，FCHECKRESULT='1' 良好的单位数
+        sql: "{CUBE}.\"FAGENIDCODE\""
+        type: countDistinct
+        filters:
+          - sql: "{CUBE}.\"FCHECKRESULT\" = '1'"
+      - name: payable_amt
+        title: 应缴金额(元)
+        description: sum(FPAYABLEAMT)
+        sql: "{CUBE}.\"FPAYABLEAMT\""
+        type: sum
+      - name: real_amt
+        title: 实缴金额(元)
+        description: sum(FREALAMT)
+        sql: "{CUBE}.\"FREALAMT\""
+        type: sum
+      - name: owe_amt
+        title: 欠缴金额(元)
+        description: sum(FOWEAMT)
+        sql: "{CUBE}.\"FOWEAMT\""
+        type: sum
+
+    dimensions:
+      - name: fid
+        title: 审验单ID
+        sql: "{CUBE}.\"FID\""
+        type: string
+        primary_key: true
+        public: false    # 技术主键不对外
+      - name: no
+        title: 业务单号
+        description: FNO
+        sql: "{CUBE}.\"FNO\""
+        type: string
+      - name: state
+        title: 审验状态
+        description: 1 未审验 / 2 已审验（实测另有 0=1 行，字典外取值原样分组）
+        sql: "{CUBE}.\"FCHANGESTATE\""
+        type: string
+      - name: check_result
+        title: 审验结果
+        description: 1 良好 / 2 合格（注释写 1/2/3/4，实测只有 1/2/null）
+        sql: "{CUBE}.\"FCHECKRESULT\""
+        type: string
+      - name: writeoff_type
+        title: 核销方式
+        description: FWRITEOFFTYPE 1 手动核销 / 2 自动核销
+        sql: "{CUBE}.\"FWRITEOFFTYPE\""
+        type: string
+      - name: check_type
+        title: 审核方式
+        description: FCHECKTYPE 1 手动审核 / 2 自动审核
+        sql: "{CUBE}.\"FCHECKTYPE\""
+        type: string
+      - name: data_source
+        title: 数据来源
+        description: FDATASOURCE 1 接口转入 / 2 卡导入 / 3 手工录入
+        sql: "{CUBE}.\"FDATASOURCE\""
+        type: number
+      - name: compiled_date
+        title: 编制日期
+        description: FDATE（VARCHAR2 'YYYY-MM-DD'）转日期，时间分析默认维度
+        sql: "TO_DATE({CUBE}.\"FDATE\", 'YYYY-MM-DD')"
+        type: time
+      - name: begin_date
+        title: 审验起始日期
+        description: FBGNDATE（VARCHAR2）转日期
+        sql: "TO_DATE({CUBE}.\"FBGNDATE\", 'YYYY-MM-DD')"
+        type: time
+      - name: end_date
+        title: 审验结束日期
+        description: FENDDATE（VARCHAR2）转日期
+        sql: "TO_DATE({CUBE}.\"FENDDATE\", 'YYYY-MM-DD')"
+        type: time
+      - name: region_code
+        title: 区划编码
+        description: FRGNCODE 关联 region.code（行级权限维度）
+        sql: "{CUBE}.\"FRGNCODE\""
+        type: string
+      - name: agency_code
+        title: 单位识别码
+        description: FAGENIDCODE 关联 agency.agency_code
+        sql: "{CUBE}.\"FAGENIDCODE\""
+        type: string
+      - name: bill_total
+        title: 票据使用份数
+        description: FBILLTOTAL（VARCHAR2，不做 sum 度量）
+        sql: "{CUBE}.\"FBILLTOTAL\""
+        type: string
+      - name: bill_invalid
+        title: 票据作废份数
+        description: FBILLINVALID（VARCHAR2，不做 sum 度量）
+        sql: "{CUBE}.\"FBILLINVALID\""
+        type: string
+
+# 行级权限：access_policy 双互补策略（与 paybook/stock 同款）。
+    access_policy:
+      - group: "*"
+        conditions:
+          - if: "{ securityContext.region_code }"
+        row_level:
+          filters:
+            - member: region_code
+              operator: equals
+              values: ["{ securityContext.region_code }"]
+      - group: "*"
+        conditions:
+          - if: "{ not securityContext.region_code }"
+        row_level:
+          allow_all: true

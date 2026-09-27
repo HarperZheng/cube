@@ -1,0 +1,867 @@
+序号,分类,问数内容,备注,sql（要包含必传条件，如开票日期）,SQL验证,问数问题,CUBE API
+1,领票,按时间段、领用机构、票种、查询出库或入库的份数、号段、入库状态,《出库汇总表》、《入库汇总表》,"-- oracle:按时间段、领用机构、票种、查询出库的份数、号段、入库状态 
+select stock.fdate as ""日期"",
+         nvl(a.fagenname, r.fname)   as ""领用机构"",
+         b.fname  as ""票据名称"",
+         item1.fnumber  as ""数量"",
+         item1.fbillno1 as ""起始号"",
+         item1.fbillno2 as ""终止号"",
+         case when stock.fchangestate = '1' then '未审核'
+            when stock.fchangestate = '2' then '审核退回'
+            when stock.fchangestate = '3' then '已审核'
+            when stock.fchangestate = '31' then '不需要审核'
+            when stock.fchangestate = '15' then '已出库'
+            when stock.fchangestate = '8' then '已入库'
+            when stock.fchangestate = '6' then '已写卡'
+           end as  ""入库状态""
+  from fbe_stock_out stock
+  left join fbe_stock_out_item item1 on stock.fid = item1.fpid
+  left join fab_agen a on a.fagenidcode = stock.fagencode and a.fisfinal = '1'
+  left join afa_auth_region r on r.fcode = stock.fagencode
+  left join fab_bill b on b.fid = item1.fbillid
+  where stock.frgncode = '出库区划编码' 
+and stock.fdate >= '起始日期' and stock.fdate  <= '终止日期' 
+and  b.fname = '票据名称' and nvl(a.fagenname, r.fname)  = '机构名称';
+  
+  -- oracle按时间段、领用机构、票种、查询入库的份数、号段、入库状态 
+select stock.fdate as ""日期"",
+         r.fname   as ""领用机构"",
+         b.fname  as ""票据名称"",
+         item1.fnumber  as ""数量"",
+         item1.fbillno1 as ""起始号"",
+         item1.fbillno2 as ""终止号"",
+         stock.fchangestate,
+         case when stock.fchangestate = '3' then '已审核'
+            when stock.fchangestate = '31' then '不需审核'
+            when stock.fchangestate = '9' then '已入库确认'
+           end as  ""入库状态""
+  from fbe_stock_in stock
+  left join fbe_stock_in_item item1 on stock.fid = item1.fpid
+  left join afa_auth_region r on r.fcode = stock.frgncode
+  left join fab_bill b on b.fid = item1.fbillid
+  where stock.FCHANGESTATE in ('3','9','31') 
+  and stock.frgncode = '出库区划编码'  
+and stock.fdate >= '起始日期' and stock.fdate  <= '终止日期' 
+and  b.fname = '票据名称' ;
+  
+ 
+  ",,,"可构建（出库）：{""measures"":[""outbound_view.total_number""],""dimensions"":[""outbound_view.name"",""outbound_view.state"",""outbound_view.bill_code"",""outbound_view.bill_no1"",""outbound_view.bill_no2""],""timeDimensions"":[{""dimension"":""outbound_view.out_date"",""dateRange"":[""2026-01-01"",""2026-09-23""]}],""filters"":[{""member"":""outbound_view.name"",""operator"":""equals"",""values"":[""领用机构名称""]}],""limit"":100,""order"":{""outbound_view.total_number"":""desc""}}；入库（缺入库状态：模型已验证 UBE_STOCK_IN 无 FCHANGESTATE 字段，其余可查）：{""measures"":[""stock_in_item.total_number""],""dimensions"":[""agency.name"",""stock_in_item.bill_code"",""stock_in_item.bill_no1"",""stock_in_item.bill_no2""],""timeDimensions"":[{""dimension"":""stock_in.in_date"",""dateRange"":[""2026-01-01"",""2026-09-23""]}],""limit"":100}。注：领用侧票种仅 bill_code（票种ID，stock_out_item 无 bill_type join），票种名称过滤不可达；时间范围为示例，按需替换。"
+2,,查询单位剩余库存及各票种对应剩余库存,《单位库存表》,"-- oracle:查询单位剩余库存及各票种对应剩余库存
+select 
+  fagencode as ""单位编码"",
+  fagenname as ""单位名称"",
+  fbillcode as ""票据编码"",
+  fbillname as ""票据名称"",
+  sum(stocknum) as ""库存数量""
+  from（
+  Select 
+  a.fagencode,
+  a.fagenname,
+  b.fbillcode,
+  b.fbillname,
+  (s.fbillno2 - s.fbillno1 + 1) as stocknum
+  From v_ubr_stock s
+  left join fab_bill b on s.fbillid = b.fid
+  left join fab_agen a on a.fagenidcode = s.fagenidcode and a.fisfinal = '1'
+  union all 
+  Select 
+  a.fagencode,
+  a.fagenname,
+  b.fbillcode,
+  b.fbillname,
+  (s.fbillno2 - s.fbillno1 + 1) as stocknum
+  From ubr_stock_offline s
+  left join fab_bill b on s.fbillid = b.fid
+  left join fab_agen a on a.fagenidcode = s.fagenidcode and a.fisfinal = '1') tmp
+  group by fagencode, fagenname, fbillcode, fbillname",,,"可构建：库存份数已新增 stock.stock_qty（sum(TO_NUMBER(FBILLNO2)-TO_NUMBER(FBILLNO1)+1) 起止号折算；677 行全部可数值化已核实，Oracle 对数一致 107270761）：{""measures"":[""stock.stock_qty"",""stock.stock_count""],""dimensions"":[""agency.name"",""bill_type.name"",""stock.source""],""limit"":100}（按单位/票种分组，source 维度区分在线/离线；口径=Σ(止号-起号+1)，票号段不重叠）"
+3,用票,按时间段（年\月\周等）、区划、票种、项目、行业查询用票单位数量、日均开票数量,单位还细分，如社团单位，还能细分出促进会、联合会、协会、学会、商会等,"---ck:按时间段（年\月\周等）、区划、票种、项目、行业查询用票单位数量、日均开票数量
+select  
+c.fdate,
+c.frgnname,
+d.fname,
+c.fbillname,
+c.fitemname,
+count(distinct(c.fagenidcode)) as agennum, -- 单位数
+count(distinct(c.fpid)) as invoicenum -- 开票量
+from une_cbill_high  c
+left join fab_agen a on a.fagenidcode  = c.fagenidcode  and a.fisfinal  = '1' 
+left join afa_res_dictitem d  on d.fcode = a.findcode and d.fdictcode = '117'
+where c.fdate > '2026-01-01'  and c.fdate < '2026-12-31'
+group by c.fdate,c.frgncode,c.frgnname,d.fname,c.fbillid,c.fbillname,c.fitemidcode,c.fitemname
+order by c.fdate,c.frgncode,d.fname",,,"可构建：1)""用票单位数""已新增 cbill.agen_cnt（count_distinct FAGENIDCODE，Oracle 对数一致：2026-09=2/全期45）：{""measures"":[""cbill.agen_cnt"",""cbill.receipt_count""],""dimensions"":[""cbill.region_code"",""bill_type.name"",""cbill_item.item_name"",""agency.industry_name""],""timeDimensions"":[{""dimension"":""cbill.bill_date"",""dateRange"":[""2026-01-01"",""2026-09-23""]}],""limit"":100} 2)""日均开票数量""已新增 cbill.daily_avg（有单日均：笔数÷有开票天数，calculated measure，分母 date_cnt=count_distinct 开票日期）：{""measures"":[""cbill.daily_avg"",""cbill.date_cnt"",""cbill.receipt_count""],""timeDimensions"":[{""dimension"":""cbill.bill_date"",""dateRange"":[""2026-01-01"",""2026-09-23""]}],""limit"":100}（全期日均 49.9 份/天；口径已拍板=有单日均，自然日均模型内无法表达）"
+4,,按时间段（年\月\周等）、区划、单位、票种、项目查询开票份数和金额，包括开具数、作废数、冲红数,《开票汇总表》,"-- ck:按时间段（年\月\周等）、区划、单位、票种、项目查询开票份数和金额，包括开具数、作废数、冲红数
+select  
+c.fdate,
+c.frgnname,
+c.fagenname,
+c.fbillname,
+c.fitemname,
+count(distinct(c.fpid)) as invoicenum, -- 开票份数
+sum(c.famt) as totalamt, --开票金额
+ count(distinct CASE WHEN c.fstate = '1' AND c.ftotalamt >= 0 THEN c.fpid ELSE NULL END) AS  normalnum, --开具数
+ count(distinct CASE WHEN c.fstate = '2'  THEN c.fpid ELSE NULL END) AS  invalidnum, --作废冲红数
+ count(distinct CASE WHEN c.fstate = '1' AND c.ftotalamt < 0 THEN c.fpid ELSE NULL END) AS  writeoffnum -- 冲红数
+from une_cbill_high  c
+where c.fdate > '2026-01-01'   and c.fdate < '2026-12-31'
+group by c.fdate,c.frgncode,c.frgnname,c.fagenidcode,c.fagenname,c.fbillid,c.fbillname,c.fitemidcode,c.fitemname
+order by c.fdate,c.frgncode,c.fagenidcode;",,,"可构建（份数/金额/开具数/作废数/冲红数）：冲红数已新增 cbill.red_cnt（FSTATE='1' AND FTOTALAMT<0，正常状态金额为负；比冲销开票 FBUSTYPE=3 口径宽，两口径 db.js 实测不等；正常数不含冲红=normal_count-red_cnt 可自行组合）：{""measures"":[""cbill.receipt_count"",""cbill.total_amount"",""cbill.normal_count"",""cbill.void_count"",""cbill.red_cnt""],""dimensions"":[""cbill.region_code"",""agency.name"",""bill_type.name"",""cbill_item.item_name""],""timeDimensions"":[{""dimension"":""cbill.bill_date"",""dateRange"":[""2026-01-01"",""2026-09-23""]}],""limit"":100,""order"":{""cbill.total_amount"":""desc""}}"
+5,,按时间段（年\月\周等）、区划、行业、票种、项目查询向企业开具的票据份数和金额,企业判断方式：交款人含“单位”、“企业”等，交款人类型为单位，交款人字数超过5个字等,"ck:按时间段（年\月\周等）、区划、行业、票种、项目查询向企业开具的票据份数和金额
+select  
+c.fdate,
+c.frgnname,
+d.fname,
+c.fbillname,
+c.fitemname,
+count(distinct CASE WHEN position(c.fpayername, '单位') > 0 or  position(c.fpayername, '企业') > 0  THEN c.fpid  ELSE null end) as invoicenum,-- 向企业开具的票据份数
+sum( CASE WHEN position(c.fpayername, '单位') > 0 or  position(c.fpayername, '企业') > 0  THEN c.famt  ELSE 0 end) as invoiceamt -- 向企业开具的票据金额
+from une_cbill_high  c
+left join fab_agen a on a.fagenidcode  = c.fagenidcode  and a.fisfinal  = '1' 
+left join afa_res_dictitem d  on d.fcode = a.findcode and d.fdictcode = '117'
+where c.fdate > '2026-01-01'  and c.fdate < '2026-12-31'
+group by c.fdate,c.frgncode,c.frgnname,d.fname,c.fbillid,c.fbillname,c.fitemidcode,c.fitemname
+order by c.fdate,c.frgncode,d.fname",,,"部分可构建：缴款人类型维度已新增 cbill.payer_type（FPAYERTYPE 缴款人类型，48/48 月表全覆盖；取值 1/2 语义待业务确认）：{""measures"":[""cbill.receipt_count"",""cbill.item_count"",""cbill.total_amount""],""dimensions"":[""cbill.payer_type""],""limit"":100}（全期：1=31847 笔/1219641009984.02 元，2=485 笔/741742.88 元）。企业过滤=payer_type='<1或2>'，业务拍板 1/2 谁是单位后即可用（语义证据：本表注释无取值、异表 BS_PAYINFO_ERROR 注释""1 个人 2 单位""跨表未必一致、名称形态抽样无区分度）；原 SQL 的 contains""单位/企业""口径不可行（payer_name 脱敏只露末2字，且原始 contains 命中仅 36/3605 该口径本身也漏）"
+6,核票,按时间段（年\月\周等）、区划、单位、票种查询票据核销情况，包括本期情况，累计情况；,《审验汇总表》,"--oracle:按时间段（年\月\周等）、区划、单位、票种查询票据核销情况，包括本期情况，累计情况；
+SELECT DISTINCT SUMALL.FRGNCODE as ""区划编码"",
+                    AGEN.FAGENCODE as ""单位编码"",
+                    AGEN.FAGENNAME as  ""单位名称"",
+                    DICT.FNAME  as ""计量单位"",
+                    BILL.FBILLCODE as ""票据编码"" ,
+                    BILL.FBILLNAME  as ""票据名称"",
+                    THIS.FNUMBER as ""本期数量"",
+                    THIS.FAMT as ""本期审验金额"",
+                    THIS.FINVNUM as ""本期份数"",
+                    SUMALL.FALLNUMBER as ""累计审验数量"",
+                    SUMALL.FALLAMT as ""累计审验金额"",
+                    SUMALL.FALLINVNUM as ""累计审验份数""
+      FROM (SELECT WO.FRGNCODE,
+                        WO.FAGENIDCODE,
+                        ITEM.FBILLID,
+                        SUM(ITEM.FNUMBER) AS FALLNUMBER,
+                        SUM(ITEM.FAMT) AS FALLAMT,
+                        SUM(ITEM.FINVNUM) AS FALLINVNUM
+                   FROM FBE_WRITEOFF WO
+                   LEFT JOIN FBE_WRITEOFF_BILLITEM ITEM
+                     ON ITEM.FPID = WO.FID
+                  WHERE WO.FRGNCODE = '区划编码' AND WO.FCHANGESTATE = '2' 
+                  --- AND WO.FAGENIDCODE='单位识别码'
+                  -- AND ITEM.FBILLID='票据ID'
+                  GROUP BY WO.FRGNCODE, WO.FAGENIDCODE, ITEM.FBILLID) SUMALL
+      LEFT JOIN (SELECT WO.FRGNCODE,
+                        WO.FAGENIDCODE,
+                        ITEM.FBILLID,
+                        SUM(ITEM.FNUMBER) AS FNUMBER,
+                        SUM(ITEM.FAMT) AS FAMT,
+                        SUM(ITEM.FINVNUM) AS FINVNUM
+                   FROM FBE_WRITEOFF WO
+                   LEFT JOIN FBE_WRITEOFF_BILLITEM ITEM
+                     ON ITEM.FPID = WO.FID
+                  WHERE WO.FRGNCODE ='区划编码' AND WO.FCHANGESTATE = '2' 
+                 --AND WO.FDATE >='开始日期'
+                 --WO.FDATE<= '结束日期'
+                 --AND WO.FAGENIDCODE= '单位识别码'
+                 --AND ITEM.FBILLID= '票据ID'
+                  GROUP BY WO.FRGNCODE,WO.FAGENIDCODE, ITEM.FBILLID) THIS
+        ON SUMALL.FRGNCODE = THIS.FRGNCODE
+       AND THIS.FAGENIDCODE = SUMALL.FAGENIDCODE
+       AND THIS.FBILLID = SUMALL.FBILLID
+      LEFT JOIN V_FAB_BILLAGEN AGEN ON AGEN.FAGENIDCODE = SUMALL.FAGENIDCODE
+      LEFT JOIN V_FAB_BILL BILL ON SUMALL.FBILLID = BILL.FID
+      LEFT JOIN FBA_DICT DICT ON DICT.FOBJ = 'BILL_UNITS'
+      WHERE BILL.FUNITS = DICT.FCODE
+      ORDER BY AGEN.FAGENCODE, BILL.FBILLCODE",,,"可构建（本期/累计分两次查询：本期带 timeDimensions，累计去掉 timeDimensions）：本期 {""measures"":[""writeoff_view.inv_num"",""writeoff_view.face_amt"",""writeoff_view.audited_count""],""dimensions"":[""writeoff_view.name"",""writeoff_view.bill_name""],""timeDimensions"":[{""dimension"":""writeoff_view.compiled_date"",""dateRange"":[""2026-01-01"",""2026-09-23""]}],""limit"":100}。注：区划编码在 view 交付面被排除（行级权限维度），查区划用 cube 层 writeoff.region_code。"
+7,,按区划、单位、票种查询剩余未核销情况，总份数、金额；,《未核验情况表》,"---oracle:按区划、单位、票种查询剩余未核销情况，总份数、金额；
+SELECT DISTINCT 
+      AGEN.FAGENNAME as ""单位名称"",
+      UWO.FRGNCODE as ""区划编码"",
+      UWO.FAGENIDCODE as ""单位识别码"",
+      BILL.FBILLCODE as ""票据编码"",
+      BILL.FBILLNAME as ""票据名称"",
+      DICT.FNAME  as ""计量单位"",
+      UWO.FBATCHCODE as ""票据批次号"",
+      UWO.FBILLNO1 as ""起始号"",
+      UWO.FBILLNO2 as ""终止号"",
+      UWO.FNUMBER as ""份数"",
+      BILLBATCH.FBILLNOLEN as ""票号长度"",
+      AGEN.FAGENCODE as ""单位编码"",
+      (BILLBATCH.FCOPYNUM*UWO.FNUMBER) AS ""数量""，
+      BILLBATCH.FCHECKCODELEN as ""票据校验码长度""
+      FROM FBE_UNWRITEOFF UWO
+    LEFT JOIN V_FAB_BILLAGEN AGEN ON AGEN.FAGENIDCODE = UWO.FAGENIDCODE
+    LEFT JOIN V_FAB_BILL BILL ON UWO.FBILLID = BILL.FID
+    LEFT JOIN V_FAB_BILL_BATCH BILLBATCH ON UWO.FBATCHCODE = BILLBATCH.FBATCHCODE
+    LEFT JOIN FBA_DICT DICT ON DICT.FOBJ = 'BILL_UNITS'
+    LEFT JOIN V_FAB_BILLBATCH_PRICE BBP ON BBP.FBATCHCODE = UWO.FBATCHCODE  AND UWO.FBILLID = BBP .FBILLID AND UWO.FRGNCODE = BBP.FRGNCODE
+      WHERE BILL.FUNITS = DICT.FCODE AND UWO.FRGNCODE = '区划编码'
+       --and UWO.FAGENIDCODE in '单位识别码'
+       --and BILL.FID= '票据ID'
+       ---and UWO.FBATCHCODE= '票据批次号'
+        ORDER BY AGEN.FAGENCODE,BILL.FBILLCODE,UWO.FBATCHCODE",,,"无法构建，缺少""未核销库存""主题：FBE_UNWRITEOFF 表未建模（缺票据批次号/起始号/终止号/份数/票号长度/校验码长度等成员）；属新主题，需走 cube-modeling 完整六步。"
+8,,按区划查询已完成票据核销单位数，核销通过的单位数，发现异常用票的单位数,,"---oracle:按区划查询已完成票据核销单位数，核销通过的单位数，发现异常用票的单位数
+select 
+count(distinct case when t.fchangestate = '2' then  t.fagenidcode else null end) as allccount, -- 已完成核销的单位数量
+count(distinct case when t.fcheckresult = '1' then  t.fagenidcode else null end ) as passcount,-- 核销通过的单位数量
+count(distinct (select s.fagenidcode from fbe_suspicious s where s.fwriteoffid = t.fid and rownum = '1')) as exceptionCount -- 发现异常用票的单位数
+from fbe_writeoff t
+where t.fdate >= '2026-01-01' ;",,,"可构建（按单位去重度量已交付，Oracle 对数一致）：已完成核销单位数=writeoff.aud_agen_cnt（43）、核销通过单位数=writeoff.good_agen_cnt（38）、异常用票单位数=suspicious.agen_cnt（46）：{""measures"":[""writeoff.aud_agen_cnt"",""writeoff.good_agen_cnt""],""dimensions"":[""writeoff.region_code""],""limit"":100}；异常用票按区划 {""measures"":[""superv_view.agen_cnt"",""superv_view.proc_agen_cnt"",""superv_view.pend_agen_cnt""],""dimensions"":[""superv_view.region_name""],""limit"":100}"
+9,,按区划查询已上报的核销单数，自动核销通过的核销单数，发现异常用票的核销单数，整改合格的核销单数,,"--按区划查询已上报的核销单数，自动核销通过的核销单数，发现异常用票的核销单数，整改合格的核销单数
+select 
+count(distinct t.fagenidcode) as allcount, --按区划查询已上报的核销单数
+count(distinct case when t.fcheckresult = '1' and t.fwriteofftype = '2' then  t.fagenidcode else null end  ) as autopasscount,-- 自动核销通过的核销单数
+count(distinct (select s.fagenidcode from fbe_suspicious s where s.fwriteoffid = t.fid and rownum = '1')) as exceptionCount, -- 发现异常用票的单位数
+count(distinct case when t.fcheckresult = '6' then  t.fagenidcode else null end  ) as rectifypasscount-- 整改合格的核销单数
+from fbe_writeoff t
+where t.frgncode = '530000' ;",,,"部分可构建：已上报核销单数 {""measures"":[""writeoff.writeoff_count""],""dimensions"":[""writeoff.region_code""],""limit"":100}；自动核销通过数（单独查询，双过滤器）{""measures"":[""writeoff.writeoff_count""],""filters"":[{""member"":""writeoff.check_result"",""operator"":""equals"",""values"":[""1""]},{""member"":""writeoff.writeoff_type"",""operator"":""equals"",""values"":[""2""]}]}（试跑=52）；异常用票核销单数已新增 suspicious.wo_cnt（count_distinct FWRITEOFFID，matchkey 100%，当前 35；只给总数，不做核销单属性下钻，未建 join 避免 agency 多路径成环）：{""measures"":[""suspicious.wo_cnt""],""limit"":100}。仍缺：整改合格数 check_result=6 模型实测无该取值（仅 1 良好/2 合格/null），需业务对齐"
+10,领用核,"按时间段（年\月\周等）、区划、单位、票种查询票据领用核汇总情况；
+如：上期结存（数量、份数）、本期发生份数（领用、审验、作废、遗失）、累计发生份数（领用、审验、作废、遗失）、当前库存、期末结存（数量、份数）","《票据领核汇总表》
+","-- oracle:按时间段（年\月\周等）、区划、单位、票种查询票据领用核汇总情况；
+如：上期结存（数量、份数）、本期发生份数（领用、审验、作废、遗失）、累计发生份数（领用、审验、作废、遗失）、当前库存、期末结存（数量、份数） 
+SELECT FALL.FRGNCODE as ""区划编码"",
+        REGION.FNAME  as ""区划名称"",
+        AGEN.FAGENCODE  as ""单位编码"",
+        AGEN.FAGENNAME  as ""单位名称"",
+        BILL.FBILLNAME  as ""票据名称"",
+        BILL.FBILLCODE as ""票据编码"",
+        FALL.FBILLID as ""票据ID"",
+        DICT.FNAME as ""计量单位"",
+
+        CASE WHEN (NVL(SURPLUS.FNUMBER, 0) - NVL(SURPLUS.FTHISWRITEOFFNUM, 0)) >= 0
+        then (NVL(SURPLUS.FNUMBER, 0) - NVL(SURPLUS.FTHISWRITEOFFNUM, 0))
+        else 0 end as ""上期结存数量"",
+        CASE WHEN (NVL(SURPLUS.FAMOUNT, 0) - NVL(SURPLUS.FTHISWRITEOFF, 0)) >= 0
+        then (NVL(SURPLUS.FAMOUNT, 0) - NVL(SURPLUS.FTHISWRITEOFF, 0))
+        else 0 end as ""上期结存份数"",
+
+        FTHIS.FAMOUNT AS ""本期-领入"",
+        FTHIS.FTHISWRITEOFF AS ""本期-审验"",
+        (NVL(FTHIS.FTHISINVALID, 0) + NVL(FTHIS.FTHISSTOCKINVALID, 0)) AS ""本期-作废"",
+        FTHIS.FTHISWRITEOFF - (NVL(FTHIS.FTHISINVALID, 0) + NVL(FTHIS.FTHISSTOCKINVALID, 0)) AS ""本期-使用"",
+
+        FALL.FAMOUNT AS ""累计-领入"",
+        FALL.FTHISWRITEOFF AS ""累计-审验"",
+        (NVL(FALL.FTHISINVALID, 0) + NVL(FALL.FTHISSTOCKINVALID, 0)) AS ""累计-作废"",
+        FALL.FTHISWRITEOFF - (NVL(FALL.FTHISINVALID, 0) + NVL(FALL.FTHISSTOCKINVALID, 0)) AS ""累计-使用"",
+
+        CASE WHEN (NVL(SURPLUS.FNUMBER, 0) + NVL(FTHIS.FNUMBER, 0) - NVL(FTHIS.FTHISWRITEOFFNUM, 0) -
+        NVL(SURPLUS.FTHISWRITEOFFNUM, 0)) >= 0
+        THEN (NVL(SURPLUS.FNUMBER, 0) + NVL(FTHIS.FNUMBER, 0) - NVL(FTHIS.FTHISWRITEOFFNUM, 0) -
+        NVL(SURPLUS.FTHISWRITEOFFNUM, 0)) ELSE 0 END
+        AS ""期末-数量"",
+        CASE WHEN (NVL(SURPLUS.FAMOUNT, 0) + NVL(FTHIS.FAMOUNT, 0) - NVL(FTHIS.FTHISWRITEOFF, 0) -
+        NVL(SURPLUS.FTHISWRITEOFF, 0)) >= 0
+        THEN (NVL(SURPLUS.FAMOUNT, 0) + NVL(FTHIS.FAMOUNT, 0) - NVL(FTHIS.FTHISWRITEOFF, 0) - NVL(SURPLUS.FTHISWRITEOFF,
+        0)) ELSE 0 END
+        AS  ""期末-份数""
+        FROM (
+        
+             SELECT SUM(FALL.FAMOUNT) AS FAMOUNT,
+        SUM(FALL.FNUMBER) AS FNUMBER,
+        SUM(FTHISWRITEOFFNUM) AS FTHISWRITEOFFNUM,
+        SUM(FTHISWRITEOFF) AS FTHISWRITEOFF,
+        SUM(FTHISSTOCKWRITEOFF) AS FTHISSTOCKWRITEOFF,
+        SUM(FTHISINVALID) AS FTHISINVALID,
+        SUM(FTHISSTOCKINVALID) AS FTHISSTOCKINVALID,
+        FALL.FRGNCODE,
+        FALL.FAGENCODE,
+        FALL.FBILLID
+        FROM (
+            SELECT SO.FRGNCODE,
+            SO.FAGENCODE,
+            SOI.FBILLID,
+            SOI.FNUMBER,
+            (SOI.FNUMBER * BB.FCOPYNUM) AS FAMOUNT,
+            0 AS FTHISWRITEOFFNUM,
+            0 AS FTHISWRITEOFF,
+            0 AS FTHISINVALID,
+            0 AS FTHISSTOCKINVALID,
+            0 AS FTHISSTOCKWRITEOFF
+            FROM FBE_STOCK_OUT SO
+            LEFT JOIN FBE_STOCK_OUT_ITEM SOI
+            ON SO.FID = SOI.FPID
+            LEFT JOIN V_FAB_BILL_BATCH BB
+            ON BB.FBATCHCODE = SOI.FBATCHCODE
+            WHERE SO.FCHANGESTATE != 1 AND SO.FCHANGESTATE != 2
+            AND SO.FDATE >='开始日期'
+           AND SO.FDATE <= '结束日期'
+            UNION ALL
+            SELECT WO.FRGNCODE,
+            WO.FAGENIDCODE,
+            WOI.FBILLID,
+            0 AS FNUMBER,
+            0 AS FAMOUNT,
+            WOI.FNUMBER AS FTHISWRITEOFFNUM,
+            NVL((WOI.FNUMBER * BB.FCOPYNUM),0) AS FTHISWRITEOFF,
+            0 AS FTHISINVALID,
+            0 AS FTHISSTOCKINVALID,
+            0 AS FTHISSTOCKWRITEOFF
+            FROM FBE_WRITEOFF WO
+            LEFT JOIN FBE_WRITEOFF_BILLITEM WOI
+            ON WOI.FPID = WO.FID
+            LEFT JOIN V_FAB_BILL_BATCH BB
+            ON BB.FBATCHCODE = WOI.FBATCHCODE
+            WHERE WO.FCHANGESTATE != 1 AND WO.FCHECKRESULT = '1'
+            AND WO.FDATE >= '开始日期'
+            AND WO.FDATE <= '结束日期'
+            UNION ALL
+            SELECT WO1.FRGNCODE,
+            WO1.FAGENIDCODE,
+            WBII.FBILLID,
+            0 AS FNUMBER,
+            0 AS FAMOUNT,
+            0 AS FTHISWRITEOFFNUM,
+            0 AS FTHISWRITEOFF,
+            0 AS FTHISINVALID,
+            WBII.FAMOUNT AS FTHISSTOCKINVALID,
+            0 AS FTHISSTOCKWRITEOFF
+            FROM FBE_WRITEOFF WO1
+            LEFT JOIN FBE_WRITEOFF_BILLINVALID_ITEM WBII
+            ON WBII.FPID = WO1.FID
+            WHERE WBII.FTYPE = '2' AND WO1.FCHANGESTATE != 1 AND WO1.FCHECKRESULT = '1'
+            AND WO1.FDATE >= '开始日期'
+            AND WO1.FDATE <= '结束日期'
+            UNION ALL
+            SELECT WO2.FRGNCODE,
+            WO2.FAGENIDCODE,
+            WBII1.FBILLID,
+            0 AS FNUMBER,
+            0 AS FAMOUNT,
+            0 AS FTHISWRITEOFFNUM,
+            0 AS FTHISWRITEOFF,
+            WBII1.FAMOUNT AS FTHISINVALID,
+            0 AS FTHISSTOCKINVALID,
+            0 AS FTHISSTOCKWRITEOFF
+            FROM FBE_WRITEOFF WO2
+            LEFT JOIN FBE_WRITEOFF_BILLINVALID_ITEM WBII1
+            ON WBII1.FPID = WO2.FID
+            WHERE WBII1.FTYPE = '1' AND WO2.FCHANGESTATE != 1 AND WO2.FCHECKRESULT = '1'
+            AND WO2.FDATE >= '开始日期'
+            AND WO2.FDATE <= '结束日期') FALL
+        GROUP BY FALL.FRGNCODE, FALL.FAGENCODE, FALL.FBILLID
+        
+        ) FTHIS
+            RIGHT JOIN (
+            
+                  SELECT
+              SUM(FALL.FNUMBER) AS FNUMBER,
+              SUM(FALL.FAMOUNT) AS FAMOUNT,
+              SUM(FTHISWRITEOFFNUM) AS FTHISWRITEOFFNUM,
+                        SUM(FTHISWRITEOFF) AS FTHISWRITEOFF,
+                        SUM(FTHISSTOCKWRITEOFF) AS FTHISSTOCKWRITEOFF,
+                        SUM(FTHISINVALID) AS FTHISINVALID,
+                        SUM(FTHISSTOCKINVALID) AS FTHISSTOCKINVALID,
+                        FALL.FRGNCODE,
+                        FALL.FAGENCODE,
+              FALL.FBILLID
+                   FROM (SELECT SO.FRGNCODE,
+                                SO.FAGENCODE,
+                                SOI.FBILLID,
+                  SOI.FNUMBER,
+                                (SOI.FNUMBER * BB.FCOPYNUM) AS FAMOUNT,
+                  0 AS FTHISWRITEOFFNUM,
+                                0 AS FTHISWRITEOFF,
+                                0 AS FTHISINVALID,
+                                0 AS FTHISSTOCKINVALID,
+                                0 AS FTHISSTOCKWRITEOFF
+                           FROM FBE_STOCK_OUT SO
+                           LEFT JOIN FBE_STOCK_OUT_ITEM SOI
+                             ON SO.FID = SOI.FPID
+                           LEFT JOIN V_FAB_BILL_BATCH BB
+                             ON BB.FBATCHCODE = SOI.FBATCHCODE
+                           WHERE SO.FCHANGESTATE != 1 AND SO.FCHANGESTATE != 2
+                         UNION ALL
+                         SELECT WO.FRGNCODE,
+                                WO.FAGENIDCODE,
+                                WOI.FBILLID,
+                  0 AS FNUMBER,
+                                0 AS FAMOUNT,
+                  WOI.FNUMBER AS FTHISWRITEOFFNUM,
+                                NVL((WOI.FNUMBER * BB.FCOPYNUM),0) AS FTHISWRITEOFF,
+                                0 AS FTHISINVALID,
+                                0 AS FTHISSTOCKINVALID,
+                                0 AS FTHISSTOCKWRITEOFF
+               FROM FBE_WRITEOFF WO
+                         LEFT JOIN FBE_WRITEOFF_BILLITEM WOI
+                              ON WOI.FPID = WO.FID
+                         LEFT JOIN V_FAB_BILL_BATCH BB
+                              ON BB.FBATCHCODE = WOI.FBATCHCODE
+                         WHERE WO.FCHANGESTATE != 1 AND WO.FCHECKRESULT = '1'
+                         UNION ALL
+                         SELECT WO1.FRGNCODE,
+                                WO1.FAGENIDCODE,
+                                WBII.FBILLID,
+                  0 AS FNUMBER,
+                                0 AS FAMOUNT,
+                                0 AS FTHISWRITEOFFNUM,
+                  0 AS FTHISWRITEOFF,
+                                0 AS FTHISINVALID,
+                                WBII.FAMOUNT AS FTHISSTOCKINVALID,
+                                0 AS FTHISSTOCKWRITEOFF
+                         FROM FBE_WRITEOFF WO1
+                         LEFT JOIN FBE_WRITEOFF_BILLINVALID_ITEM WBII
+                          ON WBII.FPID = WO1.FID
+                         WHERE WBII.FTYPE = '2' AND WO1.FCHANGESTATE != 1 AND WO1.FCHECKRESULT = '1'
+                         UNION ALL
+                         SELECT WO2.FRGNCODE,
+                                WO2.FAGENIDCODE,
+                                WBII1.FBILLID,
+                  0 AS FNUMBER,
+                                0 AS FAMOUNT,
+                  0 AS FTHISWRITEOFFNUM,
+                                0 AS FTHISWRITEOFF,
+                                WBII1.FAMOUNT AS FTHISINVALID,
+                                0 AS FTHISSTOCKINVALID,
+                                0 AS FTHISSTOCKWRITEOFF
+                           FROM FBE_WRITEOFF WO2
+                           LEFT JOIN FBE_WRITEOFF_BILLINVALID_ITEM WBII1
+                             ON WBII1.FPID = WO2.FID
+                          WHERE WBII1.FTYPE = '1' AND WO2.FCHANGESTATE != 1 AND WO2.FCHECKRESULT = '1') FALL
+                  GROUP BY FALL.FRGNCODE, FALL.FAGENCODE, FALL.FBILLID
+            
+            ) FALL
+              ON FALL.FRGNCODE = FTHIS.FRGNCODE
+              AND FALL.FAGENCODE = FTHIS.FAGENCODE
+              AND FALL.FBILLID = FTHIS.FBILLID
+            LEFT JOIN (
+            
+               SELECT SUM(FALL.FAMOUNT) AS FAMOUNT,
+        SUM(FALL.FNUMBER) AS FNUMBER,
+        SUM(FTHISWRITEOFFNUM) AS FTHISWRITEOFFNUM,
+        SUM(FTHISWRITEOFF) AS FTHISWRITEOFF,
+        SUM(FTHISSTOCKWRITEOFF) AS FTHISSTOCKWRITEOFF,
+        SUM(FTHISINVALID) AS FTHISINVALID,
+        SUM(FTHISSTOCKINVALID) AS FTHISSTOCKINVALID,
+        FALL.FRGNCODE,
+        FALL.FAGENCODE,
+        FALL.FBILLID
+        FROM (SELECT SO.FRGNCODE,
+        SO.FAGENCODE,
+        SOI.FBILLID,
+        SOI.FNUMBER,
+        (SOI.FNUMBER * BB.FCOPYNUM) AS FAMOUNT,
+        0 AS FTHISWRITEOFFNUM,
+        0 AS FTHISWRITEOFF,
+        0 AS FTHISINVALID,
+        0 AS FTHISSTOCKINVALID,
+        0 AS FTHISSTOCKWRITEOFF
+        FROM FBE_STOCK_OUT SO
+        LEFT JOIN FBE_STOCK_OUT_ITEM SOI
+        ON SO.FID = SOI.FPID
+        LEFT JOIN V_FAB_BILL_BATCH BB
+        ON BB.FBATCHCODE = SOI.FBATCHCODE
+        WHERE SO.FCHANGESTATE != 1 AND SO.FCHANGESTATE != 2
+        AND SO.FDATE < '开始日期'
+        UNION ALL
+        SELECT WO.FRGNCODE,
+        WO.FAGENIDCODE,
+        WOI.FBILLID,
+        0 AS FNUMBER,
+        0 AS FAMOUNT,
+        WOI.FNUMBER AS FTHISWRITEOFFNUM,
+        NVL((WOI.FNUMBER * BB.FCOPYNUM),0) AS FTHISWRITEOFF,
+        0 AS FTHISINVALID,
+        0 AS FTHISSTOCKINVALID,
+        0 AS FTHISSTOCKWRITEOFF
+        FROM FBE_WRITEOFF WO
+        LEFT JOIN FBE_WRITEOFF_BILLITEM WOI
+        ON WOI.FPID = WO.FID
+        LEFT JOIN V_FAB_BILL_BATCH BB
+        ON BB.FBATCHCODE = WOI.FBATCHCODE
+        WHERE WO.FCHANGESTATE != 1 AND WO.FCHECKRESULT = '1'
+        AND WO.FDATE <  '开始日期'
+        UNION ALL
+        SELECT WO1.FRGNCODE,
+        WO1.FAGENIDCODE,
+        WBII.FBILLID,
+        0 AS FNUMBER,
+        0 AS FAMOUNT,
+        0 AS FTHISWRITEOFFNUM,
+        0 AS FTHISWRITEOFF,
+        0 AS FTHISINVALID,
+        WBII.FAMOUNT AS FTHISSTOCKINVALID,
+        0 AS FTHISSTOCKWRITEOFF
+        FROM FBE_WRITEOFF WO1
+        LEFT JOIN FBE_WRITEOFF_BILLINVALID_ITEM WBII
+        ON WBII.FPID = WO1.FID
+        WHERE WBII.FTYPE = '2' AND WO1.FCHANGESTATE != 1 AND WO1.FCHECKRESULT = '1'
+        AND WO1.FDATE < '开始日期'
+        UNION ALL
+        SELECT WO2.FRGNCODE,
+        WO2.FAGENIDCODE,
+        WBII1.FBILLID,
+        0 AS FNUMBER,
+        0 AS FAMOUNT,
+        0 AS FTHISWRITEOFFNUM,
+        0 AS FTHISWRITEOFF,
+        WBII1.FAMOUNT FTHISINVALID,
+        0 AS FTHISSTOCKINVALID,
+        0 AS FTHISSTOCKWRITEOFF
+        FROM FBE_WRITEOFF WO2
+        LEFT JOIN FBE_WRITEOFF_BILLINVALID_ITEM WBII1
+        ON WBII1.FPID = WO2.FID
+        WHERE WBII1.FTYPE = '1' AND WO2.FCHANGESTATE != 1 AND WO2.FCHECKRESULT = '1'
+        AND WO2.FDATE <  '开始日期'
+        ) FALL
+        GROUP BY FALL.FRGNCODE, FALL.FAGENCODE, FALL.FBILLID
+            
+            
+            ) SURPLUS
+              ON FALL.FRGNCODE = SURPLUS.FRGNCODE
+              AND FALL.FAGENCODE = SURPLUS.FAGENCODE
+              AND FALL.FBILLID = SURPLUS.FBILLID
+            LEFT JOIN V_FAB_BILLAGEN AGEN ON AGEN.FAGENIDCODE = FALL.FAGENCODE
+            LEFT JOIN AFA_AUTH_REGION REGION ON AGEN.FRGNCODE = REGION.FCODE
+            LEFT JOIN V_FAB_BILL BILL ON FALL.FBILLID = BILL.FID
+            LEFT JOIN FBA_DICT DICT ON DICT.FCODE = BILL.FUNITS AND FOBJ= 'BILL_UNITS'
+        WHERE FALL.FRGNCODE = '区划编码'
+        AND AGEN.FAGENIDCODE= '单位识别码'
+        AND BILL.FID= '票据编码'
+        ORDER BY AGEN.FAGENCODE DESC,BILL.FBILLCODE",,,"无法构建（上期结存/期末结存/累计-本期为跨期间运算，API 单查询无法表达）：缺作废/遗失明细（FBE_WRITEOFF_BILLINVALID_ITEM 未建模）。库存份数已新增 stock.stock_qty（同序号2，当前结存 107270761 可查）：{""measures"":[""stock.stock_qty""],""dimensions"":[""agency.name"",""bill_type.name""],""limit"":100}。部分可查：本期领用份数 {""measures"":[""stock_out_item.total_number""],""timeDimensions"":[{""dimension"":""stock_out.out_date"",""dateRange"":[""2026-01-01"",""2026-09-23""]}]}；本期审验份数 {""measures"":[""writeoff_billitem.inv_num""],""timeDimensions"":[{""dimension"":""writeoff.compiled_date"",""dateRange"":[""2026-01-01"",""2026-09-23""]}]}"
+11,监管,按区划、票种、项目、行业查询监管规则条数、事中\事后监管规则条数；,自动执行右侧几条SQL,"-- oracle:按照区划查询监管规则条数、事中\事后监管规则条数
+Select 
+rg.fname, -- 区划名称
+(select count(1) from fab_rule r 
+where 
+ r.faltercode = '1' and r.frgnid = rg.id
+ ) as totalcount,-- 监管规则条数 
+(select count(1) from fab_rule r 
+where 
+ r.faltercode = '1' and r.frgnid = rg.id and r.fenableinvoicecheck = '1'
+ ), -- 事中规则条数
+(select count(1) from fab_rule r 
+where 
+ r.faltercode = '1' and r.frgnid = rg.id and (r.fenableinvoicecheck != '1' or r.fenableinvoicecheck is null)
+ ) -- 事后规则条数
+From afa_auth_region rg 
+order by rg.fcode",已验证,各区划监管规则条数,"无法构建，缺少""监管规则""主题：FAB_RULE 及关联表 FAB_RULE_BILL/FAB_RULE_ITEM/FAB_RULE_AGEN 均未建模（缺规则计数、事中/事后标志 FENABLEINVOICECHECK、生效标志 FALTERCODE）；本行4条SQL（按区划/票种/项目/行业）均依赖该主题。"
+,,,,"-- oracle:按照票据查询监管规则条数、事中\事后监管规则条数
+Select 
+b.fname, --票据名称
+(
+select count(1) from fab_rule r 
+where 
+ r.faltercode = '1' 
+and（exists (Select t.* From fab_rule_bill rb where rb.fpid = r.fid  and rb.fbillid = b.fid) or not exists(Select t.* From fab_rule_bill rb where rb.fpid = r.fid ))
+) as totalcount, -- 监管规则数
+(
+select count(1) from fab_rule r 
+where 
+ r.faltercode = '1' and r.fenableinvoicecheck = '1'
+and（exists (Select t.* From fab_rule_bill rb where rb.fpid = r.fid  and rb.fbillid = b.fid) or not exists(Select t.* From fab_rule_bill rb where rb.fpid = r.fid ))
+) as szcount, -- 事中规则数量
+(
+select count(1) from fab_rule r 
+where 
+ r.faltercode = '1' and (r.fenableinvoicecheck != '1' or r.fenableinvoicecheck is null)
+and（exists (Select t.* From fab_rule_bill rb where rb.fpid = r.fid  and rb.fbillid = b.fid) or not exists(Select t.* From fab_rule_bill rb where rb.fpid = r.fid ))
+) as shcount --  事后规则数量
+From fab_bill b
+order by b.fcode ",已验证,各票种有多少条监管规则,同序号11：无法构建，缺少监管规则主题（FAB_RULE/FAB_RULE_BILL 未建模，票种维度关联缺失）。
+,,,少了按行业的SQL,"-- oracle:按照项目查询监管规则条数、事中\事后监管规则条数
+Select 
+i.fname, --项目名称
+(
+select count(1) from fab_rule r 
+where 
+ r.faltercode = '1' 
+and（exists (Select t.* From fab_rule_item ri where ri.fpid = r.fid  and ri.fitemidcode = i.fitemidcode) or not exists(Select t.* From fab_rule_bill ri where  ri.fpid = r.fid ))
+) as totalcount, -- 监管规则数
+(
+select count(1) from fab_rule r 
+where 
+ r.faltercode = '1' and r.fenableinvoicecheck = '1'
+and（exists (Select t.* From fab_rule_item ri where ri.fpid = r.fid  and ri.fitemidcode = i.fitemidcode) or not exists(Select t.* From fab_rule_bill ri where  ri.fpid = r.fid ))
+) as szcount, -- 事中规则数量
+(
+select count(1) from fab_rule r 
+where 
+ r.faltercode = '1' and (r.fenableinvoicecheck != '1' or r.fenableinvoicecheck is null)
+and（exists (Select t.* From fab_rule_item ri where ri.fpid = r.fid  and ri.fitemidcode = i.fitemidcode) or not exists(Select t.* From fab_rule_bill ri where  ri.fpid = r.fid ))
+) as shcount --  事后规则数量
+From fab_item i where i.fisfinal = '1'
+order by i.fcode",已验证,各项目监管规则条数统计,同序号11：无法构建，缺少监管规则主题（FAB_RULE/FAB_RULE_ITEM 未建模，项目维度关联缺失）。
+,,,,"--oracle:按照行业查询监管规则条数、事中\事后监管规则条数
+Select 
+dict.fname, --所属行业名称
+(
+select count(1) from fab_rule r 
+where 
+ r.faltercode = '1' 
+and（exists (Select t.* From fab_rule_agen  ra left join fab_agen a on  ra.fagenidcode = a.fagenidcode and a.fisfinal = '1' where a.findcode = dict.fdictcode) or not exists(Select t.* From fab_rule_agen ra where ra.fpid = r.fid ))
+) as totalcount, -- 监管规则数
+(
+select count(1) from fab_rule r 
+where 
+ r.faltercode = '1' and r.fenableinvoicecheck = '1'
+and（exists (Select t.* From fab_rule_agen  ra left join fab_agen a on  ra.fagenidcode = a.fagenidcode and a.fisfinal = '1' where a.findcode = dict.fdictcode) or not exists(Select t.* From fab_rule_agen ra where ra.fpid = r.fid ))
+) as szcount, -- 事中规则数量
+(
+select count(1) from fab_rule r 
+where 
+ r.faltercode = '1' and (r.fenableinvoicecheck != '1' or r.fenableinvoicecheck is null)
+and（exists (Select t.* From fab_rule_agen  ra left join fab_agen a on  ra.fagenidcode = a.fagenidcode and a.fisfinal = '1' where a.findcode = dict.fdictcode) or not exists(Select t.* From fab_rule_agen ra where ra.fpid = r.fid ))
+) as shcount --  事后规则数量
+From  afa_res_dictitem dict 
+where dict.fdictcode = '117';",已验证,,同序号11：无法构建，缺少监管规则主题（FAB_RULE/FAB_RULE_AGEN 未建模，行业维度关联缺失）。
+12,,按区划、单位、票种、项目、行业查询异常用票、违规用票份数，已处理份数，待处理份数；,"云南没有违规操作流程
+自动执行右侧几条SQL
+","-- oracle:按区划查询异常用票、违规用票份数，已处理份数，待处理份数；
+Select 
+rg.fname, -- 区划名称
+(Select count(1) From fbe_suspicious s where s.frgnid = rg.id), --异常票数
+(Select count(1) From fbe_suspicious s where s.frgnid = rg.id and s.fstatus = '3'), --已处理数
+(Select count(1) From fbe_suspicious s where s.frgnid = rg.id and s.fstatus != '3') --未处理数
+From afa_auth_region rg 
+order by rg.fcode",已验证,各区划的异常用票、违规用票份数是多少？已处理和待处理的各多少？,"可构建（区划/单位/票种/行业；按项目缺维度）：{""measures"":[""superv_view.suspicious_count"",""superv_view.pending_count"",""superv_view.processed_count""],""dimensions"":[""superv_view.region_name"",""superv_view.name"",""superv_view.bill_name"",""superv_view.industry_name""],""limit"":100,""order"":{""superv_view.suspicious_count"":""desc""}}。违规用票口径：result=2（标记违规）过滤或 result 维度分组（模型实测有 3 无 2，字典外取值原样分组）。按项目无法构建：suspicious 未关联收费项目。"
+,,,少了按项目和行业的SQL,"-- oracle:按票种查询异常用票、违规用票份数，已处理份数，待处理份数；
+Select 
+b.fname, --票据名称
+(Select count(1) From fbe_suspicious s where s.fbillid = b.fid), --异常票数
+(Select count(1) From fbe_suspicious s where s.fbillid = b.fid and s.fstatus = '3'), --已处理数
+(Select count(1) From fbe_suspicious s where s.fbillid = b.fid and s.fstatus != '3') --未处理数
+From fab_bill b
+order by b.fcode ",已验证,各票种的异常用票情况怎么样,可构建：同序号12查询，按票种分组（票种维度=superv_view.bill_name 已含在查询中，去掉其他维度即可）。
+,,,,"
+-- oracle:按项目查询异常用票、违规用票份数，已处理份数，待处理份数；
+Select fi.fcode, -- 项目编码
+       fi.fname, -- 项目名称
+       (Select count(1)
+          From fbe_suspicious s
+         where exists
+         (Select ci.*
+                  From (Select i.fpid, i.fitemidcode, i.fitemcode, i.fitemname
+                          From une_cbill_item i
+                        union all
+                        Select i.fpid, i.fitemidcode, i.fitemcode, i.fitemname
+                          From une_cbill_item_202601 i
+                        union all
+                        Select i.fpid, i.fitemidcode, i.fitemcode, i.fitemname
+                          From une_cbill_item_202602 i .. ..) ci
+                 where ci.fitemidcode = fi.fitemidcode
+                   and ci.fpid = s.fbusid)) as allnum, --异常票数
+       (Select count(1)
+          From fbe_suspicious s
+         where s.fstatus = '3 '
+           and exists
+         (Select ci.*
+                  From (Select i.fpid, i.fitemidcode, i.fitemcode, i.fitemname
+                          From une_cbill_item i
+                        union all
+                        Select i.fpid, i.fitemidcode, i.fitemcode, i.fitemname
+                          From une_cbill_item_202601 i
+                        union all
+                        Select i.fpid, i.fitemidcode, i.fitemcode, i.fitemname
+                          From une_cbill_item_202602 i .. ..) ci
+                 where ci.fitemidcode = fi.fitemidcode
+                   and ci.fpid = s.fbusid)) as allnum, --已处理数
+       (Select count(1)
+          From fbe_suspicious s
+         where s.fstatus != '3 '
+           and exists
+         (Select ci.*
+                  From (Select i.fpid, i.fitemidcode, i.fitemcode, i.fitemname
+                          From une_cbill_item i
+                        union all
+                        Select i.fpid, i.fitemidcode, i.fitemcode, i.fitemname
+                          From une_cbill_item_202601 i
+                        union all
+                        Select i.fpid, i.fitemidcode, i.fitemcode, i.fitemname
+                          From une_cbill_item_202602 i .. ..) ci
+                 where ci.fitemidcode = fi.fitemidcode
+                   and ci.fpid = s.fbusid)) as allnum, --未处理数          
+  From fab_item fi
+ where fi.fisfinal = '1'
+ order by fi.fcode",已验证,各项目的异常用票情况怎么样,无法构建，缺少项目维度：suspicious 未关联收费项目表（无项目字段）。
+,,,,"
+
+-- oracle:按行业查询异常用票、违规用票份数，已处理份数，待处理份数；
+Select d.fname, -- 所属行业
+       (Select count(1)
+          From fbe_suspicious s
+          left join fab_agen a
+            on a.fisfinal = '1'
+           and s.fagenidcode = a.fagenidcode
+         where a.findcode = d.fcode) as allnum, --异常票数
+       (Select count(1)
+          From fbe_suspicious s
+          left join fab_agen a
+            on a.fisfinal = '1'
+           and s.fagenidcode = a.fagenidcode
+         where a.findcode = d.fcode
+           and s.fstatus = '3') as allnum, --异常票数
+       (Select count(1)
+          From fbe_suspicious s
+          left join fab_agen a
+            on a.fisfinal = '1'
+           and s.fagenidcode = a.fagenidcode
+         where a.findcode = d.fcode
+           and s.fstatus != '3') as allnum --未处理数          
+  From afa_res_dictitem d
+ where d.fdictcode = '117'",已验证,各行业的异常用票、违规用票份数是多少？已处理和待处理的各多少？,可构建：同序号12查询，按行业分组（行业维度=superv_view.industry_name 已含在查询中）。
+13,,按区划、单位、票种、项目、行业查询异常用票或违规用票单位数、已完成整改单位数、待整改单位数、超期未整改的单位数,云南没违规整改流程,"---探索出来的查询SQL，需要确认是否可以,CK库--
+SELECT rg.fname AS region_name, COUNT(DISTINCT u.fagencode) AS total_unit_cnt, COUNT(DISTINCT CASE WHEN u.has_overdue = 1 THEN u.fagencode END) AS overdue_unit_cnt, COUNT(DISTINCT CASE WHEN u.has_overdue = 0 AND u.all_done = 1 THEN u.fagencode END) AS rectified_unit_cnt, COUNT(DISTINCT CASE WHEN u.has_overdue = 0 AND u.all_done = 0 THEN u.fagencode END) AS pending_unit_cnt FROM ( SELECT s.fagencode AS fagencode, MAX(s.frgnid) AS frgnid, MAX(CASE WHEN s.fstatus = '2' THEN 1 ELSE 0 END) AS has_overdue, MIN(CASE WHEN s.fstatus = '3' THEN 1 ELSE 0 END) AS all_done FROM fbe_suspicious s WHERE s.fresult IN ('0','1','2') GROUP BY s.fagencode ) u LEFT JOIN afa_auth_region rg ON rg.id = u.frgnid WHERE rg.fname IS NOT NULL GROUP BY rg.fname ORDER BY total_unit_cnt DESC",,,"部分可构建：异常用票单位数=suspicious.agen_cnt（46）、已完成整改（已处理）单位数=suspicious.proc_agen_cnt（8）、待整改单位数=suspicious.pend_agen_cnt（46）：{""measures"":[""superv_view.agen_cnt"",""superv_view.proc_agen_cnt"",""superv_view.pend_agen_cnt""],""dimensions"":[""superv_view.region_name""],""limit"":100}。缺：1)违规用票单位数（result=2）与超期未整改单位数（fstatus=2）模型实测无该取值（返回0，口径需与业务对齐）2)按项目维度（suspicious 未关联收费项目）"
+14,,查询事中、事后发现的异常用票份数；,,"-- oracle:查询事中、事后发现的异常用票份数；
+Select 
+sum(case when r.fenableinvoicecheck = '1' then 1 else 0 end), --事中的异常份数
+sum(case when r.fenableinvoicecheck = '1' then 0 else 1 end) --事后的异常份数
+from fbe_suspicious_rules s
+left join fab_rule r on s.fruleid = r.fid",已验证,事中和事后分别发现了多少异常用票,"无法构建，缺少""事中/事后规则关联""：FBE_SUSPICIOUS_RULES、FAB_RULE 未建模，suspicious cube 无规则维度，无法拆分事中/事后。"
+15,,单位库存预警，问目前单位哪些单位库存到安全阈值,云南库存预警采用：库存数量<今年计划数据*预警比率,"-- oracle: 单位库存预警，问目前单位哪些单位库存到安全阈值     
+   select 
+        distinct(fagenname)
+        from (
+          Select
+          a.fagenname,
+          b.fname,
+          nvl((
+             Select  sum(to_number(t.fbillno2) - to_number(t.fbillno1) + 1) as stocknum
+            From v_ubr_stock t
+            where  t.fagenidcode = fb.fagenidcode and fb.fbillid = t.fbillid
+        ),0) as stocknum,
+         nvl((
+             SELECT sum(i.fplanadjnumber) as prtnum
+            FROM ube_stock_prtplanadj_item i
+            LEFT JOIN ube_stock_prtplanadj t on i.fpid = t.fid
+            where  t.fagenidcode = fb.fagenidcode and i.fbillid = fb.fbillid
+            and t.fyear =  TO_CHAR(SYSDATE, 'YYYY') and t.fchangestate = '64'
+        ),0) as prtnum,
+        (Select t.fvalue From nontax_config t where t.fkey = 'AGEN_STOCK_WARN_RATE') as warnrate
+        From fab_agen_bill fb 
+        left join fab_bill b on b.fid = fb.fbillid
+        left join fab_agen a on a.fagenidcode = fb.fagenidcode and a.fisfinal = '1'
+       
+       ) tmp
+       where tmp.prtnum * tmp.warnrate > tmp.stocknum",已验证,哪些单位库存已经到安全阈值了,"部分可构建：库存份数已新增 stock.stock_qty（同序号2，当前结存 107270761 可查）：{""measures"":[""stock.stock_qty""],""dimensions"":[""agency.name"",""bill_type.name"",""stock.source""],""limit"":100}。仍缺：1)用票计划表 UBE_STOCK_PRTPLANADJ(_ITEM) 未建模（今年计划数）2)预警比率配置 NONTAX_CONFIG（AGEN_STOCK_WARN_RATE）未建模；且""库存<计划×比率""比较需模型端计算度量，超出 API 查询能力。"
+16,,按区划、行业查询已暂停发放票据的单位数,,,,,"无法构建，缺少""暂停发放""标志维度：agency 维度无暂停发放状态（仅有 is_ticket_agen 是否领票单位）；单位计数本身可用 agency.count。"
+17,,按时间段、领用机构、票种、行业查询近期领用与核销趋势,,"--ORACLE: 按票种查询近期领用与核销趋势
+--核销
+select b.fid,b.fcode ,b.fname, sum(fwb.fnumber )
+from fbe_writeoff_billitem fwb 
+left join fbe_writeoff fb on fb.fid  = fwb.fpid 
+left join fab_bill b on fwb.fbillid  = b.fid 
+group by b.fid,b.fcode ,b.fname;
+--领用
+select  b.fid,b.fcode ,b.fname, sum(i.fnumber)
+from fbe_stock_out_item i
+left join fbe_stock_out t on t.fid  = i.fpid
+left join fab_bill b on i.fbillid = b.fid 
+group by b.fid,b.fcode ,b.fname 
+;",已验证,"各票种的核销数量
+
+各票种的领用与核销趋势","可构建（领用/核销各一条查询，趋势=按日期分组）：领用 {""measures"":[""stock_out_item.total_number""],""dimensions"":[""stock_out.out_date"",""agency.name"",""agency.industry_name""],""timeDimensions"":[{""dimension"":""stock_out.out_date"",""dateRange"":[""2026-07-01"",""2026-09-23""]}],""limit"":100}；核销 {""measures"":[""writeoff_billitem.inv_num""],""dimensions"":[""writeoff.compiled_date"",""writeoff_billitem.bill_name"",""agency.name""],""timeDimensions"":[{""dimension"":""writeoff.compiled_date"",""dateRange"":[""2026-07-01"",""2026-09-23""]}],""limit"":100}。注：领用侧票种仅 bill_code（无 bill_type join），核销侧票种名称可用 bill_name。"
+18,,按区划、单位、票种、项目、行业查询票据的开具数量与金额趋势变化,,"-- ck:按区划查询票据的开具数量与金额趋势变化
+select  c.frgncode ,c.frgnname,c.fdate,count(1) as num ,sum(c.ftotalamt ) as amt   from une_cbill_new c 
+group by c.frgncode ,c.frgnname,c.fdate
+order by c.frgncode,c.fdate
+
+-- ck:按单位查询票据的开具数量与金额趋势变化
+select  c.fagencode ,c.fagenname,c.fdate,count(1) as num ,sum(c.ftotalamt ) as amt   from une_cbill_new c 
+group by c.fagencode ,c.fagenname ,c.fdate
+order by c.fagencode ,c.fagenname ,c.fdate
+
+
+-- ck:按票据查询票据的开具数量与金额趋势变化
+select  c.fbillcode ,c.fbillname,c.fdate,count(1) as num ,sum(c.ftotalamt ) as amt   from une_cbill_new  c
+group by c.fbillcode ,c.fbillname  ,c.fdate
+order by c.fbillcode  ,c.fbillname  ,c.fdate
+
+
+-- ck:按项目查询票据的开具数量与金额趋势变化
+select  c.fitemcode  ,c.fitemname ,c.fdate,count(distinct c.fpid ) as num ,sum(c.famt) as amt   from une_cbill_high  c
+group by c.fitemcode  ,c.fitemname   ,c.fdate
+order by c.fitemcode  ,c.fitemname   ,c.fdate
+
+-- ck:按行业查询票据的开具数量与金额趋势变化
+select  d.fname,c.fdate,count(1 ) as num ,sum(c.ftotalamt   ) as amt   from une_cbill_new  c
+left join fab_agen a on a.fagenidcode  = c.fagenidcode  and a.fisfinal  = '1' 
+left join afa_res_dictitem d  on d.fcode = a.findcode and d.fdictcode = '117'
+group by d.fname   ,c.fdate
+order by d.fname  ,c.fdate;
+",已验证,,"可构建（开具数量与金额趋势；区划/单位/票种/项目/行业按需加维度）：{""measures"":[""cbill.receipt_count"",""cbill.total_amount""],""dimensions"":[""cbill.bill_date""],""timeDimensions"":[{""dimension"":""cbill.bill_date"",""dateRange"":[""2026-01-01"",""2026-09-23""]}],""order"":{""cbill.bill_date"":""asc""},""limit"":400}。可加维度：单位=agency.name、票种=bill_type.name、项目=cbill_item.item_name（配 cbill_item.item_count）、行业=agency.industry_name、区划=cbill.region_code（cube 层，view 交付面已排除）。"
+19,,异常操作查询，高频作废/冲红票据、超限额开具的单位,,"-- ck:查询前10的冲红或者作废票据份数
+select fbillcode,fbillname,count(1) as openNum 
+from une_cbill_new t where (t.ftotalamt < 0 or t.fstate not in ('1'))
+and t.fdate >  formatDateTime(today() - INTERVAL 1 YEAR, '%Y-%m-%d')
+group by t.fbillcode ,t.fbillname 
+order by openNum desc
+limit 10;
+
+
+-- ck:查询前10的冲红或单位份数
+select fagenname,count(1) as openNum 
+from une_cbill_new t where (t.ftotalamt < 0 or t.fstate not in ('1'))
+and t.fdate >  formatDateTime(today() - INTERVAL 1 YEAR, '%Y-%m-%d')
+group by t.fagenidcode ,t.fagenname
+order by openNum desc
+limit 10;",已验证,"哪些单位作废冲红最多
+
+查询异常操作情况
+
+2025年高频作废冲红的票据情况","部分可构建：作废票据Top10 {""measures"":[""cbill.void_count""],""dimensions"":[""bill_type.name""],""timeDimensions"":[{""dimension"":""cbill.bill_date"",""dateRange"":[""2025-09-23"",""2026-09-23""]}],""limit"":10,""order"":{""cbill.void_count"":""desc""}}（作废单位Top10 将维度改 agency.name）；冲红票据Top10 已新增 cbill.red_cnt（FSTATE='1' AND FTOTALAMT<0，2025 年冲红）：{""measures"":[""cbill.red_cnt""],""dimensions"":[""bill_type.name""],""timeDimensions"":[{""dimension"":""cbill.bill_date"",""dateRange"":[""2025-01-01"",""2025-12-31""]}],""limit"":10,""order"":{""cbill.red_cnt"":""desc""}}（冲红单位Top10 将维度改 agency.name）。仍缺：超限额开具（缺限额规则配置，FAB_RULE 未建模）"
+20,,智能监管单位上线情况,"上线开启智能监管的情况，各区划的启动单位日期、数量。
+如果启动单位比较少，分析已启动单位是什么范围
+如果未启动单位比较少，分析未启动单位是什么范围","oracle:统计智能监管上线单位的情况
+select 
+sum(enablenum),  -- 智能监管上线的单位数
+sum(disablenum)-- 智能监管未上线的单位数
+from (
+-- 按照区划启动单位数
+Select count(1) enablenum, 0 as disablenum
+ From 
+fab_agen a 
+where a.fisfinal = '1'
+ and exists(
+Select 
+  ci.frgnid
+From fab_supervise_config c 
+right join fab_supervise_config_item ci on c.fid = ci.fpid
+where c.fkey = 'enable-supervise' and ci.fagenidcode is null and ci.fvalue = '1'
+and a.frgnid = ci.frgnid
+)
+union all
+-- 按照单位启动单位数
+Select 
+ count(1)  enablenum, 0 as disablenum
+From fab_supervise_config c 
+right join fab_supervise_config_item ci on c.fid = ci.fpid
+where c.fkey = 'enable-supervise' and ci.fagenidcode is not null and ci.fvalue = '1'
+union all
+-- 按照区划不启动启动单位数
+Select  0 as enablenum, count(1)  as disablenum
+ From 
+fab_agen a 
+where a.fisfinal = '1'
+ and not exists(
+Select 
+  ci.frgnid
+From fab_supervise_config c 
+right join fab_supervise_config_item ci on c.fid = ci.fpid
+where c.fkey = 'enable-supervise' and ci.fagenidcode is null and ci.fvalue = '1'
+and a.frgnid = ci.frgnid
+)
+union all
+-- 按照单位不启动单位数
+Select   0 as enablenum, count(1)  as disablenum
+From fab_supervise_config c 
+right join fab_supervise_config_item ci on c.fid = ci.fpid
+where c.fkey = 'enable-supervise' and ci.fagenidcode is not null and ci.fvalue = '0'
+) t",已验证,"智能监管上线了多少单位
+
+分析未上线单位的具体情况","无法构建，缺少""智能监管配置""主题：FAB_SUPERVISE_CONFIG/_ITEM 未建模（缺 enable-supervise 配置、区划/单位级开关、启动日期）。"
+21,,智能监管单位应用情况,区划上线的规则库、事中命中情况、事后命中情况,"-- oracle:查询每天事中、事后发现的异常用票份数；
+Select 
+fbusdate,
+sum(case when r.fenableinvoicecheck = '1' then 1 else 0 end), --事中的异常份数
+sum(case when r.fenableinvoicecheck = '1' then 0 else 1 end) --事后的异常份数
+from fbe_suspicious_rules s
+left join fbe_suspicious fs on s.fsuspiciousid = fs.fid
+left join fab_rule r on s.fruleid = r.fid
+group by fs.fbusdate",已验证,"查询智能监管应用情况
+
+2025年各区划监管规则命中情况","部分可构建：每日异常用票份数 {""measures"":[""superv_view.suspicious_count""],""dimensions"":[""superv_view.bill_date""],""timeDimensions"":[{""dimension"":""superv_view.bill_date"",""dateRange"":[""2026-01-01"",""2026-09-23""]}],""limit"":400}。缺：事中/事后命中拆分（FBE_SUSPICIOUS_RULES+FAB_RULE 未建模，同序号14）、区划上线规则库（同序号11）。"
+22,查验,按区划、时间段统计查验次数、查验频率,了解哪些地区、哪些单位的票据被频繁查验？是否存在集中、突击式查验？,,,,"无法构建，缺少""票据查验""主题：查验记录表未建模（缺查验时间/查验单位/查验次数度量；频率=次数/时间跨度，需模型端计算度量）。"
+23,,查验渠道分布，通过财政官网、微信、APP等各渠道的查验量占比。,,,,,"无法构建，缺少""票据查验""主题＋查验渠道字段（财政官网/微信/APP 渠道来源未建模）。"
+24,,查验通过率/不通过率,,,,,"无法构建，缺少""票据查验""主题＋查验结果字段（通过/不通过状态未建模）。"
+25,报销,按区划、时间段查询个人数字账户、单位数字账户开通数、冻结数,,,,,"无法构建，缺少""数字账户""主题：个人/单位数字账户开通、冻结状态表未建模。"
+26,,按区划、票种、单位、项目查询票据跨省报销份数、金额，跨省报销票据的区域、行业、项目、金额区间等分布情况,了解哪个区划、哪些单位（如企业、医疗机构）跨省报销业务比较多？主要事由（如差旅、医疗、会议）是什么？,,,,"无法构建，缺少""跨省报销""主题：报销记录表未建模（缺报销份数/金额/区域/行业/项目/金额区间成员）。"
+27,,按区划、时间段、开票单位、报销单位查询票据授权情况，授权确认\拒收率,,,,,"无法构建，缺少""票据授权""主题：授权/确认/拒收记录表未建模（缺授权率分子/分母）。"
+28,,按区划、时间段、报销单位查询入账反馈情况，反馈率,,,,,"无法构建，缺少""入账反馈""主题：入账反馈记录表未建模（缺反馈率分子/分母）。"
+29,,按区划、票种、单位、项目查询票据下载份数、下载频率,,,,,"无法构建，缺少""票据下载""主题：下载记录表未建模（缺下载份数/下载时间/频率成员）。"

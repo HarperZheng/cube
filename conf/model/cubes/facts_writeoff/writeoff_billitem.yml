@@ -1,0 +1,80 @@
+# 审验票据明细—— P4.5（writeoff 主子表的票据侧）
+# 明细表一行 = 审验单下的单个票据的票号段（FPID 关联 FBE_WRITEOFF.FID）。
+# P4.5 核实（grain）：明细 2230 行 / distinct FPID 314，孤儿 151 行（同
+# income 侧数据毛刺，belongs_to LEFT JOIN 下钻属性为 null）；FID 主键。
+# join 键：FBILLID→FAB_BILL.FID 100% 匹配（matchkey 实测）。
+# 无区划/单位列：区划属性经 join writeoff 传递；行级权限不单独声明（无区划
+# 列可过滤）——join 查询时经主表策略交集生效（docs/11）。
+# 敏感字段：无。
+cubes:
+  - name: writeoff_billitem
+    title: 审验票据明细
+    description: |
+      票据审验的票据开具明细（FBE_WRITEOFF_BILLITEM，2230 行）。
+      每行 = 一张审验单下的单个票据的票号段。审验单属性经 join writeoff。
+    meta:
+      ai_context: >-
+        明细粒度为"审验单×票据×票号段"（FPID 关联 FBE_WRITEOFF.FID）。
+        开票份数用 inv_num，票面金额用 face_amt。票据名称走 bill_name
+        或 join bill_type；审验单属性（单号/状态/区划）经 join writeoff 获取。
+
+    sql_table: FBE_WRITEOFF_BILLITEM
+
+    joins:
+      # belongs_to 主表
+      - name: writeoff
+        sql: "{CUBE}.\"FPID\" = {writeoff}.\"FID\""
+        relationship: many_to_one
+
+    measures:
+      - name: count
+        title: 明细行数
+        type: count
+      - name: inv_num
+        title: 开票份数
+        description: sum(FINVNUM)
+        sql: "{CUBE}.\"FINVNUM\""
+        type: sum
+      - name: face_amt
+        title: 票面金额(元)
+        description: sum(FAMT)（票面金额）
+        sql: "{CUBE}.\"FAMT\""
+        type: sum
+
+    dimensions:
+      - name: fid
+        title: 明细ID
+        sql: "{CUBE}.\"FID\""
+        type: string
+        primary_key: true
+        public: false    # 技术主键不对外
+      - name: bill_id
+        title: 票据ID
+        description: FBILLID 关联 bill_type.id（100% 匹配已验证）
+        sql: "{CUBE}.\"FBILLID\""
+        type: string
+      - name: bill_code
+        title: 票据编码
+        description: FBILLCODE
+        sql: "{CUBE}.\"FBILLCODE\""
+        type: string
+      - name: bill_name
+        title: 票据名称
+        description: FBILLNAME（源表冗余列）
+        sql: "{CUBE}.\"FBILLNAME\""
+        type: string
+      - name: batch_code
+        title: 票据批次代码
+        description: FBATCHCODE
+        sql: "{CUBE}.\"FBATCHCODE\""
+        type: string
+      - name: bill_no1
+        title: 票号起
+        description: FBILLNO1（票号段起始）
+        sql: "{CUBE}.\"FBILLNO1\""
+        type: string
+      - name: bill_no2
+        title: 票号止
+        description: FBILLNO2（票号段截止）
+        sql: "{CUBE}.\"FBILLNO2\""
+        type: string

@@ -1,0 +1,10 @@
+# 换行策略：文本自动归一，关键类型显式固定
+* text=auto
+*.sh text eol=lf
+*.py text eol=lf
+*.js text eol=lf
+*.yml text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.cmd text eol=crlf
+*.bat text eol=crlf

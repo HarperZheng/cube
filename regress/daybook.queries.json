@@ -1,0 +1,44 @@
+[
+  {
+    "name": "收入日结-三口径并存",
+    "query": {
+      "measures": ["daybook_view.count", "daybook_view.income_amt", "daybook_view.expense_amt", "daybook_view.net_amt"]
+    }
+  },
+  {
+    "name": "收入日结-收入类别下钻",
+    "query": {
+      "measures": ["daybook_view.income_amt"],
+      "dimensions": ["daybook_view.income_sort_name"],
+      "order": {"daybook_view.income_amt": "desc"},
+      "limit": 10
+    }
+  },
+  {
+    "name": "收入日结-按收入日期分组",
+    "query": {
+      "measures": ["daybook_view.income_amt"],
+      "dimensions": ["daybook_view.received_date"],
+      "order": {"daybook_view.received_date": "asc"},
+      "limit": 10
+    }
+  },
+  {
+    "name": "收入日结-收入区划与单位下钻",
+    "query": {
+      "measures": ["daybook_view.income_amt", "daybook_view.count"],
+      "dimensions": ["daybook_view.im_rgn_name", "daybook_view.im_agen_name"],
+      "order": {"daybook_view.income_amt": "desc"},
+      "limit": 10
+    }
+  },
+  {
+    "name": "收入日结-收款账户下钻",
+    "query": {
+      "measures": ["daybook_view.income_amt"],
+      "dimensions": ["daybook_view.acct_name", "daybook_view.acct_bank"],
+      "order": {"daybook_view.income_amt": "desc"},
+      "limit": 5
+    }
+  }
+]

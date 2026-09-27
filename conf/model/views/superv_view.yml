@@ -1,0 +1,55 @@
+# 监管交付视图—— P5（docs/cube-dataqa-topic/01-design.md §9）
+# 可疑票据 + 状态/结果口径。view 名取 superv_view（suspicious__suspicious_count
+# 超 11g 30 字符上限，view 名必须短）。
+views:
+  - name: superv_view
+    title: 票据监管（交付视图）
+    description: 可疑票据全口径 + 单位下钻；消费方统一从这里查
+    meta:
+      ai_context: >-
+        票据监管交付视图。可疑票据数用 suspicious_count；单据状态口径用
+        status 维度或 pending_count（未通知+待说明）/ processed_count
+        （已处理）；处理结果用 result 维度或 cleared_count（解除可疑）；
+        金额用 total_amt。按时间分析走 compiled_date（编制日期）。
+        单位下钻走 name/industry_name。payer_name 已脱敏（只露末2字）。
+        按单位去重计数用 agen_cnt（可疑单位数）/ proc_agen_cnt（已处理）/
+        pend_agen_cnt（待处理）。有异常用票的核销单数用 wo_cnt
+        （count_distinct FWRITEOFFID）。
+    cubes:
+      - join_path: suspicious
+        includes:
+          - suspicious_count
+          - pending_count
+          - processed_count
+          - cleared_count
+          - agen_cnt
+          - proc_agen_cnt
+          - pend_agen_cnt
+          - wo_cnt
+          - total_amt
+          - bill_no
+          - status
+          - result
+          - agen_name
+          - bill_name
+          - compiled_date
+          - bill_date
+        excludes:
+          - fid              # 技术主键
+          - region_code      # 行级权限维度
+          - agency_code      # 关联键
+          - bill_id          # 技术外键
+          - agen_code
+          - writeoff_id      # 技术键不对外，核销单计数走 wo_cnt
+          - payer_name       # 敏感字段已脱敏，交付面不暴露
+          - description
+      - join_path: suspicious.agency
+        includes:
+          - name
+          - industry_name
+      - join_path: suspicious.region
+        prefix: true         # region.name 与 agency.name 冲突 → region_name
+        includes:
+          - name
+          - level
+          - is_leaf

@@ -1,0 +1,36 @@
+# 退付交付视图—— 新增主题③（用户指定三表核心之一）
+# 单事实视图：backpay（+agency 行业下钻）。退库标志/退库时间各两字段并存
+# （用户拍板 2026-09-23：is_confirm+is_send / funds_rec_date+apply_date）。
+views:
+  - name: backpay_view
+    title: 退付（交付视图）
+    description: 退付（退库标志/退库时间/退款方式 + 区划/单位/金额）；消费方统一从这里查
+    meta:
+      ai_context: >-
+        退付交付视图。退库标志用 is_confirm（是否确认，1 已确认——退付流程
+        完成确认，"已退库"口径）或 is_send（是否发送银行，流程中间态）；
+        退库时间默认用 funds_rec_date（资金到账日期，严格口径）或
+        apply_date（退付申请日期，全覆盖）；退款方式用 pay_mode（柜台缴款/
+        网上缴款/自助终端）。退付金额用 total_amt；缴款金额用 pay_amt。
+        区划用 rgn_code/rgn_name；单位用 agen_code/agen_name。
+    cubes:
+      - join_path: backpay
+        includes:
+          - count
+          - total_amt
+          - pay_amt
+          - rgn_code
+          - rgn_name
+          - agen_code
+          - agen_name
+          - is_confirm
+          - is_send
+          - apply_date
+          - funds_rec_date
+          - pay_mode
+        excludes:
+          - fid              # 技术主键
+      - join_path: backpay.agency
+        includes:
+          - name
+          - industry_name

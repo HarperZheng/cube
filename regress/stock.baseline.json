@@ -1,0 +1,415 @@
+{
+  "savedAt": "2026-09-23T08:19:56.019Z",
+  "results": [
+    {
+      "name": "出库单数与明细金额",
+      "query": {
+        "measures": [
+          "stock_out.out_count",
+          "stock_out_item.total_amount"
+        ]
+      },
+      "resultSet": {
+        "data": [
+          {
+            "stock_out.out_count": "996",
+            "stock_out_item.total_amount": "213013.06"
+          }
+        ]
+      }
+    },
+    {
+      "name": "出库按状态分组",
+      "query": {
+        "measures": [
+          "stock_out.out_count"
+        ],
+        "dimensions": [
+          "stock_out.state"
+        ],
+        "order": {
+          "stock_out.state": "asc"
+        }
+      },
+      "resultSet": {
+        "data": [
+          {
+            "stock_out.state": "1",
+            "stock_out.out_count": "4"
+          },
+          {
+            "stock_out.state": "2",
+            "stock_out.out_count": "104"
+          },
+          {
+            "stock_out.state": "4",
+            "stock_out.out_count": "14"
+          },
+          {
+            "stock_out.state": "61",
+            "stock_out.out_count": "874"
+          }
+        ]
+      }
+    },
+    {
+      "name": "入库单数与明细金额",
+      "query": {
+        "measures": [
+          "stock_in.in_count",
+          "stock_in_item.total_amount"
+        ]
+      },
+      "resultSet": {
+        "data": [
+          {
+            "stock_in.in_count": "413",
+            "stock_in_item.total_amount": "18233.03"
+          }
+        ]
+      }
+    },
+    {
+      "name": "申领口径",
+      "query": {
+        "measures": [
+          "stock_apply.apply_count",
+          "stock_apply.approve_count",
+          "stock_apply.rejected_count"
+        ]
+      },
+      "resultSet": {
+        "data": [
+          {
+            "stock_apply.apply_count": "201",
+            "stock_apply.approve_count": "5",
+            "stock_apply.rejected_count": "6"
+          }
+        ]
+      }
+    },
+    {
+      "name": "申领按状态分组",
+      "query": {
+        "measures": [
+          "stock_apply.apply_count"
+        ],
+        "dimensions": [
+          "stock_apply.state"
+        ],
+        "order": {
+          "stock_apply.state": "asc"
+        }
+      },
+      "resultSet": {
+        "data": [
+          {
+            "stock_apply.state": "1",
+            "stock_apply.apply_count": "5"
+          },
+          {
+            "stock_apply.state": "2",
+            "stock_apply.apply_count": "6"
+          },
+          {
+            "stock_apply.state": "31",
+            "stock_apply.apply_count": "22"
+          },
+          {
+            "stock_apply.state": "4",
+            "stock_apply.apply_count": "17"
+          },
+          {
+            "stock_apply.state": "521",
+            "stock_apply.apply_count": "1"
+          },
+          {
+            "stock_apply.state": "541",
+            "stock_apply.apply_count": "9"
+          },
+          {
+            "stock_apply.state": "64",
+            "stock_apply.apply_count": "141"
+          }
+        ]
+      }
+    },
+    {
+      "name": "库存段数按来源",
+      "query": {
+        "measures": [
+          "stock.stock_count"
+        ],
+        "dimensions": [
+          "stock.source"
+        ],
+        "order": {
+          "stock.source": "asc"
+        }
+      },
+      "resultSet": {
+        "data": [
+          {
+            "stock.source": "offline",
+            "stock.stock_count": "191"
+          },
+          {
+            "stock.source": "online",
+            "stock.stock_count": "486"
+          }
+        ]
+      }
+    },
+    {
+      "name": "库存按票种名称分组(传递join)",
+      "query": {
+        "measures": [
+          "stock.stock_count"
+        ],
+        "dimensions": [
+          "bill_type.name"
+        ],
+        "limit": 10,
+        "order": {
+          "stock.stock_count": "desc"
+        }
+      },
+      "resultSet": {
+        "data": [
+          {
+            "bill_type.name": "非税收入电子缴款书（电子）",
+            "stock.stock_count": "111"
+          },
+          {
+            "bill_type.name": "非税电子票",
+            "stock.stock_count": "93"
+          },
+          {
+            "bill_type.name": "测试-政府非税收入统一票据（电子）1",
+            "stock.stock_count": "59"
+          },
+          {
+            "bill_type.name": "行政事业单位资金往来结算票据",
+            "stock.stock_count": "41"
+          },
+          {
+            "bill_type.name": "医疗门诊收费票据",
+            "stock.stock_count": "39"
+          },
+          {
+            "bill_type.name": "非税缴款通知书（电子）",
+            "stock.stock_count": "39"
+          },
+          {
+            "bill_type.name": "测试-政府非税收入统一票据（电子）",
+            "stock.stock_count": "34"
+          },
+          {
+            "bill_type.name": "社会资金公益事业捐赠票据",
+            "stock.stock_count": "32"
+          },
+          {
+            "bill_type.name": "行政事业单位资金往来结算票据（微机）",
+            "stock.stock_count": "25"
+          },
+          {
+            "bill_type.name": "机打票",
+            "stock.stock_count": "21"
+          }
+        ]
+      }
+    },
+    {
+      "name": "可疑票据全口径",
+      "query": {
+        "measures": [
+          "suspicious.suspicious_count",
+          "suspicious.pending_count",
+          "suspicious.processed_count",
+          "suspicious.cleared_count",
+          "suspicious.total_amt"
+        ]
+      },
+      "resultSet": {
+        "data": [
+          {
+            "suspicious.suspicious_count": "19194",
+            "suspicious.pending_count": "19155",
+            "suspicious.processed_count": "39",
+            "suspicious.cleared_count": "23",
+            "suspicious.total_amt": "880769354879.44"
+          }
+        ]
+      }
+    },
+    {
+      "name": "可疑按状态分组",
+      "query": {
+        "measures": [
+          "suspicious.suspicious_count"
+        ],
+        "dimensions": [
+          "suspicious.status"
+        ],
+        "order": {
+          "suspicious.status": "asc"
+        }
+      },
+      "resultSet": {
+        "data": [
+          {
+            "suspicious.status": "0",
+            "suspicious.suspicious_count": "19067"
+          },
+          {
+            "suspicious.status": "1",
+            "suspicious.suspicious_count": "88"
+          },
+          {
+            "suspicious.status": "3",
+            "suspicious.suspicious_count": "39"
+          }
+        ]
+      }
+    },
+    {
+      "name": "可疑按处理结果分组",
+      "query": {
+        "measures": [
+          "suspicious.suspicious_count"
+        ],
+        "dimensions": [
+          "suspicious.result"
+        ],
+        "order": {
+          "suspicious.result": "asc"
+        }
+      },
+      "resultSet": {
+        "data": [
+          {
+            "suspicious.result": "0",
+            "suspicious.suspicious_count": "19156"
+          },
+          {
+            "suspicious.result": "1",
+            "suspicious.suspicious_count": "23"
+          },
+          {
+            "suspicious.result": "3",
+            "suspicious.suspicious_count": "15"
+          }
+        ]
+      }
+    },
+    {
+      "name": "可疑按区划分组",
+      "query": {
+        "measures": [
+          "suspicious.suspicious_count"
+        ],
+        "dimensions": [
+          "suspicious.region_code"
+        ],
+        "limit": 10,
+        "order": {
+          "suspicious.suspicious_count": "desc"
+        }
+      },
+      "resultSet": {
+        "data": [
+          {
+            "suspicious.region_code": "530000",
+            "suspicious.suspicious_count": "19001"
+          },
+          {
+            "suspicious.region_code": "530100",
+            "suspicious.suspicious_count": "110"
+          },
+          {
+            "suspicious.region_code": "530102",
+            "suspicious.suspicious_count": "46"
+          },
+          {
+            "suspicious.region_code": "530702",
+            "suspicious.suspicious_count": "37"
+          }
+        ]
+      }
+    },
+    {
+      "name": "出库单票下钻(bill_no+date)",
+      "query": {
+        "measures": [
+          "stock_out_item.count",
+          "stock_out_item.total_amount"
+        ],
+        "dimensions": [
+          "stock_out_item.bill_code"
+        ],
+        "filters": [
+          {
+            "member": "stock_out.bill_no",
+            "operator": "equals",
+            "values": [
+              "0000000001"
+            ]
+          },
+          {
+            "member": "stock_out.out_date",
+            "operator": "equals",
+            "values": [
+              "2019-08-27"
+            ]
+          }
+        ],
+        "order": {
+          "stock_out_item.bill_code": "asc"
+        }
+      },
+      "resultSet": {
+        "data": [
+          {
+            "stock_out_item.bill_code": "510f0d040b124078a060377238118566",
+            "stock_out_item.count": "2",
+            "stock_out_item.total_amount": "0"
+          },
+          {
+            "stock_out_item.bill_code": "de3b8d50f32145778b1a4f00d33c66e9",
+            "stock_out_item.count": "2",
+            "stock_out_item.total_amount": "0"
+          }
+        ]
+      }
+    },
+    {
+      "name": "库存份数按来源",
+      "query": {
+        "measures": [
+          "stock.stock_qty",
+          "stock.stock_count"
+        ],
+        "dimensions": [
+          "stock.source"
+        ],
+        "order": {
+          "stock.source": "asc"
+        }
+      },
+      "resultSet": {
+        "data": [
+          {
+            "stock.source": "offline",
+            "stock.stock_qty": "106511344",
+            "stock.stock_count": "191"
+          },
+          {
+            "stock.source": "online",
+            "stock.stock_qty": "759417",
+            "stock.stock_count": "486"
+          }
+        ]
+      }
+    }
+  ]
+}

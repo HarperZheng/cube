@@ -1,0 +1,130 @@
+# 开票明细（按月分表动态 UNION）—— 方案 B（docs/cube-dataqa-topic/01-design.md §6）
+# 表名由 globals.py 的 monthly_tables('UNE_CBILL_ITEM') 编译期枚举（P3 泛化：
+# 前缀作参数，与 cbill 主表共用；正则 6 位后缀 + 过滤未来空表），
+# 新月份建表后模型零维护。
+# 注意：Jinja 插值拼进 SQL 必须加 safe 过滤器（默认 JSON 转义会破坏 YAML）。
+# 命名：UNE_CBILL 系源表注释为"电脑票"（源系统对财政电子票据开具的内部叫法），
+#       cube 面向消费方用业务语言"开票"；"电脑票"字样不出现在 title/描述中。
+cubes:
+  - name: cbill_item
+    title: 开票明细
+    description: |
+      开票的分项目明细，按月分表 UNE_CBILL_ITEM_YYYYMM 的 UNION ALL（编译期动态枚举）。
+      每行 = 一条开票记录下的单个收费项目明细（FPID 关联开票主表）。
+      原指标来源：data-analysis-topic 用票主题 une_cbill_item。
+    meta:
+      ai_context: >-
+        明细粒度为"开票记录×收费项目"（FPID 关联开票主表 UNE_CBILL.FID，
+        FID 为明细主键）。bill_month 从物理分表名提取（YYYY-MM），查询按月
+        分组时直接用该维度，无需对 FDATE 取月。
+
+    sql: |
+      {%- set tables = monthly_tables('UNE_CBILL_ITEM') %}
+      {%- set cols = monthly_columns('UNE_CBILL_ITEM') %}
+      {%- for t in tables %}
+      {%- set ym = t[-6:] %}
+      SELECT {{ cols | join(', ') | safe }},
+             TO_DATE('{{ (ym[:4] ~ '-' ~ ym[4:] ~ '-01') | safe }}', 'YYYY-MM-DD') AS "BILL_MONTH"
+      FROM {{ t | safe }}
+      {%- if not loop.last %} UNION ALL {% endif %}
+      {%- endfor %}
+
+    joins:
+      # 单票下钻（P3 补，docs/07 orders.line_items 同款 belongs_to 模式）：
+      # 明细可达主表全部属性（bill_no/state/bus_type/payer_name，维度向下传），
+      # 单票下钻一条查询完成（按 cbill.bill_no 过滤 + 明细分组）。
+      # FID 跨月唯一已验证（32317=32317），fan trap 由 Cube 靠主键处理（docs/05）。
+      - name: cbill
+        sql: "{CUBE}.\"FPID\" = {cbill}.\"FID\""
+        relationship: many_to_one
+
+    measures:
+      - name: count
+        title: 明细行数
+        type: count
+      - name: item_count
+        title: 开票笔数(含项目)
+        description: count(FPID)，对应原指标"含项目"口径（每明细行计 1，不去重）
+        sql: "{CUBE}.\"FPID\""
+        type: count
+      - name: total_amount
+        title: 金额合计(元)
+        sql: "{CUBE}.\"FAMT\""
+        type: sum
+      - name: total_number
+        title: 数量合计(份)
+        sql: "{CUBE}.\"FNUMBER\""
+        type: sum
+
+    dimensions:
+      - name: fid
+        title: 明细ID
+        sql: "{CUBE}.\"FID\""
+        type: string
+        primary_key: true
+        public: false    # 技术主键不对外
+      - name: bill_month
+        title: 票款月份
+        description: 从物理分表名提取（YYYY-MM），时间维度
+        sql: "{CUBE}.\"BILL_MONTH\""
+        type: time
+      - name: item_code
+        title: 项目编码
+        sql: "{CUBE}.\"FITEMCODE\""
+        type: string
+      - name: item_name
+        title: 项目名称
+        sql: "{CUBE}.\"FITEMNAME\""
+        type: string
+      - name: region_code
+        title: 区划编码
+        sql: "{CUBE}.\"FRGNCODE\""
+        type: string
+      - name: agency_code
+        title: 单位识别码
+        sql: "{CUBE}.\"FAGENIDCODE\""
+        type: string
+      - name: created_date
+        title: 缴款日期
+        description: FDATE（VARCHAR2 'YYYY-MM-DD'）转日期
+        sql: "TO_DATE({CUBE}.\"FDATE\", 'YYYY-MM-DD')"
+        type: time
+
+# 行级权限：access_policy 双互补策略（与 paybook/cbill 同款，P2 最终方案）：
+# 有区划属性走 row_level 过滤、无属性走 allow_all 放行。
+# 硬语义：策略存在 = 白名单制，每种用户状态必须至少命中一条策略。
+    access_policy:
+      - group: "*"
+        conditions:
+          - if: "{ securityContext.region_code }"
+        row_level:
+          filters:
+            - member: region_code
+              operator: equals
+              values: ["{ securityContext.region_code }"]
+      - group: "*"
+        conditions:
+          - if: "{ not securityContext.region_code }"
+        row_level:
+          allow_all: true
+
+# P6 预聚合（docs/cube-dataqa-topic/01-design.md §10 P6）：rollup 物化 45 张月表
+# UNION ALL，bill_month 分区与物理分表对齐。成员按 regress/cbill.queries.json
+# 反推（按月分布/按项目分组/明细合计用例）。dimensions 含 region_code（JWT 命中）。
+# 单票下钻用例（cbill.bill_no 过滤，belongs_to join）不命中——预聚合未含主表
+# 维度，点查询代价可接受，文档化。
+    pre_aggregations:
+      - name: main
+        measures:
+          - CUBE.count
+          - CUBE.item_count
+          - CUBE.total_amount
+          - CUBE.total_number
+        dimensions:
+          - CUBE.item_code
+          - CUBE.item_name
+          - CUBE.region_code
+          - CUBE.agency_code
+        time_dimension: CUBE.bill_month
+        granularity: month
+        partition_granularity: month

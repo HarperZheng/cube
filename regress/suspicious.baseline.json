@@ -1,0 +1,221 @@
+{
+  "savedAt": "2026-09-23T08:20:00.845Z",
+  "results": [
+    {
+      "name": "可疑票据总数与金额",
+      "query": {
+        "measures": [
+          "suspicious.suspicious_count",
+          "suspicious.total_amt"
+        ]
+      },
+      "resultSet": {
+        "data": [
+          {
+            "suspicious.suspicious_count": "19194",
+            "suspicious.total_amt": "880769354879.44"
+          }
+        ]
+      }
+    },
+    {
+      "name": "单据状态口径",
+      "query": {
+        "measures": [
+          "suspicious.pending_count",
+          "suspicious.processed_count",
+          "suspicious.cleared_count"
+        ]
+      },
+      "resultSet": {
+        "data": [
+          {
+            "suspicious.pending_count": "19155",
+            "suspicious.processed_count": "39",
+            "suspicious.cleared_count": "23"
+          }
+        ]
+      }
+    },
+    {
+      "name": "按区划分组（cube层）",
+      "query": {
+        "measures": [
+          "suspicious.suspicious_count"
+        ],
+        "dimensions": [
+          "suspicious.region_code"
+        ],
+        "limit": 10
+      },
+      "resultSet": {
+        "data": [
+          {
+            "suspicious.region_code": "530000",
+            "suspicious.suspicious_count": "19001"
+          },
+          {
+            "suspicious.region_code": "530100",
+            "suspicious.suspicious_count": "110"
+          },
+          {
+            "suspicious.region_code": "530102",
+            "suspicious.suspicious_count": "46"
+          },
+          {
+            "suspicious.region_code": "530702",
+            "suspicious.suspicious_count": "37"
+          }
+        ]
+      }
+    },
+    {
+      "name": "按单位分组",
+      "query": {
+        "measures": [
+          "suspicious.suspicious_count"
+        ],
+        "dimensions": [
+          "suspicious.agen_name"
+        ],
+        "order": {
+          "suspicious.suspicious_count": "desc"
+        },
+        "limit": 10
+      },
+      "resultSet": {
+        "data": [
+          {
+            "suspicious.agen_name": "云南医保测试单位改名",
+            "suspicious.suspicious_count": "12645"
+          },
+          {
+            "suspicious.agen_name": "云南考试院测试0615",
+            "suspicious.suspicious_count": "1544"
+          },
+          {
+            "suspicious.agen_name": "人大金仓按年分表测试单位0804",
+            "suspicious.suspicious_count": "975"
+          },
+          {
+            "suspicious.agen_name": "云南测试单位0831",
+            "suspicious.suspicious_count": "637"
+          },
+          {
+            "suspicious.agen_name": "云南年结测试单位oracle20241009",
+            "suspicious.suspicious_count": "577"
+          },
+          {
+            "suspicious.agen_name": "云南通用测试单位0801",
+            "suspicious.suspicious_count": "485"
+          },
+          {
+            "suspicious.agen_name": "云南年结测试单位瀚高20241014",
+            "suspicious.suspicious_count": "343"
+          },
+          {
+            "suspicious.agen_name": "云南发展改革委员会",
+            "suspicious.suspicious_count": "334"
+          },
+          {
+            "suspicious.agen_name": "测试云南测试环境",
+            "suspicious.suspicious_count": "309"
+          },
+          {
+            "suspicious.agen_name": "通用单位168",
+            "suspicious.suspicious_count": "199"
+          }
+        ]
+      }
+    },
+    {
+      "name": "按编制日期分组（近30天，month 粒度别名超11g上限不可用）",
+      "query": {
+        "measures": [
+          "suspicious.suspicious_count"
+        ],
+        "dimensions": [
+          "suspicious.compiled_date"
+        ],
+        "timeDimensions": [
+          {
+            "dimension": "suspicious.compiled_date",
+            "dateRange": [
+              "2026-08-24",
+              "2026-09-23"
+            ]
+          }
+        ],
+        "order": {
+          "suspicious.compiled_date": "asc"
+        },
+        "limit": 10
+      },
+      "resultSet": {
+        "data": [
+          {
+            "suspicious.compiled_date": "2026-09-01T00:00:00.000",
+            "suspicious.suspicious_count": "1"
+          }
+        ]
+      }
+    },
+    {
+      "name": "监管视图-区划下钻三口径",
+      "query": {
+        "measures": [
+          "superv_view.suspicious_count",
+          "superv_view.pending_count",
+          "superv_view.processed_count"
+        ],
+        "dimensions": [
+          "superv_view.region_name"
+        ],
+        "limit": 10
+      },
+      "resultSet": {
+        "data": [
+          {
+            "superv_view.region_name": "云南省本级",
+            "superv_view.suspicious_count": "19001",
+            "superv_view.pending_count": "18962",
+            "superv_view.processed_count": "39"
+          },
+          {
+            "superv_view.region_name": "昆明市本级",
+            "superv_view.suspicious_count": "110",
+            "superv_view.pending_count": "110",
+            "superv_view.processed_count": "0"
+          },
+          {
+            "superv_view.region_name": "五华区",
+            "superv_view.suspicious_count": "46",
+            "superv_view.pending_count": "46",
+            "superv_view.processed_count": "0"
+          },
+          {
+            "superv_view.region_name": "古城区",
+            "superv_view.suspicious_count": "37",
+            "superv_view.pending_count": "37",
+            "superv_view.processed_count": "0"
+          }
+        ]
+      }
+    },
+    {
+      "name": "有异常用票的核销单数",
+      "query": {
+        "measures": [
+          "suspicious.wo_cnt"
+        ]
+      },
+      "resultSet": {
+        "data": [
+          {
+            "suspicious.wo_cnt": "35"
+          }
+        ]
+      }
+    }
+  ]
+}

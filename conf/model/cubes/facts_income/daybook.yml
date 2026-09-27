@@ -1,0 +1,207 @@
+# 收入日结（FNE_INCOME_DAYBOOK，697 行）—— 新增主题③（用户指定三表核心之一）
+# 一张表覆盖：收入类别、收入/执收单位、收入区划、收款银行/账户、收款金额、
+# 收入日期（严格口径）。粒度 = 每行一条日结记录（FID 主键，③-1 已核实唯一）。
+# ③-1 核实结论（db.js 实测）：
+#   FID 唯一；FIMTYPE 1 正常收入=696 / 5 分成收入=1；
+#   FIODIRECTION 1 收入=695 / -1 支出=2（支出方向金额 +200 正数存储）；
+#   FINCOMESORT 三类：101 政府性基金收入 575 / 102 专项收入 98 / 103 行政事业性收费 24；
+#   收入方向金额合计 30,200,711.05（支出方向 200）；
+#   FIMAGENIDCODE→agency.FAGENIDCODE（FAB_AGEN）matchkey 100%；
+#   FIMRGNCODE 取值 000000/530000/530111（000000 一行，不建 region join——
+#   join 遇 INNER 语义会丢行，收入区划直接用源列交付）。
+# 口径拍板（AskUserQuestion，2026-09-23）：收款金额两口径并存——
+#   income_amt 仅收入方向（30,200,711.05，默认）/ net_amt 净额（收入-支出）。
+#   时间轴严格口径 = FRECEIVEDDATE 收入日期（用户指定；FPAYDATE 缴款日期并存）。
+# 敏感字段：FIMACCTNAME/FIMACCT 为财政/国库收款账户（非个人），按用户要求建模。
+cubes:
+  - name: daybook
+    title: 收入日结
+    description: |
+      收入日结表 FNE_INCOME_DAYBOOK，每行一条日结记录。
+      覆盖收入类别/收入单位/收入区划/收款银行账户/收款金额/收入日期。
+      收款金额默认口径 = 仅收入方向（FIODIRECTION=1）。
+    public: true
+    meta:
+      ai_context: >-
+        收入日结。收款金额（严格收入口径）用 income_amt；支出方向金额用
+        expense_amt；净额用 net_amt（收入-支出，两口径并存）。
+        时间轴默认用 received_date（收入日期，严格口径）；缴款日期用 pay_date。
+        收入类别用 income_sort/income_sort_name；收入类型用 im_type
+        （1 正常/2 暂存款转/3 调整/4 退付/5 分成）；收支方向用 io_direction
+        （1 收入/-1 支出）；数据类型用 data_type（11 缴款本级收入等，
+        16xx 为退付负收入）。收入单位用 im_agen_code/im_agen_name；
+        执收单位用 chg_agen_code/chg_agen_name；收入区划用
+        im_rgn_code/im_rgn_name。收款银行编码用 pay_bank_code、代理银行
+        名称用 pay_bank_name；收款单位名称用 acct_name、账号用 acct、
+        开户行用 acct_bank。项目用 item_code/item_name。
+
+    sql_table: FNE_INCOME_DAYBOOK
+
+    joins:
+      - name: agency
+        sql: "{CUBE}.\"FIMAGENIDCODE\" = {agency}.\"FAGENIDCODE\""
+        relationship: many_to_one
+
+    measures:
+      # drill_members（2026-09-24 补，用户拍板与 treasury 同款）：
+      # 点指标下钻明细——日结记录数/收款金额点击单元格返回明细字段
+      # （docs/02-measures，可含 join cube 维度）。
+      - name: count
+        title: 日结记录数
+        drill_members: [daybook.received_date, daybook.chg_agen_name,
+                        daybook.income_sort_name, daybook.item_name]
+        type: count
+      # 收款金额两口径（AskUserQuestion 拍板 2026-09-23）：
+      # income_amt 仅收入方向 = 30,200,711.05（默认）；
+      # expense_amt 支出方向 = 200；net_amt 净额（calculated，度量引用自动展开）。
+      - name: income_amt
+        title: 收款金额(元)
+        description: FIMAMT 合计，仅收入方向（FIODIRECTION=1）——严格收款口径（拍板默认）
+        drill_members: [daybook.received_date, daybook.chg_agen_name,
+                        daybook.acct_name, daybook.item_name]
+        sql: "{CUBE}.\"FIMAMT\""
+        type: sum
+        filters:
+          - sql: "{CUBE}.\"FIODIRECTION\" = '1'"
+      - name: expense_amt
+        title: 支出方向金额(元)
+        description: FIMAMT 合计，仅支出方向（FIODIRECTION=-1），实测 2 行合计 200
+        sql: "{CUBE}.\"FIMAMT\""
+        type: sum
+        filters:
+          - sql: "{CUBE}.\"FIODIRECTION\" = '-1'"
+      - name: net_amt
+        title: 收款金额净额(元)
+        description: 收款金额 - 支出方向金额（calculated measure，度量引用自动展开为聚合）
+        sql: "{income_amt} - {expense_amt}"
+        type: number
+
+    dimensions:
+      - name: fid
+        title: 日结ID
+        sql: "{CUBE}.\"FID\""
+        type: string
+        primary_key: true
+        public: false    # 技术主键不对外
+      - name: im_type
+        title: 收入类型
+        description: 1 正常收入 / 2 暂存款转收入 / 3 调整 / 4 退付 / 5 分成收入（表注释；实测 1=696 / 5=1）
+        sql: "{CUBE}.\"FIMTYPE\""
+        type: string
+      - name: io_direction
+        title: 收支方向
+        description: FIODIRECTION，1 收入 / -1 支出（实测 695/2）
+        sql: "{CUBE}.\"FIODIRECTION\""
+        type: string
+      - name: data_type
+        title: 数据类型
+        description: 缴款本级收入11 / 清分收入12 / 国库收入13 / 清分待支出14 / 退付收入15 / 清分支出21 / 缴库支出22；线上退付负收入 1611~1622
+        sql: "{CUBE}.\"FDATATYPE\""
+        type: string
+      - name: income_sort
+        title: 收入类别编码
+        description: FINCOMESORT，实测 101 政府性基金 575 / 102 专项 98 / 103 行政事业性收费 24
+        sql: "{CUBE}.\"FINCOMESORT\""
+        type: string
+      - name: income_sort_name
+        title: 收入类别名称
+        sql: "{CUBE}.\"FINCOMESORTNAME\""
+        type: string
+      - name: im_agen_code
+        title: 收入单位编码
+        sql: "{CUBE}.\"FIMAGENCODE\""
+        type: string
+      - name: im_agen_name
+        title: 收入单位名称
+        sql: "{CUBE}.\"FIMAGENNAME\""
+        type: string
+      - name: chg_agen_code
+        title: 执收单位编码
+        sql: "{CUBE}.\"FCHGAGENCODE\""
+        type: string
+      - name: chg_agen_name
+        title: 执收单位名称
+        sql: "{CUBE}.\"FCHGAGENNAME\""
+        type: string
+      - name: im_rgn_code
+        title: 收入区划编码
+        description: FIMRGNCODE，取值 000000/530000/530111（行级权限维度）
+        sql: "{CUBE}.\"FIMRGNCODE\""
+        type: string
+      - name: im_rgn_name
+        title: 收入区划名称
+        sql: "{CUBE}.\"FIMRGNNAME\""
+        type: string
+      - name: chg_rgn_code
+        title: 执收区划编码
+        sql: "{CUBE}.\"FCHGRGNCODE\""
+        type: string
+      - name: pay_bank_code
+        title: 收款银行编码
+        description: FPAYBANKCODE 收款银行（代理银行）编码
+        sql: "{CUBE}.\"FPAYBANKCODE\""
+        type: string
+      - name: pay_bank_name
+        title: 代理银行名称
+        description: FPAYBANKNAME
+        sql: "{CUBE}.\"FPAYBANKNAME\""
+        type: string
+      - name: acct_name
+        title: 收款单位名称
+        description: FIMACCTNAME 收款帐户名称（财政/国库账户，非个人）
+        sql: "{CUBE}.\"FIMACCTNAME\""
+        type: string
+      - name: acct
+        title: 收款单位账号
+        description: FIMACCT 收款帐户帐号（财政/国库账户）
+        sql: "{CUBE}.\"FIMACCT\""
+        type: string
+      - name: acct_bank
+        title: 收款开户行名称
+        description: FIMACCTBANK 收款帐户开户行名称
+        sql: "{CUBE}.\"FIMACCTBANK\""
+        type: string
+      - name: acct_type
+        title: 收款账户类型
+        description: FIMACCTTYPE
+        sql: "{CUBE}.\"FIMACCTTYPE\""
+        type: string
+      - name: received_date
+        title: 收入日期
+        description: FRECEIVEDDATE（VARCHAR2 'YYYY-MM-DD'）转日期，收款时间严格口径（用户拍板默认时间轴）
+        sql: "TO_DATE({CUBE}.\"FRECEIVEDDATE\", 'YYYY-MM-DD')"
+        type: time
+      - name: pay_date
+        title: 缴款日期
+        description: FPAYDATE（VARCHAR2 'YYYY-MM-DD'）转日期
+        sql: "TO_DATE({CUBE}.\"FPAYDATE\", 'YYYY-MM-DD')"
+        type: time
+      - name: item_code
+        title: 项目编码
+        description: FITEMCODE（日结侧项目口径；用票侧项目走 cbill_item）
+        sql: "{CUBE}.\"FITEMCODE\""
+        type: string
+      - name: item_name
+        title: 项目名称
+        description: FITEMNAME
+        sql: "{CUBE}.\"FITEMNAME\""
+        type: string
+
+# 行级权限：access_policy 双互补策略（与 cbill/paybook 同款）。
+# 收入区划 im_rgn_code 是本表的区划归属维度；有区划属性走 row_level 过滤、
+# 无属性走 allow_all 放行（策略存在 = 白名单制）。无个人敏感字段建模，
+# 不需要 member_level/member_masking。
+    access_policy:
+      - group: "*"
+        conditions:
+          - if: "{ securityContext.region_code }"
+        row_level:
+          filters:
+            - member: im_rgn_code
+              operator: equals
+              values: ["{ securityContext.region_code }"]
+      - group: "*"
+        conditions:
+          - if: "{ not securityContext.region_code }"
+        row_level:
+          allow_all: true

@@ -1,0 +1,88 @@
+# 单位维度 —— 源表 FAB_AGEN（449 行）
+# FAB_AGEN 同 FAGENIDCODE 多行（版本历史），FISFINAL=1 恰好 336 行且全唯一，
+# 必须在 sql_table 内过滤，否则事实表 join 会行倍增。
+# 行业名称（FINDCODE）经字典 AFA_RES_DICTITEM（FDICTCODE='117'，FCODE 唯一）翻译，
+# LEFT JOIN 嵌在 sql_table 内保持扁平结果（与原指标 impl 的 industry join 口径一致）。
+cubes:
+  - name: agency
+    title: 单位
+    description: |
+      执收单位维度（FISFINAL=1 最新快照）。事实表的 agency_code（FAGENIDCODE）
+      关联本 cube 的 agency_code 维度。行业名称由字典表（字典分类 117）翻译。
+    public: false    # 只通过 join 被事实 cube 引用
+    meta:
+      ai_context: >-
+        单位识别码 FAGENIDCODE 是事实表关联键；FAGENNAME 为单位名称。
+        单位细分（促进会/联合会/协会/商会等）按名称关键词或 sort_code/type_code。
+
+    sql_table: >
+      (
+        SELECT a.*,
+               d."FNAME" AS "INDUSTRY_NAME"
+        FROM FAB_AGEN a
+        LEFT JOIN AFA_RES_DICTITEM d
+          ON d."FCODE" = a."FINDCODE" AND d."FDICTCODE" = '117'
+        WHERE a."FISFINAL" = 1
+      )
+
+    measures:
+      - name: count
+        title: 单位数
+        type: count
+
+    joins:
+      - name: region
+        sql: "{CUBE}.\"FRGNID\" = {region}.\"ID\""
+        relationship: many_to_one
+
+    dimensions:
+      - name: id
+        title: 单位ID
+        sql: "{CUBE}.\"FID\""
+        type: string
+        primary_key: true
+        public: false
+      - name: agency_code
+        title: 单位识别码
+        description: 事实表 FAGENIDCODE 关联键（FISFINAL=1 内唯一）
+        sql: "{CUBE}.\"FAGENIDCODE\""
+        type: string
+      - name: name
+        title: 单位名称
+        sql: "{CUBE}.\"FAGENNAME\""
+        type: string
+      - name: code
+        title: 单位业务码
+        sql: "{CUBE}.\"FAGENCODE\""
+        type: string
+      - name: type_code
+        title: 单位类型代码
+        sql: "{CUBE}.\"FTYPECODE\""
+        type: string
+      - name: sort_code
+        title: 单位分类代码
+        sql: "{CUBE}.\"FSORTCODE\""
+        type: string
+      - name: industry_code
+        title: 行业代码
+        sql: "{CUBE}.\"FINDCODE\""
+        type: string
+      - name: industry_name
+        title: 行业名称
+        description: 字典分类 117 翻译（AFA_RES_DICTITEM）
+        sql: "{CUBE}.\"INDUSTRY_NAME\""
+        type: string
+      - name: is_ticket_agen
+        title: 是否领票单位
+        description: 1 是 / 0 否
+        sql: "{CUBE}.\"FISTICKAGEN\""
+        type: string
+      - name: is_leaf
+        title: 是否底级
+        description: 1 是 / 0 否
+        sql: "{CUBE}.\"FISLEAF\""
+        type: string
+      - name: level_code
+        title: 层次码
+        sql: "{CUBE}.\"FLEVELCODE\""
+        type: string

@@ -1,0 +1,843 @@
+{
+ "type": "answer",
+ "title": "各单位票据核销率：已核销份数/开具份数",
+ "plan": [
+  [
+   "各单位（分子侧）",
+   "writeoff_view.name",
+   "writeoff_view ai_context：单位下钻走 name（agency join 单位名称）"
+  ],
+  [
+   "各单位（分母侧）",
+   "usage_view.name",
+   "usage_view ai_context：单位下钻走 name（agency join，与分子侧同源 agency 主数据可对齐）"
+  ],
+  [
+   "已核销票据份数（分子）",
+   "writeoff_view.inv_num",
+   "词典「核销情况」2026-09-26 定案：核销单票据明细 sum(FINVNUM)，限已审验 state='2'"
+  ],
+  [
+   "开具票据份数（分母）",
+   "usage_view.receipt_count",
+   "词典「核销情况」2026-09-26 定案：开票笔数去重（FID 去重，每张票据计 1）"
+  ],
+  [
+   "核销率(%)",
+   "(跨 view 比值)",
+   "无联查 view，分子分母两条查询按单位名称对齐计算；非金额度量未做 Oracle 对数"
+  ]
+ ],
+ "tables": [
+  {
+   "title": "口径A：各单位已核销票据份数（票据审验·已审验核销单）",
+   "query": {
+    "measures": [
+     "writeoff_view.inv_num"
+    ],
+    "dimensions": [
+     "writeoff_view.name"
+    ],
+    "filters": [
+     {
+      "member": "writeoff_view.state",
+      "operator": "equals",
+      "values": [
+       "2"
+      ]
+     }
+    ],
+    "timeDimensions": [],
+    "order": {
+     "writeoff_view.inv_num": "desc"
+    },
+    "limit": 1000
+   },
+   "rows": [
+    {
+     "writeoff_view.name": "通用测试单位02062",
+     "writeoff_view.inv_num": null
+    },
+    {
+     "writeoff_view.name": "反算测试单位20250401",
+     "writeoff_view.inv_num": null
+    },
+    {
+     "writeoff_view.name": "医保测试单位改名",
+     "writeoff_view.inv_num": 17166
+    },
+    {
+     "writeoff_view.name": "测试测试环境0115",
+     "writeoff_view.inv_num": 2086
+    },
+    {
+     "writeoff_view.name": "通用测试单位0801",
+     "writeoff_view.inv_num": 1951
+    },
+    {
+     "writeoff_view.name": "考试院测试0615",
+     "writeoff_view.inv_num": 1813
+    },
+    {
+     "writeoff_view.name": "saas单位0927名称变更",
+     "writeoff_view.inv_num": 1083
+    },
+    {
+     "writeoff_view.name": "人大金仓按年分表测试单位0804",
+     "writeoff_view.inv_num": 1014
+    },
+    {
+     "writeoff_view.name": "云南测试单位",
+     "writeoff_view.inv_num": 930
+    },
+    {
+     "writeoff_view.name": "测试单位0831",
+     "writeoff_view.inv_num": 800
+    },
+    {
+     "writeoff_view.name": "发展改革委员会",
+     "writeoff_view.inv_num": 481
+    },
+    {
+     "writeoff_view.name": "通用单位168",
+     "writeoff_view.inv_num": 359
+    },
+    {
+     "writeoff_view.name": "智能核销测试测试单位1",
+     "writeoff_view.inv_num": 327
+    },
+    {
+     "writeoff_view.name": "测试医疗单位0729",
+     "writeoff_view.inv_num": 290
+    },
+    {
+     "writeoff_view.name": "一通用单位0303",
+     "writeoff_view.inv_num": 163
+    },
+    {
+     "writeoff_view.name": "智能核销二级分类",
+     "writeoff_view.inv_num": 157
+    },
+    {
+     "writeoff_view.name": "测试通用测试单位0720",
+     "writeoff_view.inv_num": 152
+    },
+    {
+     "writeoff_view.name": "测试教育厅1",
+     "writeoff_view.inv_num": 136
+    },
+    {
+     "writeoff_view.name": "缴费开票测试单位",
+     "writeoff_view.inv_num": 128
+    },
+    {
+     "writeoff_view.name": "智能核销昆明市本级单位",
+     "writeoff_view.inv_num": 124
+    },
+    {
+     "writeoff_view.name": "测试1125",
+     "writeoff_view.inv_num": 117
+    },
+    {
+     "writeoff_view.name": "缴款书测试单位0227",
+     "writeoff_view.inv_num": 81
+    },
+    {
+     "writeoff_view.name": "测试测试单位0722",
+     "writeoff_view.inv_num": 76
+    },
+    {
+     "writeoff_view.name": "反算测试单位241115",
+     "writeoff_view.inv_num": 69
+    },
+    {
+     "writeoff_view.name": "智能核销五华区测试单位",
+     "writeoff_view.inv_num": 69
+    },
+    {
+     "writeoff_view.name": "医疗测试单位231124",
+     "writeoff_view.inv_num": 65
+    },
+    {
+     "writeoff_view.name": "智能核销单位0408",
+     "writeoff_view.inv_num": 45
+    },
+    {
+     "writeoff_view.name": "捐赠测试单位240715",
+     "writeoff_view.inv_num": 41
+    },
+    {
+     "writeoff_view.name": "丽江市发展委员中心",
+     "writeoff_view.inv_num": 30
+    },
+    {
+     "writeoff_view.name": "测试单位0925",
+     "writeoff_view.inv_num": 28
+    },
+    {
+     "writeoff_view.name": "测试单位0926",
+     "writeoff_view.inv_num": 26
+    },
+    {
+     "writeoff_view.name": "测试国库处单位",
+     "writeoff_view.inv_num": 19
+    },
+    {
+     "writeoff_view.name": "通用测试单位070301",
+     "writeoff_view.inv_num": 16
+    },
+    {
+     "writeoff_view.name": "测试单位1102分类单位",
+     "writeoff_view.inv_num": 14
+    },
+    {
+     "writeoff_view.name": "信息技术中心",
+     "writeoff_view.inv_num": 11
+    },
+    {
+     "writeoff_view.name": "虚拟汇缴测试单位240524",
+     "writeoff_view.inv_num": 9
+    },
+    {
+     "writeoff_view.name": "测试通用单位012307",
+     "writeoff_view.inv_num": 8
+    },
+    {
+     "writeoff_view.name": "体育彩票中心",
+     "writeoff_view.inv_num": 6
+    },
+    {
+     "writeoff_view.name": "测试上级单位01csh",
+     "writeoff_view.inv_num": 5
+    },
+    {
+     "writeoff_view.name": "测试环境0117",
+     "writeoff_view.inv_num": 2
+    },
+    {
+     "writeoff_view.name": "通用测试单位02121",
+     "writeoff_view.inv_num": 1
+    },
+    {
+     "writeoff_view.name": "医疗测试单位240718",
+     "writeoff_view.inv_num": 1
+    },
+    {
+     "writeoff_view.name": "测试单位0108",
+     "writeoff_view.inv_num": 1
+    }
+   ],
+   "total": 29900
+  },
+  {
+   "title": "口径B：各单位开具票据份数（用票·开票笔数去重）",
+   "query": {
+    "measures": [
+     "usage_view.receipt_count"
+    ],
+    "dimensions": [
+     "usage_view.name"
+    ],
+    "filters": [],
+    "timeDimensions": [],
+    "order": {
+     "usage_view.receipt_count": "desc"
+    },
+    "limit": 1000
+   },
+   "rows": [
+    {
+     "usage_view.name": "医保测试单位改名",
+     "usage_view.receipt_count": 20766
+    },
+    {
+     "usage_view.name": "人大金仓按年分表测试单位0804",
+     "usage_view.receipt_count": 1998
+    },
+    {
+     "usage_view.name": "通用测试单位0801",
+     "usage_view.receipt_count": 1926
+    },
+    {
+     "usage_view.name": "考试院测试0615",
+     "usage_view.receipt_count": 1697
+    },
+    {
+     "usage_view.name": "虚拟汇缴测试单位240524",
+     "usage_view.receipt_count": 1072
+    },
+    {
+     "usage_view.name": "saas单位0927名称变更",
+     "usage_view.receipt_count": 953
+    },
+    {
+     "usage_view.name": "测试单位0831",
+     "usage_view.receipt_count": 822
+    },
+    {
+     "usage_view.name": "医疗测试单位231124",
+     "usage_view.receipt_count": 496
+    },
+    {
+     "usage_view.name": "通用单位168",
+     "usage_view.receipt_count": 482
+    },
+    {
+     "usage_view.name": "年结测试单位oracle20241009",
+     "usage_view.receipt_count": 353
+    },
+    {
+     "usage_view.name": "云南测试单位",
+     "usage_view.receipt_count": 284
+    },
+    {
+     "usage_view.name": "私有化mysql测试yn",
+     "usage_view.receipt_count": 180
+    },
+    {
+     "usage_view.name": "年结测试单位瀚高20241014",
+     "usage_view.receipt_count": 156
+    },
+    {
+     "usage_view.name": "通用测试单位0613",
+     "usage_view.receipt_count": 153
+    },
+    {
+     "usage_view.name": "一通用单位0303",
+     "usage_view.receipt_count": 143
+    },
+    {
+     "usage_view.name": "缴费开票测试单位",
+     "usage_view.receipt_count": 125
+    },
+    {
+     "usage_view.name": "反算测试单位241115",
+     "usage_view.receipt_count": 90
+    },
+    {
+     "usage_view.name": "智能核销单位0408",
+     "usage_view.receipt_count": 89
+    },
+    {
+     "usage_view.name": "测试测试单位0722",
+     "usage_view.receipt_count": 79
+    },
+    {
+     "usage_view.name": "测试基层人民法院",
+     "usage_view.receipt_count": 72
+    },
+    {
+     "usage_view.name": "测试通用测试单位0720",
+     "usage_view.receipt_count": 42
+    },
+    {
+     "usage_view.name": "通用测试单位1128",
+     "usage_view.receipt_count": 42
+    },
+    {
+     "usage_view.name": "综合收费测试单位1",
+     "usage_view.receipt_count": 37
+    },
+    {
+     "usage_view.name": "捐赠测试单位240715",
+     "usage_view.receipt_count": 35
+    },
+    {
+     "usage_view.name": "测试单位0925",
+     "usage_view.receipt_count": 34
+    },
+    {
+     "usage_view.name": "考试院测试231124",
+     "usage_view.receipt_count": 25
+    },
+    {
+     "usage_view.name": "通用测试单位070301",
+     "usage_view.receipt_count": 22
+    },
+    {
+     "usage_view.name": "医疗单位1104",
+     "usage_view.receipt_count": 21
+    },
+    {
+     "usage_view.name": "医疗测试单位10131",
+     "usage_view.receipt_count": 20
+    },
+    {
+     "usage_view.name": "测试基层人民法院231121",
+     "usage_view.receipt_count": 20
+    },
+    {
+     "usage_view.name": "测试单位0926",
+     "usage_view.receipt_count": 18
+    },
+    {
+     "usage_view.name": "缴款书测试单位0227",
+     "usage_view.receipt_count": 15
+    },
+    {
+     "usage_view.name": "mysqlSaaS高校",
+     "usage_view.receipt_count": 12
+    },
+    {
+     "usage_view.name": "测试单位1011",
+     "usage_view.receipt_count": 10
+    },
+    {
+     "usage_view.name": "测试下级单位01csh",
+     "usage_view.receipt_count": 7
+    },
+    {
+     "usage_view.name": "反算测试单位20250401",
+     "usage_view.receipt_count": 7
+    },
+    {
+     "usage_view.name": "测试单位95",
+     "usage_view.receipt_count": 6
+    },
+    {
+     "usage_view.name": "测试通用单位012307",
+     "usage_view.receipt_count": 6
+    },
+    {
+     "usage_view.name": "测试单位0717",
+     "usage_view.receipt_count": 5
+    },
+    {
+     "usage_view.name": "测试单位mysql1128",
+     "usage_view.receipt_count": 3
+    },
+    {
+     "usage_view.name": "通用测试单位02062",
+     "usage_view.receipt_count": 3
+    },
+    {
+     "usage_view.name": "医疗测试单位240718",
+     "usage_view.receipt_count": 2
+    },
+    {
+     "usage_view.name": "通用测试单位02121",
+     "usage_view.receipt_count": 2
+    },
+    {
+     "usage_view.name": "昆明缴款书测试单位0228",
+     "usage_view.receipt_count": 1
+    },
+    {
+     "usage_view.name": "测试单位0612",
+     "usage_view.receipt_count": 1
+    }
+   ],
+   "total": 32332
+  },
+  {
+   "title": "各单位核销率=口径A/口径B（按单位名称对齐）",
+   "query": {
+    "measures": [
+     "writeoff_view.inv_num"
+    ],
+    "dimensions": [
+     "writeoff_view.name"
+    ],
+    "filters": [
+     {
+      "member": "writeoff_view.state",
+      "operator": "equals",
+      "values": [
+       "2"
+      ]
+     }
+    ],
+    "timeDimensions": [],
+    "order": {
+     "writeoff_view.inv_num": "desc"
+    },
+    "limit": 1000
+   },
+   "rows": [
+    {
+     "writeoff_view.name": "缴款书测试单位0227",
+     "writeoff_view.inv_num": 81,
+     "usage_view.receipt_count": 15,
+     "核销率(%)": 540.0
+    },
+    {
+     "writeoff_view.name": "测试通用测试单位0720",
+     "writeoff_view.inv_num": 152,
+     "usage_view.receipt_count": 42,
+     "核销率(%)": 361.9
+    },
+    {
+     "writeoff_view.name": "云南测试单位",
+     "writeoff_view.inv_num": 930,
+     "usage_view.receipt_count": 284,
+     "核销率(%)": 327.46
+    },
+    {
+     "writeoff_view.name": "测试单位0926",
+     "writeoff_view.inv_num": 26,
+     "usage_view.receipt_count": 18,
+     "核销率(%)": 144.44
+    },
+    {
+     "writeoff_view.name": "测试通用单位012307",
+     "writeoff_view.inv_num": 8,
+     "usage_view.receipt_count": 6,
+     "核销率(%)": 133.33
+    },
+    {
+     "writeoff_view.name": "捐赠测试单位240715",
+     "writeoff_view.inv_num": 41,
+     "usage_view.receipt_count": 35,
+     "核销率(%)": 117.14
+    },
+    {
+     "writeoff_view.name": "一通用单位0303",
+     "writeoff_view.inv_num": 163,
+     "usage_view.receipt_count": 143,
+     "核销率(%)": 113.99
+    },
+    {
+     "writeoff_view.name": "saas单位0927名称变更",
+     "writeoff_view.inv_num": 1083,
+     "usage_view.receipt_count": 953,
+     "核销率(%)": 113.64
+    },
+    {
+     "writeoff_view.name": "考试院测试0615",
+     "writeoff_view.inv_num": 1813,
+     "usage_view.receipt_count": 1697,
+     "核销率(%)": 106.84
+    },
+    {
+     "writeoff_view.name": "缴费开票测试单位",
+     "writeoff_view.inv_num": 128,
+     "usage_view.receipt_count": 125,
+     "核销率(%)": 102.4
+    },
+    {
+     "writeoff_view.name": "通用测试单位0801",
+     "writeoff_view.inv_num": 1951,
+     "usage_view.receipt_count": 1926,
+     "核销率(%)": 101.3
+    },
+    {
+     "writeoff_view.name": "测试单位0831",
+     "writeoff_view.inv_num": 800,
+     "usage_view.receipt_count": 822,
+     "核销率(%)": 97.32
+    },
+    {
+     "writeoff_view.name": "测试测试单位0722",
+     "writeoff_view.inv_num": 76,
+     "usage_view.receipt_count": 79,
+     "核销率(%)": 96.2
+    },
+    {
+     "writeoff_view.name": "医保测试单位改名",
+     "writeoff_view.inv_num": 17166,
+     "usage_view.receipt_count": 20766,
+     "核销率(%)": 82.65
+    },
+    {
+     "writeoff_view.name": "测试单位0925",
+     "writeoff_view.inv_num": 28,
+     "usage_view.receipt_count": 34,
+     "核销率(%)": 82.35
+    },
+    {
+     "writeoff_view.name": "反算测试单位241115",
+     "writeoff_view.inv_num": 69,
+     "usage_view.receipt_count": 90,
+     "核销率(%)": 76.67
+    },
+    {
+     "writeoff_view.name": "通用单位168",
+     "writeoff_view.inv_num": 359,
+     "usage_view.receipt_count": 482,
+     "核销率(%)": 74.48
+    },
+    {
+     "writeoff_view.name": "通用测试单位070301",
+     "writeoff_view.inv_num": 16,
+     "usage_view.receipt_count": 22,
+     "核销率(%)": 72.73
+    },
+    {
+     "writeoff_view.name": "人大金仓按年分表测试单位0804",
+     "writeoff_view.inv_num": 1014,
+     "usage_view.receipt_count": 1998,
+     "核销率(%)": 50.75
+    },
+    {
+     "writeoff_view.name": "智能核销单位0408",
+     "writeoff_view.inv_num": 45,
+     "usage_view.receipt_count": 89,
+     "核销率(%)": 50.56
+    },
+    {
+     "writeoff_view.name": "医疗测试单位240718",
+     "writeoff_view.inv_num": 1,
+     "usage_view.receipt_count": 2,
+     "核销率(%)": 50.0
+    },
+    {
+     "writeoff_view.name": "通用测试单位02121",
+     "writeoff_view.inv_num": 1,
+     "usage_view.receipt_count": 2,
+     "核销率(%)": 50.0
+    },
+    {
+     "writeoff_view.name": "医疗测试单位231124",
+     "writeoff_view.inv_num": 65,
+     "usage_view.receipt_count": 496,
+     "核销率(%)": 13.1
+    },
+    {
+     "writeoff_view.name": "虚拟汇缴测试单位240524",
+     "writeoff_view.inv_num": 9,
+     "usage_view.receipt_count": 1072,
+     "核销率(%)": 0.84
+    },
+    {
+     "writeoff_view.name": "反算测试单位20250401",
+     "writeoff_view.inv_num": null,
+     "usage_view.receipt_count": 7,
+     "核销率(%)": null
+    },
+    {
+     "writeoff_view.name": "通用测试单位02062",
+     "writeoff_view.inv_num": null,
+     "usage_view.receipt_count": 3,
+     "核销率(%)": null
+    },
+    {
+     "writeoff_view.name": "测试测试环境0115",
+     "writeoff_view.inv_num": 2086,
+     "usage_view.receipt_count": null,
+     "核销率(%)": null
+    },
+    {
+     "writeoff_view.name": "发展改革委员会",
+     "writeoff_view.inv_num": 481,
+     "usage_view.receipt_count": null,
+     "核销率(%)": null
+    },
+    {
+     "writeoff_view.name": "智能核销测试测试单位1",
+     "writeoff_view.inv_num": 327,
+     "usage_view.receipt_count": null,
+     "核销率(%)": null
+    },
+    {
+     "writeoff_view.name": "测试医疗单位0729",
+     "writeoff_view.inv_num": 290,
+     "usage_view.receipt_count": null,
+     "核销率(%)": null
+    },
+    {
+     "writeoff_view.name": "智能核销二级分类",
+     "writeoff_view.inv_num": 157,
+     "usage_view.receipt_count": null,
+     "核销率(%)": null
+    },
+    {
+     "writeoff_view.name": "测试教育厅1",
+     "writeoff_view.inv_num": 136,
+     "usage_view.receipt_count": null,
+     "核销率(%)": null
+    },
+    {
+     "writeoff_view.name": "智能核销昆明市本级单位",
+     "writeoff_view.inv_num": 124,
+     "usage_view.receipt_count": null,
+     "核销率(%)": null
+    },
+    {
+     "writeoff_view.name": "测试1125",
+     "writeoff_view.inv_num": 117,
+     "usage_view.receipt_count": null,
+     "核销率(%)": null
+    },
+    {
+     "writeoff_view.name": "智能核销五华区测试单位",
+     "writeoff_view.inv_num": 69,
+     "usage_view.receipt_count": null,
+     "核销率(%)": null
+    },
+    {
+     "writeoff_view.name": "丽江市发展委员中心",
+     "writeoff_view.inv_num": 30,
+     "usage_view.receipt_count": null,
+     "核销率(%)": null
+    },
+    {
+     "writeoff_view.name": "测试国库处单位",
+     "writeoff_view.inv_num": 19,
+     "usage_view.receipt_count": null,
+     "核销率(%)": null
+    },
+    {
+     "writeoff_view.name": "测试单位1102分类单位",
+     "writeoff_view.inv_num": 14,
+     "usage_view.receipt_count": null,
+     "核销率(%)": null
+    },
+    {
+     "writeoff_view.name": "信息技术中心",
+     "writeoff_view.inv_num": 11,
+     "usage_view.receipt_count": null,
+     "核销率(%)": null
+    },
+    {
+     "writeoff_view.name": "体育彩票中心",
+     "writeoff_view.inv_num": 6,
+     "usage_view.receipt_count": null,
+     "核销率(%)": null
+    },
+    {
+     "writeoff_view.name": "测试上级单位01csh",
+     "writeoff_view.inv_num": 5,
+     "usage_view.receipt_count": null,
+     "核销率(%)": null
+    },
+    {
+     "writeoff_view.name": "测试环境0117",
+     "writeoff_view.inv_num": 2,
+     "usage_view.receipt_count": null,
+     "核销率(%)": null
+    },
+    {
+     "writeoff_view.name": "测试单位0108",
+     "writeoff_view.inv_num": 1,
+     "usage_view.receipt_count": null,
+     "核销率(%)": null
+    },
+    {
+     "writeoff_view.name": "年结测试单位oracle20241009",
+     "writeoff_view.inv_num": null,
+     "usage_view.receipt_count": 353,
+     "核销率(%)": null
+    },
+    {
+     "writeoff_view.name": "私有化mysql测试yn",
+     "writeoff_view.inv_num": null,
+     "usage_view.receipt_count": 180,
+     "核销率(%)": null
+    },
+    {
+     "writeoff_view.name": "年结测试单位瀚高20241014",
+     "writeoff_view.inv_num": null,
+     "usage_view.receipt_count": 156,
+     "核销率(%)": null
+    },
+    {
+     "writeoff_view.name": "通用测试单位0613",
+     "writeoff_view.inv_num": null,
+     "usage_view.receipt_count": 153,
+     "核销率(%)": null
+    },
+    {
+     "writeoff_view.name": "测试基层人民法院",
+     "writeoff_view.inv_num": null,
+     "usage_view.receipt_count": 72,
+     "核销率(%)": null
+    },
+    {
+     "writeoff_view.name": "通用测试单位1128",
+     "writeoff_view.inv_num": null,
+     "usage_view.receipt_count": 42,
+     "核销率(%)": null
+    },
+    {
+     "writeoff_view.name": "综合收费测试单位1",
+     "writeoff_view.inv_num": null,
+     "usage_view.receipt_count": 37,
+     "核销率(%)": null
+    },
+    {
+     "writeoff_view.name": "考试院测试231124",
+     "writeoff_view.inv_num": null,
+     "usage_view.receipt_count": 25,
+     "核销率(%)": null
+    },
+    {
+     "writeoff_view.name": "医疗单位1104",
+     "writeoff_view.inv_num": null,
+     "usage_view.receipt_count": 21,
+     "核销率(%)": null
+    },
+    {
+     "writeoff_view.name": "医疗测试单位10131",
+     "writeoff_view.inv_num": null,
+     "usage_view.receipt_count": 20,
+     "核销率(%)": null
+    },
+    {
+     "writeoff_view.name": "测试基层人民法院231121",
+     "writeoff_view.inv_num": null,
+     "usage_view.receipt_count": 20,
+     "核销率(%)": null
+    },
+    {
+     "writeoff_view.name": "mysqlSaaS高校",
+     "writeoff_view.inv_num": null,
+     "usage_view.receipt_count": 12,
+     "核销率(%)": null
+    },
+    {
+     "writeoff_view.name": "测试单位1011",
+     "writeoff_view.inv_num": null,
+     "usage_view.receipt_count": 10,
+     "核销率(%)": null
+    },
+    {
+     "writeoff_view.name": "测试下级单位01csh",
+     "writeoff_view.inv_num": null,
+     "usage_view.receipt_count": 7,
+     "核销率(%)": null
+    },
+    {
+     "writeoff_view.name": "测试单位95",
+     "writeoff_view.inv_num": null,
+     "usage_view.receipt_count": 6,
+     "核销率(%)": null
+    },
+    {
+     "writeoff_view.name": "测试单位0717",
+     "writeoff_view.inv_num": null,
+     "usage_view.receipt_count": 5,
+     "核销率(%)": null
+    },
+    {
+     "writeoff_view.name": "测试单位mysql1128",
+     "writeoff_view.inv_num": null,
+     "usage_view.receipt_count": 3,
+     "核销率(%)": null
+    },
+    {
+     "writeoff_view.name": "昆明缴款书测试单位0228",
+     "writeoff_view.inv_num": null,
+     "usage_view.receipt_count": 1,
+     "核销率(%)": null
+    },
+    {
+     "writeoff_view.name": "测试单位0612",
+     "writeoff_view.inv_num": null,
+     "usage_view.receipt_count": 1,
+     "核销率(%)": null
+    }
+   ],
+   "total": null
+  }
+ ],
+ "answer": "核销率=已核销票据份数/开具票据份数，按词典「核销情况」2026-09-26 定案口径：分子取票据审验的核销单票据明细开票份数 writeoff_view.inv_num、限已审验核销单（state='2'）；分母取用票的开票笔数去重 usage_view.receipt_count（每张票据计 1）。两 view 无联查路径，比率按单位名称对齐跨 view 计算（表3）：两侧同名可算比率的 26 家；仅分子侧 17 家（有已核销记录、无开票记录）、仅分母侧 19 家（有开票记录、无已审验核销记录，可能是核销单未审验），比率置 null 不标 0。口径提醒：分子为票面份数、分母为票据笔数，定额票一单多份会致比率>100%，本次 11 家>100%，属口径现象非数据错误（词典已备案）。数据范围：未限时间全量；整体 29900/32332=92.48%，两侧分组加总与全量查询互验一致。",
+ "assumption": "口径沿用词典「核销情况」2026-09-26 用户拍板（分子 state='2' 已审验×inv_num、分母 receipt_count 去重笔数，四选项选推荐项）；未指定时间取全量；表3 由口径A×口径B 两条查询按单位名称对齐派生，其 query 为分子口径（口径A）",
+ "truncated": false,
+ "rows": 150,
+ "hitPreAgg": false,
+ "audited": false,
+ "_elapsed_s": 341,
+ "_scenario": "跨表（核销率，分子分母分属两 view）",
+ "_source_log_idx": 66,
+ "_source_question": "查看各单位单位核销情况（%），为已核销票据份数 / 开具票据份数。如果不能回答，告诉我缺口"
+}

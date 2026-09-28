@@ -1,0 +1,1046 @@
+{
+ "type": "answer",
+ "title": "各单位各预算科目下项目收入金额及占比（收入日结）",
+ "plan": [
+  [
+   "收入金额用严格收入口径（仅收入方向）",
+   "daybook_view.income_amt",
+   "口径词典「收款金额」定案 2026-09-23：income_amt 为严格收入口径"
+  ],
+  [
+   "单位按「各单位」词条两口径都出：收入单位（收款入账侧）",
+   "daybook_view.im_agen_name",
+   "口径词典「各单位」定案 2026-09-24：问句未明示单位口径时收入/执收两口径各出一张表"
+  ],
+  [
+   "执收单位口径单独成表对比",
+   "daybook_view.chg_agen_name",
+   "同「各单位」词条；执收侧与收款入账侧 2026-06 实测取值不同"
+  ],
+  [
+   "预算科目用源表自带科目快照（按名称分组）",
+   "daybook_view.sub_name",
+   "口径词典「预算科目×项目」定案 2026-09-27：收入问 daybook_view.sub_name，一张表出"
+  ],
+  [
+   "项目细分用项目名称（项目严格 N:1 归属单一科目）",
+   "daybook_view.item_name",
+   "模型 ai_context：项目按编码严格 N:1 归属单一科目，科目是项目的上级分组"
+  ],
+  [
+   "占比分母用不带维度的全量收入合计，两表独立计算、不跨口径合计",
+   "daybook_view.income_amt",
+   "tables 平等契约：total 用全量查询拿，禁把截断行加总、禁跨口径合计"
+  ]
+ ],
+ "tables": [
+  {
+   "title": "口径A：收入单位×预算科目×项目（收入日结·严格收入口径）",
+   "query": {
+    "measures": [
+     "daybook_view.income_amt"
+    ],
+    "dimensions": [
+     "daybook_view.im_agen_name",
+     "daybook_view.sub_name",
+     "daybook_view.item_name"
+    ],
+    "filters": [],
+    "timeDimensions": [],
+    "order": {
+     "daybook_view.income_amt": "desc"
+    },
+    "limit": 100
+   },
+   "rows": [
+    {
+     "daybook_view.im_agen_name": "中央记账单位",
+     "daybook_view.sub_name": "中央农网还贷资金收入",
+     "daybook_view.item_name": "中央分成项目--国库资金",
+     "daybook_view.income_amt": null
+    },
+    {
+     "daybook_view.im_agen_name": "云南发展改革委员会",
+     "daybook_view.sub_name": "民航发展基金收入",
+     "daybook_view.item_name": "民航发展基金收入",
+     "daybook_view.income_amt": 29158355.66
+    },
+    {
+     "daybook_view.im_agen_name": "云南通用测试单位0801",
+     "daybook_view.sub_name": "旅游发展基金收入",
+     "daybook_view.item_name": "旅游发展基金收入",
+     "daybook_view.income_amt": 349549.92
+    },
+    {
+     "daybook_view.im_agen_name": "云南发展改革委员会",
+     "daybook_view.sub_name": "旅游发展基金收入",
+     "daybook_view.item_name": "旅游发展基金收入",
+     "daybook_view.income_amt": 289694
+    },
+    {
+     "daybook_view.im_agen_name": "测试云南测试环境",
+     "daybook_view.sub_name": "国家电影事业发展专项资金收入",
+     "daybook_view.item_name": "国家电影事业发展专项资金收入",
+     "daybook_view.income_amt": 69819.8
+    },
+    {
+     "daybook_view.im_agen_name": "云南发展改革委员会",
+     "daybook_view.sub_name": "港口建设费收入",
+     "daybook_view.item_name": "港口建设费收入",
+     "daybook_view.income_amt": 69456.99
+    },
+    {
+     "daybook_view.im_agen_name": "云南通用测试单位0801",
+     "daybook_view.sub_name": "港口建设费收入",
+     "daybook_view.item_name": "港口建设费收入",
+     "daybook_view.income_amt": 58615.48
+    },
+    {
+     "daybook_view.im_agen_name": "测试云南测试环境",
+     "daybook_view.sub_name": "港口建设费收入",
+     "daybook_view.item_name": "港口建设费收入",
+     "daybook_view.income_amt": 31605.8
+    },
+    {
+     "daybook_view.im_agen_name": "云南通用测试单位0801",
+     "daybook_view.sub_name": "民航发展基金收入",
+     "daybook_view.item_name": "民航发展基金收入",
+     "daybook_view.income_amt": 29503.26
+    },
+    {
+     "daybook_view.im_agen_name": "云南医保测试单位改名",
+     "daybook_view.sub_name": "港口建设费收入",
+     "daybook_view.item_name": "港口建设费收入",
+     "daybook_view.income_amt": 22871.76
+    },
+    {
+     "daybook_view.im_agen_name": "测试云南测试环境",
+     "daybook_view.sub_name": "旅游发展基金收入",
+     "daybook_view.item_name": "旅游发展基金收入",
+     "daybook_view.income_amt": 18336.8
+    },
+    {
+     "daybook_view.im_agen_name": "通用单位168",
+     "daybook_view.sub_name": "民航发展基金收入",
+     "daybook_view.item_name": "民航发展基金收入",
+     "daybook_view.income_amt": 7820.56
+    },
+    {
+     "daybook_view.im_agen_name": "发展改革委员会",
+     "daybook_view.sub_name": "国家电影事业发展专项资金收入",
+     "daybook_view.item_name": "国家电影事业发展专项资金收入",
+     "daybook_view.income_amt": 7222
+    },
+    {
+     "daybook_view.im_agen_name": "通用单位168",
+     "daybook_view.sub_name": "港口建设费收入",
+     "daybook_view.item_name": "港口建设费收入",
+     "daybook_view.income_amt": 6808.4800000000005
+    },
+    {
+     "daybook_view.im_agen_name": "云南发展改革委员会",
+     "daybook_view.sub_name": "国家电影事业发展专项资金收入",
+     "daybook_view.item_name": "国家电影事业发展专项资金收入",
+     "daybook_view.income_amt": 6070.16
+    },
+    {
+     "daybook_view.im_agen_name": "通用单位168",
+     "daybook_view.sub_name": "中央农网还贷资金收入",
+     "daybook_view.item_name": "乡村农网还贷资金收入",
+     "daybook_view.income_amt": 5232.66
+    },
+    {
+     "daybook_view.im_agen_name": "云南发展改革委员会",
+     "daybook_view.sub_name": "中央农网还贷资金收入25",
+     "daybook_view.item_name": "乡村农网还贷资金收入",
+     "daybook_view.income_amt": 3720
+    },
+    {
+     "daybook_view.im_agen_name": "云南发展改革委员会",
+     "daybook_view.sub_name": "中央农网还贷资金收入",
+     "daybook_view.item_name": "乡村农网还贷资金收入",
+     "daybook_view.income_amt": 3624.5
+    },
+    {
+     "daybook_view.im_agen_name": "测试云南测试环境",
+     "daybook_view.sub_name": "铁路建设基金收入",
+     "daybook_view.item_name": "铁路建设基金收入",
+     "daybook_view.income_amt": 3600
+    },
+    {
+     "daybook_view.im_agen_name": "测试单位95",
+     "daybook_view.sub_name": "旅游发展基金收入",
+     "daybook_view.item_name": "旅游发展基金收入",
+     "daybook_view.income_amt": 3444
+    },
+    {
+     "daybook_view.im_agen_name": "云南测试单位",
+     "daybook_view.sub_name": "港口建设费收入",
+     "daybook_view.item_name": "港口建设费收入",
+     "daybook_view.income_amt": 3005.96
+    },
+    {
+     "daybook_view.im_agen_name": "智能核销单位0408",
+     "daybook_view.sub_name": "港口建设费收入",
+     "daybook_view.item_name": "港口建设费收入",
+     "daybook_view.income_amt": 2926
+    },
+    {
+     "daybook_view.im_agen_name": "云南saas单位0927",
+     "daybook_view.sub_name": "中央农网还贷资金收入",
+     "daybook_view.item_name": "农网还贷资金收入",
+     "daybook_view.income_amt": 2700
+    },
+    {
+     "daybook_view.im_agen_name": "云南一通用单位0303",
+     "daybook_view.sub_name": "中央农网还贷资金收入",
+     "daybook_view.item_name": "农网还贷资金收入",
+     "daybook_view.income_amt": 2631
+    },
+    {
+     "daybook_view.im_agen_name": "云南发展改革委员会",
+     "daybook_view.sub_name": "铁路建设基金收入",
+     "daybook_view.item_name": "铁路建设基金收入",
+     "daybook_view.income_amt": 2553
+    },
+    {
+     "daybook_view.im_agen_name": "云南测试单位",
+     "daybook_view.sub_name": "民航发展基金收入",
+     "daybook_view.item_name": "民航发展基金收入",
+     "daybook_view.income_amt": 2439.26
+    },
+    {
+     "daybook_view.im_agen_name": "云南一通用单位0303",
+     "daybook_view.sub_name": "铁路建设基金收入",
+     "daybook_view.item_name": "铁路建设基金收入",
+     "daybook_view.income_amt": 2333
+    },
+    {
+     "daybook_view.im_agen_name": "云南测试单位",
+     "daybook_view.sub_name": "旅游发展基金收入",
+     "daybook_view.item_name": "旅游发展基金收入",
+     "daybook_view.income_amt": 2246
+    },
+    {
+     "daybook_view.im_agen_name": "云南测试单位0831",
+     "daybook_view.sub_name": "民航发展基金收入",
+     "daybook_view.item_name": "民航发展基金收入",
+     "daybook_view.income_amt": 2158
+    },
+    {
+     "daybook_view.im_agen_name": "云南反算测试单位20250401",
+     "daybook_view.sub_name": "中央农网还贷资金收入25",
+     "daybook_view.item_name": "乡村农网还贷资金收入",
+     "daybook_view.income_amt": 2000
+    },
+    {
+     "daybook_view.im_agen_name": "发展改革委员会",
+     "daybook_view.sub_name": "港口建设费收入",
+     "daybook_view.item_name": "港口建设费收入",
+     "daybook_view.income_amt": 1900
+    },
+    {
+     "daybook_view.im_agen_name": "云南通用测试单位1128",
+     "daybook_view.sub_name": "港口建设费收入",
+     "daybook_view.item_name": "港口建设费收入",
+     "daybook_view.income_amt": 1821.32
+    },
+    {
+     "daybook_view.im_agen_name": "云南反算测试单位20250401",
+     "daybook_view.sub_name": "民航发展基金收入",
+     "daybook_view.item_name": "民航发展基金收入",
+     "daybook_view.income_amt": 1805.28
+    },
+    {
+     "daybook_view.im_agen_name": "测试云南测试环境",
+     "daybook_view.sub_name": "中央农网还贷资金收入",
+     "daybook_view.item_name": "农网还贷资金收入",
+     "daybook_view.income_amt": 1489
+    },
+    {
+     "daybook_view.im_agen_name": "通用测试单位0801",
+     "daybook_view.sub_name": "中央农网还贷资金收入25",
+     "daybook_view.item_name": "农网还贷资金收入a",
+     "daybook_view.income_amt": 1446
+    },
+    {
+     "daybook_view.im_agen_name": "云南考试院测试0615",
+     "daybook_view.sub_name": "港口建设费收入",
+     "daybook_view.item_name": "港口建设费收入",
+     "daybook_view.income_amt": 1207.92
+    },
+    {
+     "daybook_view.im_agen_name": "通用测试单位0801",
+     "daybook_view.sub_name": "港口建设费收入",
+     "daybook_view.item_name": "港口建设费收入",
+     "daybook_view.income_amt": 1201.32
+    },
+    {
+     "daybook_view.im_agen_name": "云南发展改革委员会",
+     "daybook_view.sub_name": "中央农网还贷资金收入25",
+     "daybook_view.item_name": "国有重点煤炭企业生产用电、核工业铀扩散厂和堆化工厂生产用电农网还贷资金",
+     "daybook_view.income_amt": 1200
+    },
+    {
+     "daybook_view.im_agen_name": "云南发展改革委员会",
+     "daybook_view.sub_name": "考试考务费",
+     "daybook_view.item_name": "自费来华学生报名考试",
+     "daybook_view.income_amt": 1060
+    },
+    {
+     "daybook_view.im_agen_name": "云南发展改革委员会",
+     "daybook_view.sub_name": "中央农网还贷资金收入25",
+     "daybook_view.item_name": "农网还贷资金收入a",
+     "daybook_view.income_amt": 1024.8
+    },
+    {
+     "daybook_view.im_agen_name": "云南通用测试单位1128",
+     "daybook_view.sub_name": "民航发展基金收入",
+     "daybook_view.item_name": "民航发展基金收入",
+     "daybook_view.income_amt": 1000.66
+    },
+    {
+     "daybook_view.im_agen_name": "医保测试单位",
+     "daybook_view.sub_name": "港口建设费收入",
+     "daybook_view.item_name": "港口建设费收入",
+     "daybook_view.income_amt": 890.66
+    },
+    {
+     "daybook_view.im_agen_name": "通用测试单位070301",
+     "daybook_view.sub_name": "民航发展基金收入",
+     "daybook_view.item_name": "民航发展基金收入",
+     "daybook_view.income_amt": 805.28
+    },
+    {
+     "daybook_view.im_agen_name": "云南反算测试单位20250401",
+     "daybook_view.sub_name": "港口建设费收入",
+     "daybook_view.item_name": "港口建设费收入",
+     "daybook_view.income_amt": 805.28
+    },
+    {
+     "daybook_view.im_agen_name": "医保测试单位",
+     "daybook_view.sub_name": "民航发展基金收入",
+     "daybook_view.item_name": "民航发展基金收入",
+     "daybook_view.income_amt": 803.96
+    },
+    {
+     "daybook_view.im_agen_name": "通用测试单位0801",
+     "daybook_view.sub_name": "民航发展基金收入",
+     "daybook_view.item_name": "民航发展基金收入",
+     "daybook_view.income_amt": 738
+    },
+    {
+     "daybook_view.im_agen_name": "云南发展改革委员会",
+     "daybook_view.sub_name": "中央农网还贷资金收入",
+     "daybook_view.item_name": "中央分成项目--国库资金",
+     "daybook_view.income_amt": 633
+    },
+    {
+     "daybook_view.im_agen_name": "云南发展改革委员会",
+     "daybook_view.sub_name": "教育资金收入",
+     "daybook_view.item_name": "教育资金收入",
+     "daybook_view.income_amt": 620
+    },
+    {
+     "daybook_view.im_agen_name": "云南发展改革委员会",
+     "daybook_view.sub_name": "中等职业学校学费",
+     "daybook_view.item_name": "中等职业学校学费",
+     "daybook_view.income_amt": 606
+    },
+    {
+     "daybook_view.im_agen_name": "测试云南测试环境0115",
+     "daybook_view.sub_name": "旅游发展基金收入",
+     "daybook_view.item_name": "旅游发展基金收入",
+     "daybook_view.income_amt": 600
+    },
+    {
+     "daybook_view.im_agen_name": "医保测试单位改名",
+     "daybook_view.sub_name": "中央农网还贷资金收入25",
+     "daybook_view.item_name": "农网还贷资金收入a",
+     "daybook_view.income_amt": 600
+    },
+    {
+     "daybook_view.im_agen_name": "智能核销单位0408",
+     "daybook_view.sub_name": "民航发展基金收入",
+     "daybook_view.item_name": "民航发展基金收入",
+     "daybook_view.income_amt": 523
+    },
+    {
+     "daybook_view.im_agen_name": "云南医保测试单位改名",
+     "daybook_view.sub_name": "旅游发展基金收入",
+     "daybook_view.item_name": "旅游发展基金收入",
+     "daybook_view.income_amt": 503.3
+    },
+    {
+     "daybook_view.im_agen_name": "云南saas单位0927",
+     "daybook_view.sub_name": "民航发展基金收入",
+     "daybook_view.item_name": "民航发展基金收入",
+     "daybook_view.income_amt": 500
+    },
+    {
+     "daybook_view.im_agen_name": "云南发展改革委员会",
+     "daybook_view.sub_name": "教材费",
+     "daybook_view.item_name": "教材费",
+     "daybook_view.income_amt": 460
+    },
+    {
+     "daybook_view.im_agen_name": "云南反算测试单位20250401",
+     "daybook_view.sub_name": "旅游发展基金收入",
+     "daybook_view.item_name": "旅游发展基金收入",
+     "daybook_view.income_amt": 402.64
+    },
+    {
+     "daybook_view.im_agen_name": "医保测试单位改名",
+     "daybook_view.sub_name": "港口建设费收入",
+     "daybook_view.item_name": "港口建设费收入",
+     "daybook_view.income_amt": 401.32
+    },
+    {
+     "daybook_view.im_agen_name": "医保测试单位改名",
+     "daybook_view.sub_name": "民航发展基金收入",
+     "daybook_view.item_name": "民航发展基金收入",
+     "daybook_view.income_amt": 400.66
+    },
+    {
+     "daybook_view.im_agen_name": "测试云南测试环境",
+     "daybook_view.sub_name": "教师资格考试费",
+     "daybook_view.item_name": "教师资格考试费",
+     "daybook_view.income_amt": 400
+    },
+    {
+     "daybook_view.im_agen_name": "云南发展改革委员会",
+     "daybook_view.sub_name": "考试考务费",
+     "daybook_view.item_name": "高等自学考试费",
+     "daybook_view.income_amt": 300
+    },
+    {
+     "daybook_view.im_agen_name": "云南saas单位0927",
+     "daybook_view.sub_name": "港口建设费收入",
+     "daybook_view.item_name": "港口建设费收入",
+     "daybook_view.income_amt": 300
+    },
+    {
+     "daybook_view.im_agen_name": "测试测试环境0115",
+     "daybook_view.sub_name": "中央农网还贷资金收入25",
+     "daybook_view.item_name": "国有重点煤炭企业生产用电、核工业铀扩散厂和堆化工厂生产用电农网还贷资金",
+     "daybook_view.income_amt": 300
+    },
+    {
+     "daybook_view.im_agen_name": "发展改革委员会",
+     "daybook_view.sub_name": "民航发展基金收入",
+     "daybook_view.item_name": "民航发展基金收入",
+     "daybook_view.income_amt": 300
+    },
+    {
+     "daybook_view.im_agen_name": "医保测试单位",
+     "daybook_view.sub_name": "中央农网还贷资金收入25",
+     "daybook_view.item_name": "农网还贷资金收入a",
+     "daybook_view.income_amt": 246
+    },
+    {
+     "daybook_view.im_agen_name": "测试单位95",
+     "daybook_view.sub_name": "港口建设费收入",
+     "daybook_view.item_name": "港口建设费收入",
+     "daybook_view.income_amt": 246
+    },
+    {
+     "daybook_view.im_agen_name": "云南医保测试单位改名",
+     "daybook_view.sub_name": "民航发展基金收入",
+     "daybook_view.item_name": "民航发展基金收入",
+     "daybook_view.income_amt": 201.32
+    },
+    {
+     "daybook_view.im_agen_name": "云南年结测试单位oracle20241009",
+     "daybook_view.sub_name": "港口建设费收入",
+     "daybook_view.item_name": "港口建设费收入",
+     "daybook_view.income_amt": 201.32
+    },
+    {
+     "daybook_view.im_agen_name": "云南反算测试单位241115",
+     "daybook_view.sub_name": "港口建设费收入",
+     "daybook_view.item_name": "港口建设费收入",
+     "daybook_view.income_amt": 201.32
+    },
+    {
+     "daybook_view.im_agen_name": "云南医疗测试单位231124",
+     "daybook_view.sub_name": "港口建设费收入",
+     "daybook_view.item_name": "港口建设费收入",
+     "daybook_view.income_amt": 201.32
+    },
+    {
+     "daybook_view.im_agen_name": "云南考试院测试0615",
+     "daybook_view.sub_name": "旅游发展基金收入",
+     "daybook_view.item_name": "旅游发展基金收入",
+     "daybook_view.income_amt": 201.32
+    },
+    {
+     "daybook_view.im_agen_name": "测试测试环境0115",
+     "daybook_view.sub_name": "港口建设费收入",
+     "daybook_view.item_name": "港口建设费收入",
+     "daybook_view.income_amt": 200
+    },
+    {
+     "daybook_view.im_agen_name": "测试云南测试环境",
+     "daybook_view.sub_name": "国有土地收益基金收入",
+     "daybook_view.item_name": "国有土地收益基金收入",
+     "daybook_view.income_amt": 200
+    },
+    {
+     "daybook_view.im_agen_name": "测试云南测试环境0115",
+     "daybook_view.sub_name": "港口建设费收入",
+     "daybook_view.item_name": "港口建设费收入",
+     "daybook_view.income_amt": 200
+    },
+    {
+     "daybook_view.im_agen_name": "云南发展改革委员会",
+     "daybook_view.sub_name": "高等学校住宿费",
+     "daybook_view.item_name": "高等学校住宿费",
+     "daybook_view.income_amt": 200
+    },
+    {
+     "daybook_view.im_agen_name": "发展改革委员会",
+     "daybook_view.sub_name": "中央农网还贷资金收入25",
+     "daybook_view.item_name": "乡村农网还贷资金收入",
+     "daybook_view.income_amt": 200
+    },
+    {
+     "daybook_view.im_agen_name": "测试单位",
+     "daybook_view.sub_name": "港口建设费收入",
+     "daybook_view.item_name": "港口建设费收入",
+     "daybook_view.income_amt": 200
+    },
+    {
+     "daybook_view.im_agen_name": "云南发展改革委员会",
+     "daybook_view.sub_name": "中央农网还贷资金收入",
+     "daybook_view.item_name": "农网还贷资金收入",
+     "daybook_view.income_amt": 200
+    },
+    {
+     "daybook_view.im_agen_name": "发展改革委员会",
+     "daybook_view.sub_name": "中央农网还贷资金收入25",
+     "daybook_view.item_name": "国有重点煤炭企业生产用电、核工业铀扩散厂和堆化工厂生产用电农网还贷资金",
+     "daybook_view.income_amt": 100
+    },
+    {
+     "daybook_view.im_agen_name": "云南体育彩票中心",
+     "daybook_view.sub_name": "中央农网还贷资金收入",
+     "daybook_view.item_name": "农网还贷资金收入",
+     "daybook_view.income_amt": 100
+    },
+    {
+     "daybook_view.im_agen_name": "云南通用测试单位0801",
+     "daybook_view.sub_name": "国有土地收益基金收入",
+     "daybook_view.item_name": "国有土地收益基金收入",
+     "daybook_view.income_amt": 66
+    },
+    {
+     "daybook_view.im_agen_name": "通用单位168",
+     "daybook_view.sub_name": "大中型水库移民后期扶持基金收入",
+     "daybook_view.item_name": "大中型水库移民后期扶持基金收入",
+     "daybook_view.income_amt": 60
+    },
+    {
+     "daybook_view.im_agen_name": "云南医疗测试单位231124",
+     "daybook_view.sub_name": "旅游发展基金收入",
+     "daybook_view.item_name": "旅游发展基金收入",
+     "daybook_view.income_amt": 60
+    },
+    {
+     "daybook_view.im_agen_name": "云南通用测试单位0801",
+     "daybook_view.sub_name": "其他土地出让收入",
+     "daybook_view.item_name": "其他土地出让收入",
+     "daybook_view.income_amt": 33
+    }
+   ],
+   "total": 30200711.05
+  },
+  {
+   "title": "口径B：执收单位×预算科目×项目（收入日结·严格收入口径）",
+   "query": {
+    "measures": [
+     "daybook_view.income_amt"
+    ],
+    "dimensions": [
+     "daybook_view.chg_agen_name",
+     "daybook_view.sub_name",
+     "daybook_view.item_name"
+    ],
+    "filters": [],
+    "timeDimensions": [],
+    "order": {
+     "daybook_view.income_amt": "desc"
+    },
+    "limit": 100
+   },
+   "rows": [
+    {
+     "daybook_view.chg_agen_name": "开票点001",
+     "daybook_view.sub_name": "民航发展基金收入",
+     "daybook_view.item_name": "民航发展基金收入",
+     "daybook_view.income_amt": 29158655.66
+    },
+    {
+     "daybook_view.chg_agen_name": "云南通用测试单位0801",
+     "daybook_view.sub_name": "旅游发展基金收入",
+     "daybook_view.item_name": "旅游发展基金收入",
+     "daybook_view.income_amt": 349549.92
+    },
+    {
+     "daybook_view.chg_agen_name": "开票点001",
+     "daybook_view.sub_name": "旅游发展基金收入",
+     "daybook_view.item_name": "旅游发展基金收入",
+     "daybook_view.income_amt": 289694
+    },
+    {
+     "daybook_view.chg_agen_name": "开票点001",
+     "daybook_view.sub_name": "港口建设费收入",
+     "daybook_view.item_name": "港口建设费收入",
+     "daybook_view.income_amt": 71356.98
+    },
+    {
+     "daybook_view.chg_agen_name": "测试云南测试环境",
+     "daybook_view.sub_name": "国家电影事业发展专项资金收入",
+     "daybook_view.item_name": "国家电影事业发展专项资金收入",
+     "daybook_view.income_amt": 69819.8
+    },
+    {
+     "daybook_view.chg_agen_name": "云南通用测试单位0801",
+     "daybook_view.sub_name": "港口建设费收入",
+     "daybook_view.item_name": "港口建设费收入",
+     "daybook_view.income_amt": 58816.8
+    },
+    {
+     "daybook_view.chg_agen_name": "测试云南测试环境",
+     "daybook_view.sub_name": "港口建设费收入",
+     "daybook_view.item_name": "港口建设费收入",
+     "daybook_view.income_amt": 31005.8
+    },
+    {
+     "daybook_view.chg_agen_name": "云南通用测试单位0801",
+     "daybook_view.sub_name": "民航发展基金收入",
+     "daybook_view.item_name": "民航发展基金收入",
+     "daybook_view.income_amt": 30241.26
+    },
+    {
+     "daybook_view.chg_agen_name": "开票点一",
+     "daybook_view.sub_name": "港口建设费收入",
+     "daybook_view.item_name": "港口建设费收入",
+     "daybook_view.income_amt": 22398.46
+    },
+    {
+     "daybook_view.chg_agen_name": "测试云南测试环境",
+     "daybook_view.sub_name": "旅游发展基金收入",
+     "daybook_view.item_name": "旅游发展基金收入",
+     "daybook_view.income_amt": 17658.8
+    },
+    {
+     "daybook_view.chg_agen_name": "开票点001",
+     "daybook_view.sub_name": "国家电影事业发展专项资金收入",
+     "daybook_view.item_name": "国家电影事业发展专项资金收入",
+     "daybook_view.income_amt": 13292.16
+    },
+    {
+     "daybook_view.chg_agen_name": "通用单位168",
+     "daybook_view.sub_name": "民航发展基金收入",
+     "daybook_view.item_name": "民航发展基金收入",
+     "daybook_view.income_amt": 7820.56
+    },
+    {
+     "daybook_view.chg_agen_name": "通用单位168",
+     "daybook_view.sub_name": "港口建设费收入",
+     "daybook_view.item_name": "港口建设费收入",
+     "daybook_view.income_amt": 6808.4800000000005
+    },
+    {
+     "daybook_view.chg_agen_name": "通用单位168",
+     "daybook_view.sub_name": "中央农网还贷资金收入",
+     "daybook_view.item_name": "乡村农网还贷资金收入",
+     "daybook_view.income_amt": 5232.66
+    },
+    {
+     "daybook_view.chg_agen_name": "开票点001",
+     "daybook_view.sub_name": "中央农网还贷资金收入25",
+     "daybook_view.item_name": "乡村农网还贷资金收入",
+     "daybook_view.income_amt": 3920
+    },
+    {
+     "daybook_view.chg_agen_name": "开票点001",
+     "daybook_view.sub_name": "中央农网还贷资金收入",
+     "daybook_view.item_name": "乡村农网还贷资金收入",
+     "daybook_view.income_amt": 3624.5
+    },
+    {
+     "daybook_view.chg_agen_name": "测试云南测试环境",
+     "daybook_view.sub_name": "铁路建设基金收入",
+     "daybook_view.item_name": "铁路建设基金收入",
+     "daybook_view.income_amt": 3600
+    },
+    {
+     "daybook_view.chg_agen_name": "云南测试单位95",
+     "daybook_view.sub_name": "旅游发展基金收入",
+     "daybook_view.item_name": "旅游发展基金收入",
+     "daybook_view.income_amt": 3444
+    },
+    {
+     "daybook_view.chg_agen_name": "云南测试单位",
+     "daybook_view.sub_name": "港口建设费收入",
+     "daybook_view.item_name": "港口建设费收入",
+     "daybook_view.income_amt": 3205.96
+    },
+    {
+     "daybook_view.chg_agen_name": "智能核销单位0408",
+     "daybook_view.sub_name": "港口建设费收入",
+     "daybook_view.item_name": "港口建设费收入",
+     "daybook_view.income_amt": 2926
+    },
+    {
+     "daybook_view.chg_agen_name": "云南saas单位0927",
+     "daybook_view.sub_name": "中央农网还贷资金收入",
+     "daybook_view.item_name": "农网还贷资金收入",
+     "daybook_view.income_amt": 2700
+    },
+    {
+     "daybook_view.chg_agen_name": "云南一通用单位0303",
+     "daybook_view.sub_name": "中央农网还贷资金收入",
+     "daybook_view.item_name": "农网还贷资金收入",
+     "daybook_view.income_amt": 2631
+    },
+    {
+     "daybook_view.chg_agen_name": "开票点001",
+     "daybook_view.sub_name": "铁路建设基金收入",
+     "daybook_view.item_name": "铁路建设基金收入",
+     "daybook_view.income_amt": 2553
+    },
+    {
+     "daybook_view.chg_agen_name": "云南测试单位",
+     "daybook_view.sub_name": "民航发展基金收入",
+     "daybook_view.item_name": "民航发展基金收入",
+     "daybook_view.income_amt": 2439.26
+    },
+    {
+     "daybook_view.chg_agen_name": "云南一通用单位0303",
+     "daybook_view.sub_name": "铁路建设基金收入",
+     "daybook_view.item_name": "铁路建设基金收入",
+     "daybook_view.income_amt": 2333
+    },
+    {
+     "daybook_view.chg_agen_name": "云南测试单位",
+     "daybook_view.sub_name": "旅游发展基金收入",
+     "daybook_view.item_name": "旅游发展基金收入",
+     "daybook_view.income_amt": 2246
+    },
+    {
+     "daybook_view.chg_agen_name": "云南测试单位0831",
+     "daybook_view.sub_name": "民航发展基金收入",
+     "daybook_view.item_name": "民航发展基金收入",
+     "daybook_view.income_amt": 2158
+    },
+    {
+     "daybook_view.chg_agen_name": "云南反算测试单位20250401",
+     "daybook_view.sub_name": "中央农网还贷资金收入25",
+     "daybook_view.item_name": "乡村农网还贷资金收入",
+     "daybook_view.income_amt": 2000
+    },
+    {
+     "daybook_view.chg_agen_name": "云南通用测试单位1128",
+     "daybook_view.sub_name": "港口建设费收入",
+     "daybook_view.item_name": "港口建设费收入",
+     "daybook_view.income_amt": 1821.32
+    },
+    {
+     "daybook_view.chg_agen_name": "云南反算测试单位20250401",
+     "daybook_view.sub_name": "民航发展基金收入",
+     "daybook_view.item_name": "民航发展基金收入",
+     "daybook_view.income_amt": 1805.28
+    },
+    {
+     "daybook_view.chg_agen_name": "云南通用测试单位0801",
+     "daybook_view.sub_name": "中央农网还贷资金收入25",
+     "daybook_view.item_name": "农网还贷资金收入a",
+     "daybook_view.income_amt": 1446
+    },
+    {
+     "daybook_view.chg_agen_name": "测试云南测试环境",
+     "daybook_view.sub_name": "中央农网还贷资金收入",
+     "daybook_view.item_name": "农网还贷资金收入",
+     "daybook_view.income_amt": 1369
+    },
+    {
+     "daybook_view.chg_agen_name": "开票点001",
+     "daybook_view.sub_name": "中央农网还贷资金收入25",
+     "daybook_view.item_name": "国有重点煤炭企业生产用电、核工业铀扩散厂和堆化工厂生产用电农网还贷资金",
+     "daybook_view.income_amt": 1300
+    },
+    {
+     "daybook_view.chg_agen_name": "001",
+     "daybook_view.sub_name": "旅游发展基金收入",
+     "daybook_view.item_name": "旅游发展基金收入",
+     "daybook_view.income_amt": 1278
+    },
+    {
+     "daybook_view.chg_agen_name": "云南考试院测试0615",
+     "daybook_view.sub_name": "港口建设费收入",
+     "daybook_view.item_name": "港口建设费收入",
+     "daybook_view.income_amt": 1207.92
+    },
+    {
+     "daybook_view.chg_agen_name": "李思维",
+     "daybook_view.sub_name": "港口建设费收入",
+     "daybook_view.item_name": "港口建设费收入",
+     "daybook_view.income_amt": 1201.32
+    },
+    {
+     "daybook_view.chg_agen_name": "开票点001",
+     "daybook_view.sub_name": "考试考务费",
+     "daybook_view.item_name": "自费来华学生报名考试",
+     "daybook_view.income_amt": 1060
+    },
+    {
+     "daybook_view.chg_agen_name": "开票点001",
+     "daybook_view.sub_name": "中央农网还贷资金收入25",
+     "daybook_view.item_name": "农网还贷资金收入a",
+     "daybook_view.income_amt": 1024.8
+    },
+    {
+     "daybook_view.chg_agen_name": "云南通用测试单位1128",
+     "daybook_view.sub_name": "民航发展基金收入",
+     "daybook_view.item_name": "民航发展基金收入",
+     "daybook_view.income_amt": 1000.66
+    },
+    {
+     "daybook_view.chg_agen_name": "通用测试单位0801",
+     "daybook_view.sub_name": "港口建设费收入",
+     "daybook_view.item_name": "港口建设费收入",
+     "daybook_view.income_amt": 1000
+    },
+    {
+     "daybook_view.chg_agen_name": "001",
+     "daybook_view.sub_name": "港口建设费收入",
+     "daybook_view.item_name": "港口建设费收入",
+     "daybook_view.income_amt": 1000
+    },
+    {
+     "daybook_view.chg_agen_name": "李思维",
+     "daybook_view.sub_name": "中央农网还贷资金收入25",
+     "daybook_view.item_name": "农网还贷资金收入a",
+     "daybook_view.income_amt": 846
+    },
+    {
+     "daybook_view.chg_agen_name": "通用测试单位070301",
+     "daybook_view.sub_name": "民航发展基金收入",
+     "daybook_view.item_name": "民航发展基金收入",
+     "daybook_view.income_amt": 805.28
+    },
+    {
+     "daybook_view.chg_agen_name": "开票点一",
+     "daybook_view.sub_name": "民航发展基金收入",
+     "daybook_view.item_name": "民航发展基金收入",
+     "daybook_view.income_amt": 805.28
+    },
+    {
+     "daybook_view.chg_agen_name": "云南反算测试单位20250401",
+     "daybook_view.sub_name": "港口建设费收入",
+     "daybook_view.item_name": "港口建设费收入",
+     "daybook_view.income_amt": 805.28
+    },
+    {
+     "daybook_view.chg_agen_name": "开票点001",
+     "daybook_view.sub_name": "中央农网还贷资金收入",
+     "daybook_view.item_name": "中央分成项目--国库资金",
+     "daybook_view.income_amt": 633
+    },
+    {
+     "daybook_view.chg_agen_name": "开票点001",
+     "daybook_view.sub_name": "教育资金收入",
+     "daybook_view.item_name": "教育资金收入",
+     "daybook_view.income_amt": 620
+    },
+    {
+     "daybook_view.chg_agen_name": "开票点001",
+     "daybook_view.sub_name": "中等职业学校学费",
+     "daybook_view.item_name": "中等职业学校学费",
+     "daybook_view.income_amt": 606
+    },
+    {
+     "daybook_view.chg_agen_name": "李思维",
+     "daybook_view.sub_name": "民航发展基金收入",
+     "daybook_view.item_name": "民航发展基金收入",
+     "daybook_view.income_amt": 600.66
+    },
+    {
+     "daybook_view.chg_agen_name": "云南医保测试单位改名",
+     "daybook_view.sub_name": "港口建设费收入",
+     "daybook_view.item_name": "港口建设费收入",
+     "daybook_view.income_amt": 563.96
+    },
+    {
+     "daybook_view.chg_agen_name": "智能核销单位0408",
+     "daybook_view.sub_name": "民航发展基金收入",
+     "daybook_view.item_name": "民航发展基金收入",
+     "daybook_view.income_amt": 523
+    },
+    {
+     "daybook_view.chg_agen_name": "云南saas单位0927",
+     "daybook_view.sub_name": "民航发展基金收入",
+     "daybook_view.item_name": "民航发展基金收入",
+     "daybook_view.income_amt": 500
+    },
+    {
+     "daybook_view.chg_agen_name": "开票点001",
+     "daybook_view.sub_name": "教材费",
+     "daybook_view.item_name": "教材费",
+     "daybook_view.income_amt": 460
+    },
+    {
+     "daybook_view.chg_agen_name": "云南反算测试单位20250401",
+     "daybook_view.sub_name": "旅游发展基金收入",
+     "daybook_view.item_name": "旅游发展基金收入",
+     "daybook_view.income_amt": 402.64
+    },
+    {
+     "daybook_view.chg_agen_name": "测试云南测试环境",
+     "daybook_view.sub_name": "教师资格考试费",
+     "daybook_view.item_name": "教师资格考试费",
+     "daybook_view.income_amt": 400
+    },
+    {
+     "daybook_view.chg_agen_name": "云南医保测试单位改名",
+     "daybook_view.sub_name": "旅游发展基金收入",
+     "daybook_view.item_name": "旅游发展基金收入",
+     "daybook_view.income_amt": 301.98
+    },
+    {
+     "daybook_view.chg_agen_name": "001",
+     "daybook_view.sub_name": "中央农网还贷资金收入25",
+     "daybook_view.item_name": "国有重点煤炭企业生产用电、核工业铀扩散厂和堆化工厂生产用电农网还贷资金",
+     "daybook_view.income_amt": 300
+    },
+    {
+     "daybook_view.chg_agen_name": "云南saas单位0927",
+     "daybook_view.sub_name": "港口建设费收入",
+     "daybook_view.item_name": "港口建设费收入",
+     "daybook_view.income_amt": 300
+    },
+    {
+     "daybook_view.chg_agen_name": "开票点001",
+     "daybook_view.sub_name": "考试考务费",
+     "daybook_view.item_name": "高等自学考试费",
+     "daybook_view.income_amt": 300
+    },
+    {
+     "daybook_view.chg_agen_name": "云南测试单位95",
+     "daybook_view.sub_name": "港口建设费收入",
+     "daybook_view.item_name": "港口建设费收入",
+     "daybook_view.income_amt": 246
+    },
+    {
+     "daybook_view.chg_agen_name": "云南考试院测试0615",
+     "daybook_view.sub_name": "旅游发展基金收入",
+     "daybook_view.item_name": "旅游发展基金收入",
+     "daybook_view.income_amt": 201.32
+    },
+    {
+     "daybook_view.chg_agen_name": "云南年结测试单位oracle20241009",
+     "daybook_view.sub_name": "港口建设费收入",
+     "daybook_view.item_name": "港口建设费收入",
+     "daybook_view.income_amt": 201.32
+    },
+    {
+     "daybook_view.chg_agen_name": "开票点一",
+     "daybook_view.sub_name": "旅游发展基金收入",
+     "daybook_view.item_name": "旅游发展基金收入",
+     "daybook_view.income_amt": 201.32
+    },
+    {
+     "daybook_view.chg_agen_name": "云南反算测试单位241115",
+     "daybook_view.sub_name": "港口建设费收入",
+     "daybook_view.item_name": "港口建设费收入",
+     "daybook_view.income_amt": 201.32
+    },
+    {
+     "daybook_view.chg_agen_name": "云南医疗测试单位231124",
+     "daybook_view.sub_name": "港口建设费收入",
+     "daybook_view.item_name": "港口建设费收入",
+     "daybook_view.income_amt": 201.32
+    },
+    {
+     "daybook_view.chg_agen_name": "001",
+     "daybook_view.sub_name": "国有土地收益基金收入",
+     "daybook_view.item_name": "国有土地收益基金收入",
+     "daybook_view.income_amt": 200
+    },
+    {
+     "daybook_view.chg_agen_name": "开票点001",
+     "daybook_view.sub_name": "高等学校住宿费",
+     "daybook_view.item_name": "高等学校住宿费",
+     "daybook_view.income_amt": 200
+    },
+    {
+     "daybook_view.chg_agen_name": "001",
+     "daybook_view.sub_name": "中央农网还贷资金收入",
+     "daybook_view.item_name": "农网还贷资金收入",
+     "daybook_view.income_amt": 120
+    },
+    {
+     "daybook_view.chg_agen_name": "开票点001",
+     "daybook_view.sub_name": "中央农网还贷资金收入",
+     "daybook_view.item_name": "农网还贷资金收入",
+     "daybook_view.income_amt": 100
+    },
+    {
+     "daybook_view.chg_agen_name": "开票点002",
+     "daybook_view.sub_name": "中央农网还贷资金收入",
+     "daybook_view.item_name": "农网还贷资金收入",
+     "daybook_view.income_amt": 100
+    },
+    {
+     "daybook_view.chg_agen_name": "云南体育彩票中心",
+     "daybook_view.sub_name": "中央农网还贷资金收入",
+     "daybook_view.item_name": "农网还贷资金收入",
+     "daybook_view.income_amt": 100
+    },
+    {
+     "daybook_view.chg_agen_name": "云南通用测试单位0801",
+     "daybook_view.sub_name": "国有土地收益基金收入",
+     "daybook_view.item_name": "国有土地收益基金收入",
+     "daybook_view.income_amt": 66
+    },
+    {
+     "daybook_view.chg_agen_name": "通用单位168",
+     "daybook_view.sub_name": "大中型水库移民后期扶持基金收入",
+     "daybook_view.item_name": "大中型水库移民后期扶持基金收入",
+     "daybook_view.income_amt": 60
+    },
+    {
+     "daybook_view.chg_agen_name": "云南医疗测试单位231124",
+     "daybook_view.sub_name": "旅游发展基金收入",
+     "daybook_view.item_name": "旅游发展基金收入",
+     "daybook_view.income_amt": 60
+    },
+    {
+     "daybook_view.chg_agen_name": "云南通用测试单位0801",
+     "daybook_view.sub_name": "其他土地出让收入",
+     "daybook_view.item_name": "其他土地出让收入",
+     "daybook_view.income_amt": 33
+    },
+    {
+     "daybook_view.chg_agen_name": "云南发展改革委员会",
+     "daybook_view.sub_name": "港口建设费收入",
+     "daybook_view.item_name": "港口建设费收入",
+     "daybook_view.income_amt": 0.01
+    }
+   ],
+   "total": 30200711.05
+  }
+ ],
+ "answer": "口径声明：收入金额用 daybook_view.income_amt 严格收入口径（仅收入方向 FIODIRECTION=1）；预算科目用源表自带科目快照 sub_name、项目用 item_name（项目严格 N:1 归属单一科目）；「各单位」按口径词典 2026-09-24 拍板两口径都出——口径A 收入单位（收款入账侧）、口径B 执收单位（执收侧），两张表口径平等、无主次；占比只在各表内以不带维度的全量收入合计 30200711.05 为分母计算，不跨口径合计。拍板结论：问句未明示收入/执收单位，按「各单位」词条两口径都出，未重复询问。数据范围：全量历史数据、无时间过滤；未命中预聚合，走源库 Oracle 实查，金额度量已与 Oracle 对数一致（30200711.05 / 695 行）。截断说明：口径A 83 行、口径B 76 行，均未达 limit 100，无截断。",
+ "assumption": "「各单位」按词典两口径都出（收入单位/执收单位）；科目按名称分组，103010201 一码两名（中央农网还贷资金收入 / 中央农网还贷资金收入25）会拆成两组；未指定时间范围默认全量；占比 = 各行收入金额 ÷ 该表 total，由前端按行计算",
+ "truncated": false,
+ "rows": 159,
+ "hitPreAgg": false,
+ "audited": true,
+ "_elapsed_s": 378,
+ "_scenario": "多口径（一问三表）",
+ "_source_log_idx": 75,
+ "_source_question": "查询各单位各预算科目下各项目的收入金额及占比情况"
+}

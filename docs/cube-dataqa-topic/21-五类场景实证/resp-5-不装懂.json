@@ -1,0 +1,13 @@
+{
+ "type": "nomatch",
+ "question": "查看每个单位的超额申领量（份），就是 单位在某年度、某票据种类的「已申领份数」超出「年度额度」的部分。如果不能回答，告诉我缺少什么成员",
+ "gaps": [
+  "缺「年度额度(份)」成员（硬缺口）：需要「单位×票据种类×年度」粒度的年度配额份数；现有最接近的 bill_type.quota_value「定额面值(元)」是票种级金额口径、非年度、不按单位，语义与粒度均不匹配，不能挪用；候选建模路径为 bill_type 加年度额度成员，或新增「单位×票种×年度额度」维度表（走 cube-modeling，需业务确认源表是否有该列——yml 未建 ≠ 源表无列）",
+  "缺「已申领份数（原始申填报数）」成员：申领明细 stock_apply_item 只有 appr_num「审批数(份)」（sum FAPPROVENUM，审批通过口径）；若「已申领」指申填报数（FNUMBER）则同样缺成员（stock_in_item/stock_out_item 有 total_number sum(FNUMBER) 先例，stock_apply_item 未建）；若接受「已申领=审批通过份数」，分子可用 appr_num",
+  "缺「年度」分组维度：stock_apply/stock_apply_item 只有 apply_date（日期粒度），无 year 成员；可用 timeDimensions 按年 dateRange 近似分组，或按 bill_type.eff_date 先例补建 year 维度"
+ ],
+ "_elapsed_s": 105,
+ "_scenario": "不装懂（超额申领量，报缺年度额度）",
+ "_source_log_idx": 64,
+ "_source_question": "查看每个单位的超额申领量（份），就是 单位在某年度、某票据种类的「已申领份数」超出「年度额度」的部分。如果不能回答，告诉我缺少什么成员"
+}

@@ -1,0 +1,108 @@
+{
+ "type": "answer",
+ "title": "2026年各单位已核销票据份数（已审验口径）",
+ "plan": [
+  [
+   "已核销票据份数",
+   "writeoff_view.inv_num",
+   "口径词典「核销情况」2026-09-26 定案：核销单票据明细 sum(FINVNUM)，限已审验 state='2'（meta 核验通过）"
+  ],
+  [
+   "各单位",
+   "writeoff_view.name",
+   "writeoff_view ai_context：单位下钻走 name（agency join 单位名称；meta 核验通过）"
+  ],
+  [
+   "2026年",
+   "writeoff_view.compiled_date",
+   "writeoff_view ai_context：按时间分析走 compiled_date（编制日期），dateRange 2026-01-01~2026-12-31"
+  ]
+ ],
+ "tables": [
+  {
+   "title": "各单位已核销票据份数（票据审验，已审验口径）",
+   "query": {
+    "measures": [
+     "writeoff_view.inv_num"
+    ],
+    "dimensions": [
+     "writeoff_view.name"
+    ],
+    "filters": [
+     {
+      "member": "writeoff_view.state",
+      "operator": "equals",
+      "values": [
+       "2"
+      ]
+     }
+    ],
+    "timeDimensions": [
+     {
+      "dimension": "writeoff_view.compiled_date",
+      "dateRange": [
+       "2026-01-01",
+       "2026-12-31"
+      ]
+     }
+    ],
+    "order": {
+     "writeoff_view.inv_num": "desc"
+    },
+    "limit": 100
+   },
+   "rows": [
+    {
+     "writeoff_view.name": "医保测试单位改名",
+     "writeoff_view.inv_num": 387
+    },
+    {
+     "writeoff_view.name": "通用测试单位0801",
+     "writeoff_view.inv_num": 370
+    },
+    {
+     "writeoff_view.name": "测试测试环境0115",
+     "writeoff_view.inv_num": 338
+    },
+    {
+     "writeoff_view.name": "通用单位168",
+     "writeoff_view.inv_num": 89
+    },
+    {
+     "writeoff_view.name": "智能核销二级分类",
+     "writeoff_view.inv_num": 87
+    },
+    {
+     "writeoff_view.name": "反算测试单位241115",
+     "writeoff_view.inv_num": 54
+    },
+    {
+     "writeoff_view.name": "捐赠测试单位240715",
+     "writeoff_view.inv_num": 41
+    },
+    {
+     "writeoff_view.name": "发展改革委员会",
+     "writeoff_view.inv_num": 24
+    },
+    {
+     "writeoff_view.name": "通用测试单位070301",
+     "writeoff_view.inv_num": 16
+    },
+    {
+     "writeoff_view.name": "云南测试单位",
+     "writeoff_view.inv_num": 15
+    }
+   ],
+   "total": 1421
+  }
+ ],
+ "answer": "口径：已核销票据份数 = 票据审验票据明细开票份数 sum(FINVNUM)（writeoff_view.inv_num），限已审验审验单（state='2'，2026-09-26 词典定案口径，meta 核验通过）；时间按审验单编制日期（compiled_date）落在 2026-01-01~2026-12-31；按单位名称（agency join）分组。共 10 家单位、合计 1,421 份；分组行加总与不带 dimensions 的全量合计一致（均为 1,421），无截断（10/100 组）；本次查询未命中预聚合，走源库 Oracle 实查。",
+ "assumption": "「已核销」按口径词典「核销情况」词条定案口径取已审验（state='2'）× 核销单票据明细 inv_num；「2026年」按审验单编制日期（compiled_date）落在 2026-01-01~2026-12-31 计；单位分组走 agency join 名称（writeoff_view.name），如需含未审验单或按审验起止日期口径请明示",
+ "truncated": false,
+ "rows": 10,
+ "hitPreAgg": false,
+ "_elapsed_s": 166,
+ "_scenario": "常规（分组+时间筛选+状态拆分）",
+ "_source_log_idx": 76,
+ "_source_question": "2026年各单位已核销票据份数"
+}

@@ -1,0 +1,173 @@
+{
+ "type": "answer",
+ "title": "各单位票据申领库存可用时间：均因缺库存或用量不可算",
+ "plan": [
+  [
+   "按单位名称分组出可用时间比值指标",
+   "bill_kpi_view.availMonths",
+   "bill_kpi ai_context：availMonths=库存余量/月均使用量，null 表示无用量；单位以「单位名称」为键（bill_kpi_view 交付面唯一可用口径）"
+  ],
+  [
+   "分子：库存余量(份)",
+   "bill_kpi_view.stockSum",
+   "用户指定口径「单位票据库存余量(份)」；bill_kpi_view 交付面成员"
+  ],
+  [
+   "分母：月均使用量(份/月)=季度用量÷3",
+   "bill_kpi_view.monthlyUsage",
+   "bill_kpi ai_context：月均使用量 = 季度用量 ÷ 3；bill_kpi_view 交付面成员"
+  ],
+  [
+   "筛出有库存或有用量的15家入表",
+   "bill_kpi_view.fagenname",
+   "全量272家按库存余量降序+全量合计互验后筛定；filter 硬编码单位名单保证 query 复跑与 rows 一致"
+  ]
+ ],
+ "tables": [
+  {
+   "title": "口径：单位票据库存余量(份)÷月均使用量(份/月)——有库存或有用量的15家单位（bill_kpi_view）",
+   "query": {
+    "measures": [
+     "bill_kpi_view.availMonths",
+     "bill_kpi_view.stockSum",
+     "bill_kpi_view.monthlyUsage"
+    ],
+    "dimensions": [
+     "bill_kpi_view.fagenname"
+    ],
+    "filters": [
+     {
+      "member": "bill_kpi_view.fagenname",
+      "operator": "in",
+      "values": [
+       "测试六七测试单位002",
+       "测试测试单位001",
+       "测试CS001",
+       "测试测试在线单位003",
+       "测试云南医疗测试单位",
+       "测试测试接口单位002",
+       "测试测试0418-01",
+       "测试测试0507-04",
+       "测试测试接口单位0415",
+       "测试测试0420",
+       "测试测试对接开票单位001",
+       "测试测试0418-02",
+       "测试单位0831",
+       "综合收费测试单位1",
+       "测试测试0324"
+      ]
+     }
+    ],
+    "timeDimensions": [],
+    "order": {
+     "bill_kpi_view.monthlyUsage": "desc",
+     "bill_kpi_view.stockSum": "desc"
+    },
+    "limit": 1000
+   },
+   "rows": [
+    {
+     "bill_kpi_view.fagenname": "测试六七测试单位002",
+     "bill_kpi_view.availMonths": 0,
+     "bill_kpi_view.stockSum": 0,
+     "bill_kpi_view.monthlyUsage": 13
+    },
+    {
+     "bill_kpi_view.fagenname": "测试测试单位001",
+     "bill_kpi_view.availMonths": 0,
+     "bill_kpi_view.stockSum": 0,
+     "bill_kpi_view.monthlyUsage": 12.66666666666666
+    },
+    {
+     "bill_kpi_view.fagenname": "测试CS001",
+     "bill_kpi_view.availMonths": 0,
+     "bill_kpi_view.stockSum": 0,
+     "bill_kpi_view.monthlyUsage": 10
+    },
+    {
+     "bill_kpi_view.fagenname": "测试测试在线单位003",
+     "bill_kpi_view.availMonths": 0,
+     "bill_kpi_view.stockSum": 0,
+     "bill_kpi_view.monthlyUsage": 5.3333333333333295
+    },
+    {
+     "bill_kpi_view.fagenname": "测试云南医疗测试单位",
+     "bill_kpi_view.availMonths": 0,
+     "bill_kpi_view.stockSum": 0,
+     "bill_kpi_view.monthlyUsage": 4
+    },
+    {
+     "bill_kpi_view.fagenname": "测试测试接口单位002",
+     "bill_kpi_view.availMonths": 0,
+     "bill_kpi_view.stockSum": 0,
+     "bill_kpi_view.monthlyUsage": 4
+    },
+    {
+     "bill_kpi_view.fagenname": "测试测试0418-01",
+     "bill_kpi_view.availMonths": 0,
+     "bill_kpi_view.stockSum": 0,
+     "bill_kpi_view.monthlyUsage": 3.66666666666667
+    },
+    {
+     "bill_kpi_view.fagenname": "测试测试0507-04",
+     "bill_kpi_view.availMonths": 0,
+     "bill_kpi_view.stockSum": 0,
+     "bill_kpi_view.monthlyUsage": 3.66666666666667
+    },
+    {
+     "bill_kpi_view.fagenname": "测试测试接口单位0415",
+     "bill_kpi_view.availMonths": 0,
+     "bill_kpi_view.stockSum": 0,
+     "bill_kpi_view.monthlyUsage": 3.66666666666667
+    },
+    {
+     "bill_kpi_view.fagenname": "测试测试0420",
+     "bill_kpi_view.availMonths": 0,
+     "bill_kpi_view.stockSum": 0,
+     "bill_kpi_view.monthlyUsage": 3.3333333333333295
+    },
+    {
+     "bill_kpi_view.fagenname": "测试测试对接开票单位001",
+     "bill_kpi_view.availMonths": 0,
+     "bill_kpi_view.stockSum": 0,
+     "bill_kpi_view.monthlyUsage": 1
+    },
+    {
+     "bill_kpi_view.fagenname": "测试测试0418-02",
+     "bill_kpi_view.availMonths": 0,
+     "bill_kpi_view.stockSum": 0,
+     "bill_kpi_view.monthlyUsage": 0.6666666666666665
+    },
+    {
+     "bill_kpi_view.fagenname": "测试单位0831",
+     "bill_kpi_view.availMonths": null,
+     "bill_kpi_view.stockSum": 5000,
+     "bill_kpi_view.monthlyUsage": 0
+    },
+    {
+     "bill_kpi_view.fagenname": "综合收费测试单位1",
+     "bill_kpi_view.availMonths": null,
+     "bill_kpi_view.stockSum": 1000,
+     "bill_kpi_view.monthlyUsage": 0
+    },
+    {
+     "bill_kpi_view.fagenname": "测试测试0324",
+     "bill_kpi_view.availMonths": null,
+     "bill_kpi_view.stockSum": 1,
+     "bill_kpi_view.monthlyUsage": 0
+    }
+   ],
+   "total": null
+  }
+ ],
+ "answer": "口径声明：票据申领库存可用时间(月) = 单位票据库存余量(份) ÷ 月均使用量(份/月)，月均使用量 = 季度用量 ÷ 3，按单位名称（fagenname）分组，出自 bill_kpi_view 交付视图；库存为存量快照、无时间维度，不指定时间范围。缺失成员：无——availMonths/stockSum/monthlyUsage/fagenname 四个成员在 bill_kpi_view 交付面齐全，不需要补建模。拍板结论：全量 272 家单位中仅 15 家有库存或有用量；3 家有库存（合计 6,001 份）全部零用量，availMonths 为 null（分母为 0，不可算）；12 家有用量（月均合计 65 份/月）全部零库存，availMonths 为 0；没有任何单位同时具备库存与用量，即按单位拆分后没有一家能算出有意义的可用时间。全量混合比值 6,001 ÷ 65 ≈ 92.32 月只是总量比、不属于任何单一单位，不能当各单位可用时间用。数据范围：表内为有库存或有用量的 15 家（单位名单已写入 filter，可复跑复现），其余 257 家库存 0、月均用量 0、availMonths 均为 null。截断：limit 1000，实际返回 15 行，未截断。",
+ "assumption": "口径按用户给定（availMonths=库存余量÷月均用量）；单位键用 fagenname（bill_kpi ai_context：申请单识别码大多为 NULL，单位以单位名称为键）；表内只入「有库存或有用量」的 15 家为数据范围拍板，其余 257 家 0/0 未逐行入表；度量均为份数/月份比值，非金额度量，未做 Oracle 对数",
+ "truncated": false,
+ "rows": 15,
+ "hitPreAgg": false,
+ "audited": false,
+ "_elapsed_s": 261,
+ "_scenario": "复合指标（库存可用时间）",
+ "_source_log_idx": 69,
+ "_source_question": "查询各单位票据申领库存可用时间（单位：月）-- 口径：单位票据库存余量(份) / 月均使用量(份/月)。如果有缺失成员告诉我"
+}

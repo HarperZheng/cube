@@ -12,6 +12,7 @@ views:
         缴款书交付视图。总金额用 total_amount，状态口径用 pending_count
         （待缴款）/ paid_count（已缴款）/ void_count（作废）；
         直缴/汇缴用 direct_pay_amt/collect_pay_amt；过期用 expired_count。
+        时间过滤用 fill_date（填制日期；源表无缴款日期列，缴款日期口径在 daybook/treasury）。
         单位下钻走 name/industry_name，区划下钻走 region_name。
         payer_name 已脱敏（只露末2字）。
     cubes:
@@ -31,7 +32,6 @@ views:
           - pay_code
           - payer_name
           - fill_date
-          - pay_date
           - eff_date
           - confirm_date
         excludes:

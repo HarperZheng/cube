@@ -8,7 +8,9 @@
 #   FRGNCODE   → region.code（AFA_AUTH_REGION.FCODE 全表唯一，仅 4 个区划值）
 # 口径分布实测：FSTATE 1正常 3585 / 2作废 979 / 3已缴款 2691；
 #   FBUSTYPE 1直缴 5444 / 2汇缴 1791 / 4、6 为扩展值（16+4 笔，口径度量不覆盖）
-# 日期列验证：FDATE/FPAYDATE/FEFFDATE/FCONFIRMDATE 全表 0 非法（YYYY-MM-DD）
+# 日期列验证（2026-09-28 修正）：原结论有误——UNE_PAYBOOK 实表 130 列无 FPAYDATE（缴款日期列
+#   在 FNE_PAYBOOK），实有日期列 FDATE/FEFFDATE/FCONFIRMDATE，全表 0 非法（YYYY-MM-DD）。
+#   pay_date 成员当日已删（paybook_view.includes 同步），按它查询必 ORA-00904 invalid identifier
 cubes:
   - name: paybook
     title: 缴款书
@@ -137,11 +139,6 @@ cubes:
         title: 填制日期
         description: FDATE（VARCHAR2 'YYYY-MM-DD'）转日期，时间分析默认维度
         sql: "TO_DATE({CUBE}.\"FDATE\", 'YYYY-MM-DD')"
-        type: time
-      - name: pay_date
-        title: 缴款日期
-        description: FPAYDATE（VARCHAR2 'YYYY-MM-DD'）转日期
-        sql: "TO_DATE({CUBE}.\"FPAYDATE\", 'YYYY-MM-DD')"
         type: time
       - name: eff_date
         title: 缴款书有效期

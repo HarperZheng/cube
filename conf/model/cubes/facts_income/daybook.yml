@@ -12,6 +12,9 @@
 # 口径拍板（AskUserQuestion，2026-09-23）：收款金额两口径并存——
 #   income_amt 仅收入方向（30,200,711.05，默认）/ net_amt 净额（收入-支出）。
 #   时间轴严格口径 = FRECEIVEDDATE 收入日期（用户指定；FPAYDATE 缴款日期并存）。
+# 2026-09-27 补建（16 号文档 §6）：FSUBCODE/FSUBNAME 预算科目维度——源表自带
+#   科目快照（实测零空值；项目严格 N:1 归属单科目；按科目汇总 = 收入总额
+#   30,200,711.05 分毫不差），命名随 treasury_item 先例，纯加列无 join。
 # 敏感字段：FIMACCTNAME/FIMACCT 为财政/国库收款账户（非个人），按用户要求建模。
 cubes:
   - name: daybook
@@ -33,7 +36,9 @@ cubes:
         执收单位用 chg_agen_code/chg_agen_name；收入区划用
         im_rgn_code/im_rgn_name。收款银行编码用 pay_bank_code、代理银行
         名称用 pay_bank_name；收款单位名称用 acct_name、账号用 acct、
-        开户行用 acct_bank。项目用 item_code/item_name。
+        开户行用 acct_bank。项目用 item_code/item_name；预算科目用
+        sub_code/sub_name（源表自带快照，项目按编码严格 N:1 归属单一科目，
+        科目是项目的上级分组；名称口径 103010201 一码两名会多拆 1 组）。
 
     sql_table: FNE_INCOME_DAYBOOK
 
@@ -185,6 +190,16 @@ cubes:
         title: 项目名称
         description: FITEMNAME
         sql: "{CUBE}.\"FITEMNAME\""
+        type: string
+      - name: sub_code
+        title: 预算科目编码
+        description: FSUBCODE（源表自带科目快照，非字典 join；命名随 treasury_item 先例，2026-09-27 补建，实测零空值、15 个编码）
+        sql: "{CUBE}.\"FSUBCODE\""
+        type: string
+      - name: sub_name
+        title: 预算科目名称
+        description: FSUBNAME（源表自带科目快照；项目按编码严格 N:1 归属单一科目，科目是项目的上级分组；实测 15 编码/16 名称——103010201 一码两名「中央农网还贷资金收入(25)」，按名称分组会多拆 1 组）
+        sql: "{CUBE}.\"FSUBNAME\""
         type: string
 
 # 行级权限：access_policy 双互补策略（与 cbill/paybook 同款）。

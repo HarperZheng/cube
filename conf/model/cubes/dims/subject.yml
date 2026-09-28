@@ -1,12 +1,15 @@
 # 收费科目维度 —— 源表 FAB_SUBJECT（3711 行，按年度存储 2020-2026）
-# FID 主键；科目与项目的关联关系待核实（FAB_ITEM 未直接含科目编码），
-# 暂不声明 join，供后续需要时接入
+# FID 主键。2026-09-27 勘误（16 号文档 §6）：FAB_ITEM 实有 FSUBID 科目外键，
+# 原"关联关系待核实（FAB_ITEM 未直接含科目编码）"注释有误；收入事实表
+# FNE_INCOME_DAYBOOK 亦自带 FSUBID/FSUBCODE/FSUBNAME 冗余列（daybook 已建
+# sub_code/sub_name 维度）。join 仍不声明——收入侧科目走 daybook 源列快照。
 cubes:
   - name: subject
     title: 收费科目
     description: |
       收费科目维度（按年度存储，year 维度区分年度版本）。
-      与收费项目（item）的关联关系待核实，暂不声明 join。
+      与收费项目（item）的关联：FAB_ITEM 有 FSUBID 外键；join 暂不声明
+      （收入侧科目走 daybook 源列快照）。
     public: false    # 只通过 join 被事实 cube 引用
     sql_table: FAB_SUBJECT
 

@@ -17,7 +17,9 @@ views:
         chg_agen_code/chg_agen_name；收入区划用 im_rgn_code/im_rgn_name。
         收款银行编码用 pay_bank_code、代理银行名称用 pay_bank_name；
         收款单位名称用 acct_name、账号用 acct、开户行用 acct_bank。
-        项目用 item_code/item_name。
+        项目用 item_code/item_name；预算科目用 sub_code/sub_name
+        （源表自带快照，项目按编码严格 N:1 归属单一科目，科目是项目的
+        上级分组；名称口径 103010201 一码两名会多拆 1 组）。
     cubes:
       - join_path: daybook
         includes:
@@ -47,6 +49,8 @@ views:
           - pay_date
           - item_code
           - item_name
+          - sub_code
+          - sub_name
         excludes:
           - fid              # 技术主键
       - join_path: daybook.agency

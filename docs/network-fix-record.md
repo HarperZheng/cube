@@ -12,23 +12,23 @@
 
 容器内连 `172.18.163.68:1521` 报 `EHOSTUNREACH`（网络层直接不可达，不是 Oracle 拒绝）：
 
-```powershell
+```bash
 docker exec cube node -e "require('net').connect({host:'172.18.163.68',port:1521},...)"
 # → TCP-ERR EHOSTUNREACH
 ```
 
 但同一时刻，**宿主机 Windows 是通的**：
 
-```powershell
-Test-NetConnection -ComputerName 172.18.163.68 -Port 1521
-# → TcpTestSucceeded : True
+```bash
+node -e "require('net').connect({host:'172.18.163.68',port:1521},s=>{console.log('TCP OK');s.end()}).on('error',e=>console.log('FAIL',e.code))"
+# → TCP OK
 ```
 
 宿主机通、容器不通 → 问题在 Docker 的网络层，而不是 Oracle 或防火墙。
 
 ### 2. 发现网段冲突
 
-```powershell
+```bash
 docker network inspect <网络名> --format '{{range .IPAM.Config}}{{.Subnet}}{{end}}'
 ```
 
@@ -59,7 +59,7 @@ br-c3616e2eee3c       000012AC     00000000  0000FFFF   ← 172.18.0.0/16 本地
 
 ### 第 1 步：清理残留网络（关键）
 
-```powershell
+```bash
 docker network ls                # 找到残留的 cube_default / cube_cube-net
 docker network prune -f          # 删除所有未被容器使用的网络及残留网桥
 ```
@@ -91,7 +91,7 @@ networks:
 
 ### 第 3 步：重建容器
 
-```powershell
+```bash
 docker compose down
 docker compose up -d
 ```
@@ -102,7 +102,7 @@ docker compose up -d
 
 ## 三、验证
 
-```powershell
+```bash
 # 1. 容器内路由表不再有 172.18 劫持路由
 docker exec cube cat /proc/net/route
 

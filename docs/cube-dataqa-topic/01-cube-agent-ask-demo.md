@@ -22,7 +22,8 @@
 
 - **语义层**（`conf/model/` + Cube server）：把"能查什么、怎么算、谁能看"写成
   模型（cube/view yml）。agent 不碰数据库，只发**语义层查询**（cube query，不是 SQL）。
-- **agent**（claude 会话）：翻译问题 → 核验成员 → 组装查询 → 组织答案。
+- **agent**（claude 会话）：翻译问题 → 组装查询 → 组织答案（核验=报错才进的重入
+  gate，对数=高风险才做）。
 - **纪律**（SKILL.md 契约）：五步流程 + 歧义协议 + 成员面规则 + 数字纪律 + 日志，
   把 LLM 的自由度压到最小。
 
@@ -31,10 +32,13 @@
 ```mermaid
 flowchart LR
     Q[用户中文提问] --> P[①查询计划表<br/>先展示，再执行]
-    P --> V[②meta 核验<br/>成员必须真实存在]
-    V --> Qry[③组装 cube query<br/>非 SQL]
-    Qry --> EXE[④Cube 编译执行<br/>权限/脱敏在这层生效]
-    EXE --> ANS[⑤数字纪律汇总<br/>表+口径声明]
+    P --> Qry[②组装 cube query<br/>非 SQL]
+    Qry --> EXE[③Cube 编译执行<br/>权限/脱敏在这层生效]
+    EXE -.报错才进.-> V[④meta 核验<br/>重入 gate]
+    V -.修正后重查.-> Qry
+    EXE -.高风险才做.-> AUD[⑤db.js 对数<br/>通过标已对数]
+    EXE --> ANS[⑥数字纪律汇总<br/>表+口径声明]
+    AUD --> ANS
     ANS --> LOG[qa-log 审计落盘]
 ```
 
@@ -61,12 +65,7 @@ flowchart LR
 未解除）与流转状态视角 `status ∈ {'0','1'}`（未通知+待说明，对应 pending_count）。
 词典 2026-09-22 定案：**"当前" = result='0'**。
 
-### 第2步：meta 核验（硬 gate）
-
-计划表里**每个成员**必须在 `cube.js meta` 输出里出现——防 LLM 编造成员名。
-不在就按失败模式处置（机制 6），不硬查。
-
-### 第3步：组装 query（cube query，不是 SQL）
+### 第2步：组装 query（cube query，不是 SQL）
 
 ```json
 {
@@ -81,7 +80,7 @@ flowchart LR
 固定规则：filter 只用 `{member, operator, values}`；必带 limit/order；时间范围用
 `timeDimensions.dateRange`；成员面优先 view 前缀（机制 3）。
 
-### 第4步：Cube 执行（agent 不用管的部分）
+### 第3步：Cube 执行（agent 不用管的部分）
 
 - 编译成 SQL（COUNT DISTINCT FID + GROUP BY + WHERE FRESULT='0'）发 Oracle
 - **行级权限**：access_policy 双互补策略——调用带 `securityContext.region_code` 时
@@ -91,7 +90,20 @@ flowchart LR
 - 已知前提：dev 模式 apiSecret 可铸造任意 token（等于可绕过行级权限），权限真正
   强制要等上生产换 JWT 校验（01-design §四 安全边界）
 
-### 第5步：答案（tables 平等契约载荷）
+### 第4步：meta 核验（条件触发——本例 query 一次通过，未触发）
+
+正常路径不跑（query 有返回即过，成员存在性由执行结果兜底）。执行报错
+（`member not found` / join path）才进：计划表里**每个成员**必须在 `cube.js meta`
+输出里出现——防 LLM 编造成员名，**修正后的计划须 meta 通过才允许重查**
+（重入 gate）。不在就按失败模式处置（机制 6），不硬查。
+
+### 第5步：高风险对数（条件触发——本例 count 非金额，未触发）
+
+涉金额度量 / 对外汇报 / 数字写入文档才做：db.js 直查 Oracle 对数一条，
+通过 → 答案标注"已与 Oracle 对数一致"（payload `audited: true`，前端 foot
+徽标）；不一致 → 停下报告，不得交付。
+
+### 第6步：答案（tables 平等契约载荷）
 
 ```json
 {
@@ -101,7 +113,7 @@ flowchart LR
   "tables": [
     {
       "title": "各单位×票据种类（当前=可疑中）",
-      "query": { "…": "第3步的 query" },
+      "query": { "…": "第2步的 query" },
       "rows":  ["…扁平行数组，一行一对象"],
       "total": 19156
     }
@@ -129,29 +141,32 @@ flowchart LR
 - `answer` 字段是纯口径声明/拍板结论/数据范围——表格数据不进文本
 - 跨口径**不做合计**（09-27 用户拍板）
 - 截断标注：rows=149 > limit=100，truncated=true，答案声明"仅前 100 组/共 149 组"
+- `audited`：高风险对数通过时 true（foot 徽标「已与 Oracle 对数一致」）；
+  本例 count 非金额未对数，无此标注
 
-### 第5步收尾：qa-log 审计落盘
+### 第6步收尾：qa-log 审计落盘（桥派生，agent 零动作）
 
-一行 JSONL 追加到 `logs/qa-log.jsonl`：
+一行 JSONL 落 `logs/qa-log.jsonl`——**由桥从最终三态 JSON 机械派生**（14 号 §4.1 R3
+桥单写）：agent 不写日志、不为日志构造内容，字段全是契约现成值的转录：
 
 ```json
-{"time":"2026-09-24T14:30:25+08:00","question":"不同单位当前的可疑票据种类和数量",
+{"time":"2026-09-28T14:30:25+08:00","question":"不同单位当前的可疑票据种类和数量",
  "cube":"superv_view","plan":[["不同单位","superv_view.agen_name","view ai_context"]],
  "queries":[{"…":"各表 query，一条一表"}],"query":{"…":"首表（过渡兼容）"},
- "assumption":"当前=result '0'（词典）","truncated":true,"rows":149}
+ "assumption":"当前=result '0'（词典）","truncated":true,"rows":149,"source":"ui"}
 ```
 
-| 字段 | 语义 |
-|---|---|
-| time | ISO 8601，**+08:00 带偏移** |
-| question | 用户原话 |
-| cube | 查询主题（cube 或 view 名） |
-| plan | 查询计划表 |
-| queries | **各表 query 数组（每表一条，09-27 增量；单口径也是长度 1）** |
-| query | 首表 query（过渡兼容，读侧迁 queries 后删除） |
-| assumption | 口径假设/拍板结论 |
-| truncated / rows | 是否可能截断 / 各表行数之和 |
-| source | "ui"（chat 桥场景）；桥对 ask/nomatch/error 另补 `answered:false` 审计行 |
+| 字段 | 语义 | 来源（机械转录） |
+|---|---|---|
+| time | ISO 8601，**+08:00 带偏移** | 桥 `_now_iso()`（claude 侧 UTC 占位瑕疵根治） |
+| question | 用户原话 | 桥收到的 req.question |
+| cube | 查询主题（cube 或 view 名，联查多前缀逗号并存） | queries 成员名前缀提取 |
+| plan | 查询计划表 | resp.plan 原样 |
+| queries | **各表 query 数组（每表一条，09-27 增量；单口径也是长度 1）** | tables[].query 转录 |
+| query | 首表 query（过渡兼容，读侧迁 queries 后删除） | queries[0] |
+| assumption | 口径假设/拍板结论 | resp.assumption |
+| truncated / rows | 是否可能截断 / 各表行数之和 | resp |
+| source | "ui"（固定——生产问数路径即桥）；桥对 ask/nomatch/error 另补 `answered:false` 审计行 | 桥 |
 
 ### 走查要点
 
@@ -172,7 +187,7 @@ flowchart LR
 
 执行任何查询前，先产出并展示**查询计划表**：每个自然语言成分 → 成员 + 依据，
 歧义显式标记。作用：给用户一个可纠正的中间产物（口径错了一眼能看出来）；
-给第2步提供可对单的核验清单。
+给第4步（失败诊断）提供可对单的核验清单。
 
 ### 机制 2：歧义处理协议 + 口径词典（治①，最重要的准确率杠杆）
 
@@ -213,11 +228,12 @@ flowchart LR
 
 ### 机制 5：问数日志（治"说不清当时怎么算的"）
 
-每次问答追加一行 JSONL（字段见二）。价值：审计追溯（数字被质疑时还原口径）、
-口径歧义考古（高频歧义词进口径词典）、高频问法沉淀为回归用例
-（`regress/*.queries.json`，口径变更时 diff 拦住——问数和回归两套体系接上）。
+每次问答一行 JSONL（字段见二），**桥从最终三态 JSON 机械派生（14 号 §4.1 R3 桥单写，
+agent 零动作）**。价值：审计追溯（数字被质疑时还原口径）、口径歧义考古（高频歧义词
+进口径词典）、高频问法沉淀为回归用例（`regress/*.queries.json`，口径变更时 diff
+拦住——问数和回归两套体系接上）。
 
-### 机制 6：失败模式处置（第2步核验不过时的硬规则）
+### 机制 6：失败模式处置（第4步核验不过时的硬规则）
 
 成员不在 meta 输出，按序诊断四档，**不允许跳到"建模新 cube"**：
 
@@ -245,25 +261,29 @@ flowchart LR
 | 模型/词典获取 | 第0步 check + 第1步读模型 yml、读词典 | **预置上下文注入**（见下） |
 | 歧义拍板 | `AskUserQuestion` 终端选项 | **ask 三态 JSON**（问题+选项按钮）+ `--resume` 续轮闭环 |
 | 最终输出 | 自然对话 | **只输出一个三态 JSON**（answer / ask / nomatch，桥指令约束） |
-| 审计 | qa-log | qa-log（`source:"ui"`）+ 桥对 ask/nomatch/error 补 `answered:false` |
+| 审计 | —（qa-log 桥路径专有，14 号 §4.1 R3） | qa-log **桥单写**（answer 行桥派生 + ask/nomatch/error 桥补 `answered:false`） |
 | 会话 | 人自己控制 | 空闲超 TTL / 链轮数超上限自动重建（防上下文膨胀） |
 
 **桥预置上下文注入**（2026-09-24 实施，11 号 §10）：桥在首轮 prompt 机械注入三块——
 ① 模型摘要（每个 cube/view 的 title+成员+description+ai_context，实测 ~30K 字符）
-② 通道配方（REST 模板 + docker exec 备选）③ 口径词典全文。配套规则：
+② 通道配方（docker exec cube.js 主通道 + curl REST 备选，Authorization 预填）
+③ 口径词典全文。配套规则：
 
-- 已注入时**跳过读模型文件与词典**，第0步 check 可跳过——但 **meta 核验（第2步）
-  是硬 gate，不省**
+- 已注入时**跳过读模型文件与词典**，第0步 check 可跳过；meta 核验（第4步）
+  仅执行报错时进（重入 gate），正常路径不跑
 - **禁止读 `.env` / docker-compose.yml**（查询通道凭据已预填）
 - **每问现扫、零缓存**——改完模型/词典，下一问即生效
 - **摘要与 meta 冲突时以 meta 为准**（meta 是编译事实，摘要只是搬运）——即使注入
   过期，新加的成员也只是"摘要里没有"，不会被误判"没建模"
+- **所有 shell 命令经 Bash 工具执行（零 PowerShell）**——桥 spawn 注入
+  `CLAUDE_CODE_GIT_BASH_PATH` 保证（系统级变量指到 git-bash.exe GUI 启动器无效，
+  桥校验 basename=bash.exe 并覆盖）
 
 ## 五、落地形态与文件布局
 
 ```text
 .claude/skills/cube-ask/
-  SKILL.md              # 执行契约：五步流程、歧义协议、成员面规则、数字纪律、对数触发
+  SKILL.md              # 执行契约：主链四步+两条件步（失败诊断/高风险对数）、歧义协议、成员面规则、数字纪律
   references/
     口径词典.md          # 数据：业务词 → 口径约定（13 词条，越用越厚）
     qa-example.md       # 实例（查询计划表/口径声明长什么样）
@@ -273,7 +293,8 @@ conf/model/              # 语义层本体（cubes/ views/）——口径唯一�
 ```
 
 形态演进：skill 契约先行（2026-09-22）→ chat 桥 + 预置上下文（2026-09-24）→
-tables 平等契约（2026-09-27）→ 未建模清单工具（18 号，设计定稿未实施）。
+tables 平等契约（2026-09-27）→ 契约重排：主链四步+条件步、对数单独成步（2026-09-28）→
+未建模清单工具（18 号，设计定稿未实施）。
 MCP 化仍是将来的体验升级选项（见架构篇），不是本契约的前置。
 
 ## 六、设计审核清单（回归 ask 用，逐项打勾）
@@ -282,18 +303,18 @@ MCP 化仍是将来的体验升级选项（见架构篇），不是本契约的�
 
 | # | 审核点 | 出处 |
 |---|---|---|
-| 1 | 第0步编译检查：编译不过不进入解析；桥预置上下文时可跳过，但 meta 核验不跳 | SKILL.md 第0步 |
+| 1 | 第0步编译检查：编译不过不进入解析；桥预置上下文时可跳过；meta 核验条件化（报错才进） | SKILL.md 第0步 |
 | 2 | 查询计划表先展示再执行；歧义处显式标记 | SKILL.md 第1步 |
 | 3 | 歧义三档协议：多口径→先词典（有→用并声明，无→拍板）；唯一→声明；没覆盖→必问；不静默选择 | SKILL.md 第1步 |
 | 4 | 拍板方式分环境：CLI 用 AskUserQuestion；chat 桥输出 ask 三态 JSON + resume 续轮 | 11 号 §5.2 |
-| 5 | meta 硬 gate：计划中每个成员出现在 meta 输出；混合面分别跑 meta | SKILL.md 第2步 |
-| 6 | 失败模式 a→b→c→d 逐序诊断；d 档含"yml 未建 ≠ 源表无列"话术；三档处置需用户拍板；不自动建模；不建交接文件 | SKILL.md 第2步、16 号 §4 |
-| 7 | 组装规则：优先 view 前缀 / view 未含回退 cube（限同底层）/ 跨主题走联查 view；filter 只用 member/operator/values；必带 limit(默认100)+order；时间用 timeDimensions.dateRange | SKILL.md 第1/3步 |
-| 8 | 截断检查：行数==limit → 抬高 limit 或补 count 查询；答案标注"仅前 N / 共 M 组" | SKILL.md 第4步 |
-| 9 | 答案必含：结果表 + 口径声明（含拍板结论）+ 数据范围（组数/截断） | SKILL.md 第5步 |
-| 10 | 数字纪律：只基于返回行计算；合计/占比用不带 dimensions 的全量查询；禁把截断行加总 | SKILL.md 第5步 |
-| 11 | 高风险对数触发：金额度量 / 用户明说对外汇报 / 数字将写入文档 → db.js 直查 Oracle 比对一次 | SKILL.md 第5步 |
-| 12 | qa-log 必落盘：字段齐全（time(+08:00)/question/cube/plan/queries/query/assumption/truncated/rows[/source]） | SKILL.md 第5步、14 号 §4.1 |
+| 5 | meta 重入 gate：执行报错才进，修正后计划须 meta 通过才重查；混合面分别跑 meta | SKILL.md 第4步 |
+| 6 | 失败模式 a→b→c→d 逐序诊断；d 档含"yml 未建 ≠ 源表无列"话术；三档处置需用户拍板；不自动建模；不建交接文件 | SKILL.md 第4步、16 号 §4 |
+| 7 | 组装规则：优先 view 前缀 / view 未含回退 cube（限同底层）/ 跨主题走联查 view；filter 只用 member/operator/values；必带 limit(默认100)+order；时间用 timeDimensions.dateRange | SKILL.md 第1/2步 |
+| 8 | 截断检查：行数==limit → 抬高 limit 或补 count 查询；答案标注"仅前 N / 共 M 组" | SKILL.md 第3步 |
+| 9 | 答案必含：结果表 + 口径声明（含拍板结论）+ 数据范围（组数/截断） | SKILL.md 第6步 |
+| 10 | 数字纪律：只基于返回行计算；合计/占比用不带 dimensions 的全量查询；禁把截断行加总 | SKILL.md 第6步 |
+| 11 | 高风险对数触发：金额度量 / 用户明说对外汇报 / 数字将写入文档 → db.js 直查 Oracle 比对一次；通过 → 答案标注"已与 Oracle 对数一致"（payload audited 字段，foot 徽标） | SKILL.md 第5步 |
+| 12 | qa-log 必落盘：字段齐全（time(+08:00)/question/cube/plan/queries/query/assumption/truncated/rows[/source]）；不记对数（结构稳定）；**桥派生，agent 零写日志动作** | 14 号 §4.1 R3、SKILL.md 第6步（指针） |
 
 **载荷与词典**
 

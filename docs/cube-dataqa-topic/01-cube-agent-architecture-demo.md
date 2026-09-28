@@ -6,7 +6,7 @@
 > demo 架构**（skill + CLI + chat 桥），并把 MCP server 保留为**下一步演进方向**——
 > 目前只是 demo，MCP 未落地。
 >
-> 运行时问数流程（五阶段与准确性保障）见姊妹篇：[cube-agent-ask.md](cube-agent-ask.md)；
+> 运行时问数流程（五阶段与准确性保障）见姊妹篇：[01-cube-agent-ask.md](01-cube-agent-ask.md)；
 > 消息逐跳细节见 [13-前端到claude到cube消息传递路径.md](13-前端到claude到cube消息传递路径.md)；
 > 日志规格见 [14-日志规格.md](14-日志规格.md)。
 >
@@ -152,7 +152,8 @@ conf 哲学的四条原则：
    │                                        │
    │◀── 成员列表 / {annotation, data} / SQL  │ 语义层编译 SQL ──▶ Oracle 11g (YN0411)
    ▼
-skill 五步契约：语义解析 → meta 核验 → 组装 query → cube.js query → 答案纪律
+skill 问数契约：语义解析 → 组装 query → cube.js query → 答案纪律
+（meta 核验=报错才进的重入 gate；对数=高风险才做，在答案之前）
 ```
 
 ### 链路 2：聊天窗问数（桥 + claude 会话，v2）
@@ -163,7 +164,7 @@ skill 五步契约：语义解析 → meta 核验 → 组装 query → cube.js q
    ▼
 chat/chat_server.py（宿主机桥）
    │ ②预置上下文：_preset_context() 三块——模型摘要（现扫 conf/model，零缓存）+
-   │   查询通道配方（localhost:4000/cubejs-api/v1/load）+ 口径词典
+   │   查询通道配方（docker exec cube.js 主通道 + curl REST 备选）+ 口径词典
    │ ③首轮 spawn：claude -p "<CLAUDE_INSTRUCTION+预置上下文+问题>"
    │   --output-format stream-json --verbose --max-turns 40
    │   --permission-mode bypassPermissions
@@ -225,20 +226,17 @@ sequenceDiagram
       UI->>BR: POST /chat {question, sessionId}
       BR->>BR: _preset_context() 现扫 conf/model + 词典
       BR->>CL: claude -p instruction+预置上下文+问题 (stream-json)
-      CL->>CJ: docker exec cube.js meta
-      CJ->>CUBE: GET /v1/meta
-      CUBE-->>CJ: cubes/views 成员（title/description）
-      CJ-->>CL: 成员核验（五步第 2 步，硬 gate 不省）
+      Note over CL,CJ: meta 核验仅 query 报错时进（第4步重入 gate）——正常路径直查
       CL->>CJ: docker exec cube.js query '<json>'
       CJ->>CUBE: POST /cubejs-api/v1/load
       CUBE->>DB: 语义层编译 SQL 并执行（join/口径/权限在此生效）
       DB-->>CUBE: 结果集
       CUBE-->>CJ: {annotation, data}
       CJ-->>CL: 数据
-      CL->>CL: 追加 logs/qa-log.jsonl（source:"ui"，多口径加 queries[]）
       CL-->>BR: result 行 {三态 JSON, session_id}
+      BR->>BR: 派生 qa-log 行（_qa_log_answer，_send 前；agent 零写日志，14 号 §4.1 R3）
       BR-->>UI: 三态透传（answer/ask/nomatch）
-      UI->>UI: 渲染 tables[] N 张口径平等表 + 口径声明
+      UI->>UI: 渲染 tables[] N 张口径平等表 + 口径声明 + foot 徽标（audited 已对数）
     end
 ```
 
@@ -317,7 +315,7 @@ tool 形态、四 tool 表与代码骨架见 [01-cube-agent-architecture.md](01-
 
 | 层 | 文件 | 内容 |
 |---|---|---|
-| 结果层 | `logs/qa-log.jsonl`（自 regress/ 迁移） | 每问一行的审计主链路；claude 按 skill 第 5 步写（`source:"ui"`），桥补 `{outcome, answered:false}`；多口径加 `queries[]` |
+| 结果层 | `logs/qa-log.jsonl`（自 regress/ 迁移） | 每问一行的审计主链路；**桥单写（14 号 §4.1 R3）**——answer 行 `_qa_log_answer` 从最终 JSON 派生（agent 零动作），ask/nomatch/error 桥补 `{outcome, answered:false}`；多口径 `queries[]` |
 | 推理层 | `logs/agent/index.jsonl` + `HHMMSS_a<attempt>.jsonl` + `_stderr.log`（扁平化，无 sessionId 子目录） | spawn 的 stream-json 事件流（官方格式原样）+ resume/重建链条索引 |
 | 运维层 | `logs/bridge-YYYY-MM-DD.log` | 经典单行 `<ISO+08:00> <LEVEL> [组件] 消息`，[bridge]/[claude]/[agent]；tail -f 实时看五步 |
 
@@ -343,6 +341,10 @@ tool 形态、四 tool 表与代码骨架见 [01-cube-agent-architecture.md](01-
    （`sync-index.sh` 重生成 index.html）与 embed-patch.js（preload 认领路由）。
 9. **Oracle 11g 30 字符列别名上限**——view 成员名过长会在 SQL 层报 ORA-00972
    （如 `daybook_view__received_date_month` 33 字符），命名需预检。
+10. **agent 所有 shell 命令经 Bash 工具执行（零 PowerShell）**——桥 spawn claude 时注入
+    `CLAUDE_CODE_GIT_BASH_PATH`（系统级变量指到 git-bash.exe，GUI 启动器非 shell 本体），
+    桥校验 basename=bash.exe 并覆盖；claude 定位不到可用 bash 会回退 PowerShell 工具
+    （第 7 条的姊妹 headless 约束）。
 
 ---
 
@@ -358,7 +360,7 @@ tool 形态、四 tool 表与代码骨架见 [01-cube-agent-architecture.md](01-
 落地顺序（**已完成打勾，MCP 为下一步**）：
 
 1. ✅ **cube-ask skill（问数契约）**——零新代码，复用 cube.js；准确性增量全在契约里
-   （五阶段见 [cube-agent-ask.md](cube-agent-ask.md)；五阶段是概念模型，
+   （五阶段见 [01-cube-agent-ask.md](01-cube-agent-ask.md)；五阶段是概念模型，
    skill 第 0-5 步是执行契约——check 前置为第 0 步 fail fast，两者错位对应）
 2. ✅ **chat 桥 v2**——chat_server.py 桥 + claude 会话 + 聊天窗三态渲染 + tables 平等契约
 3. ✅ **playground-ext 前端增强**——ext-drill（下钻）/ ext-chat（问数）/ ext-publish（固化）+ embed 看板消费面

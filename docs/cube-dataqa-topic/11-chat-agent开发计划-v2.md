@@ -6,7 +6,7 @@
 > 修订：三层日志与 qa-log 位置见 [14-日志规格.md](14-日志规格.md)——qa-log 迁移至
 > `logs/qa-log.jsonl`（§9.2"继续追加"条目被取代），推理层 `logs/agent/<sessionId>/`
 > 前序：[11-chat-agent开发计划.md](11-chat-agent开发计划.md)（v1：C0-C3 已完成，GLM 程序形态）
-> 定位：**Cube AI Agent（本地版 v2）= 独立 claude 会话（对话 + skill 五步契约）+ Cube 语义层（执行）；
+> 定位：**Cube AI Agent（本地版 v2）= 独立 claude 会话（对话 + skill 问数契约，主链四步+条件步）+ Cube 语义层（执行）；
 > chat_server 瘦身为 HTTP ⇄ claude 桥**
 
 ---
@@ -56,13 +56,14 @@ chat_server 保留的部分收编为一个薄桥。
 ┌─ 桥（chat_server.py 瘦身 ~200 行，host 跑）───────────────────────┐
 │  · HTTP/CORS/会话锁（v1 壳保留）                                   │
 │  · sessionId ↔ claude session_id 映射（首次存，续轮 --resume）          │
-│  · claude -p 子进程 spawn + --output-format json 解析               │
+│  · claude -p 子进程 spawn + stream-json --verbose 解析              │
 │  · ask/nomatch/error 补审计（answered:false，v1 12 节逻辑收编）      │
 └──────────────────────┬──────────────────────────────────────────┘
                        ▼ 首轮：CLAUDE_INSTRUCTION + 问题；续轮：仅用户回复
-┌─ 独立 claude 会话（后台，cube-ask skill 原生五步）────────────────────┐
-│  读模型文件(ai_context) → meta 硬 gate → 组装 → docker exec cube.js │
-│  query → 答案纪律（只基于 data 计算）+ qa-log 追加                  │
+┌─ 独立 claude 会话（后台，cube-ask skill 原生契约）──────────────────┐
+│  读模型文件(ai_context) → 组装 → docker exec cube.js query        │
+│  → 答案纪律（只基于 data 计算）+ qa-log 追加                      │
+│  （meta 核验=报错才进的重入 gate；对数=高风险才做，在答案之前）        │
 │  → 最终只输出三态 JSON（answer/ask/nomatch）                        │
 └──────────────────────┬──────────────────────────────────────────┘
                        ▼ docker exec cube → /v1/load、/v1/meta
@@ -101,18 +102,25 @@ POST /chat
 |---|---|
 | HTTP/CORS/会话锁 | v1 壳原样保留（ThreadingHTTPServer，POST /chat，`Access-Control-Allow-Origin: *`） |
 | 会话映射 | 首次 `claude -p` 返回的 `session_id` 存为 `chat sessionId → claude session_id`；续轮 `--resume`；resume 失败自动重建新会话 |
-| claude spawn | `claude -p "<首轮:指令+问题 / 续轮:用户回复>" --resume <claude_sid> --output-format json`；取 `result` 字段解析三态 JSON |
+| claude spawn | `claude -p "<首轮:指令+问题 / 续轮:用户回复>" --resume <claude_sid> --output-format stream-json --verbose`；逐行收事件流，取最后一条 `result` 行解析三态 JSON |
 | 补审计 | answer 由 claude 按 skill 写 qa-log；ask/nomatch/error 由桥写 `{outcome, answered:false}`（v1 `_qa_log_outcome` 逻辑收编） |
 | CLAUDE_INSTRUCTION | 内嵌常量（~15 行，见 5.2），不单独建文件 |
 
 - 端口 4100（不变，面板指向不动）；compose chat 服务删除后由 host 桥占用
 - claude CLI 只在宿主机——桥 host 跑（不进容器）
+- spawn 注入 `CLAUDE_CODE_GIT_BASH_PATH`（`_git_bash()` 校验 basename=bash.exe 后覆盖）——
+  agent 的所有 shell 命令都经 Bash 工具执行（零 PowerShell）；系统级变量指到 git-bash.exe
+  GUI 启动器（非 shell 本体），不覆盖 claude 会回退 PowerShell 工具、绕开 bash 通道
 - **通信形态：subprocess 进程调用（非网络 API）**——v1 那种直连 LLM API 的方式不再存在，
   claude CLI 自己管理 API 调用；桥只管 spawn + stdout 解析
-- `claude -p --output-format json` 返回 `{"result":"<最终文本>","session_id":"<uuid>",...}`——
+- `claude -p --output-format stream-json --verbose` 逐行输出事件流（init/assistant/tool_use…），
+  最后一行 `{"type":"result","result":"<最终文本>","session_id":"<uuid>",...}`——
   `result` 是三态 JSON 候选文本，`session_id` 是续轮句柄；`-p` 为 headless 模式（无交互 UI）
 
 ### 5.2 CLAUDE_INSTRUCTION（桥给 claude 的首轮指令，要点）
+
+> 2026-09-24 设计要点存档；现行以 chat_server.py 为准——tables 平等契约、
+> audited 字段与契约重排见 10.2 修订注。
 
 ```
 用 cube-ask skill 处理下面的用户问题，完整执行五步契约。
@@ -172,15 +180,22 @@ POST /chat
 
 ## 7. 关键设计点
 
-1. **claude 输出 = 三态 JSON**（chat 契约不变，前端零改动）：skill 第1步计划表/第3步 query/第4步
-   data 与契约字段一一对应——claude 跑完五步把结果按三态 JSON 收口
+1. **claude 输出 = 三态 JSON**（2026-09-28 起契约加可选 audited 字段——高风险对数
+   通过时 true，前端 foot 徽标）：skill 第1步计划表/第2步 query/第3步 data 与契约字段
+   一一对应——claude 跑完契约把结果按三态 JSON 收口
 2. **会话 = 按问拉起 + `--resume`**：首次存映射，续轮带完整上下文——反问确认闭环天然持久，
    比 v1 的 pending 历史 hack 干净（该机制随五步管线抛弃）
-3. **skill 原生方法论**：读模型文件、meta 硬 gate、组装规则、对数纪律全是 SKILL.md 原文——
+3. **skill 原生方法论**：读模型文件、meta 核验（2026-09-28 起重入 gate）、组装规则、
+   对数纪律全是 SKILL.md 原文——
    v1 现象3 的"view→cube 回退"缺失在 v2 结构性消失
 4. **AskUserQuestion 禁用**：`-p` 无交互 UI；桥指令强约束"歧义只输出 ask JSON"
 5. **qa-log 双写**：claude 按 skill 写主链路（桥指令要求 `source:"ui"`）+ 桥补 ask/nomatch/error
    的 `answered:false` 审计——v1 12 节的日志修复不丢
+
+   > **2026-09-28 R3 修订（14 号 §4.1）**：双写**收敛为桥单写**——agent 按 skill 模板手写
+   > echo 追加实测 ~28.4s/问（约占单问 45%）且两套写实现必漂移（claude 侧 time UTC 占位
+   > 即实例），answer 行改由桥 `_qa_log_answer` 从最终三态 JSON 机械派生，skill/agent 零
+   > 写日志指令；日志结构（字段/行形）不变。本条保留作沿革。
 6. **权限通道 = bypassPermissions（D0 实测定案）**：工具名 allowlist（`--allowedTools
    "Bash Read ..."`）在 `-p` 下只放行 Read/Grep 等只读工具，Bash 的命令级权限仍走
    sandbox 审批——headless 无法批准 → docker exec 全拦（语义解析完整、执行通道全阻，
@@ -194,7 +209,7 @@ POST /chat
 |---|---|
 | 延迟 60-180s/问 | demo 边界接受（第 2 节）；面板 fetch 无超时；后续流式为 v3 方向 |
 | claude 无视指令调 AskUserQuestion（-p 下调用失败） | 指令强约束 + 实测验证；claude 失败后通常自然降级为文本，桥解析失败走重试 |
-| 五步后不输出合法 JSON | `--output-format json` 结构化取 result；解析失败重试 1 次 → 明确报错不静默 |
+| 五步后不输出合法 JSON | `--output-format stream-json --verbose` 逐行收，取最后 result 行；解析失败重试 1 次 → 明确报错不静默 |
 | claude 会话上下文过长/漂移 | --resume 单线会话；resume 失败桥自动重建新会话（映射重置） |
 | claude 跑偏（调不该调的工具/改模型） | 指令点名 cube-ask"只查不改"；bypassPermissions 下约束靠指令 + skill 契约（本地 demo 边界接受） |
 | -p 下 Bash 命令级权限被 sandbox 拦（allowlist 不放行命令） | `--permission-mode bypassPermissions`（第 7 节 6，实测唯一通路） |
@@ -252,8 +267,8 @@ POST /chat
 | 13:50 | 缴库单总数/金额/状态 | 99.4s | 71.1s ≈ 72% | 14.3s | 19 |
 | 14:01 | 收款金额和净额 | 57.9s | 36.6s ≈ 63% | 8.2s | 11 |
 
-另外"你好"也要 12-41s（照样全量 spawn agent）。通道发现实据：agent 在 PowerShell
-环境下主动绕开 skill 规定的 docker exec 通道（嵌套引号难写对），自己找 REST API——
+另外"你好"也要 12-41s（照样全量 spawn agent）。通道发现实据：agent 主动绕开
+skill 规定的 docker exec 通道（嵌套引号难写对），自己找 REST API——
 烧掉读 .env、读 docker-compose、构造 Authorization header 三轮。
 
 ### 10.2 拍板记录（AskUserQuestion 四项）
@@ -264,6 +279,15 @@ POST /chat
 | 第2步 meta 核验 | 保留，agent 照跑（硬 gate 不省，准确性优先） |
 | 口径词典 | 全文注入 6.3KB（歧义协议照旧，桥每问现读、加词条立即生效） |
 | resume 链内陈旧 | 会话空闲超 N 分钟自动重建（SESSION_TTL 建议 30 分钟，env 可调） |
+
+> **2026-09-28 修订**：上表"第2步 meta 核验：保留，agent 照跑（硬 gate 不省）"
+> 已修订——meta 核验改为**失败路径的重入 gate**（执行报错才进，修正后计划须
+> meta 通过才重查），query 正常返回不跑。理由：meta 能拦的四种失败（拼写幻觉/
+> public:false/view 缺口/真没建模）query 报错同样暴露，前置检查在成功路径上是
+> 纯税；防幻觉契约由重入 gate 保留。高风险对数同步从答案纪律拆出单独成步
+> （第5步，置于答案纪律之前，不一致不得交付）；对数通过 → answer payload 加
+> `audited: true`（前端 foot 徽标「已与 Oracle 对数一致」）；qa-log 结构不变
+> （不记对数）。详见 SKILL.md 第4/5步与 01-cube-agent-ask.md 修订注。
 
 ### 10.3 设计
 
@@ -283,7 +307,8 @@ POST /chat
 配套改动：
 - CLAUDE_INSTRUCTION 加一条：预置上下文已注入，跳过读模型文件与词典，直接进语义解析
 - SKILL.md 第0/1步同步加"桥已注入预置上下文时跳过"分支（防契约字面执行仍去 Read）
-- **第2步 meta 核验保留不动**（agent 照跑，硬 gate 兜底拼写幻觉）
+- **meta 核验**：2026-09-28 修订为失败路径重入 gate（报错才进，修正后须 meta
+  通过才重查；原"每查必跑硬 gate"，见 10.2 修订注）
 
 ### 10.4 刷新机制（四层）
 
@@ -328,7 +353,7 @@ POST /chat
 
 | 实测项 | 结果 |
 |---|---|
-| 结构目标（核心验收） | **发现轮全砍**：可疑票据问工具 8→5 次、轮数 9→6，**零 Read yml / 零读 .env / 零读 docker-compose**——5 次 PowerShell 全为 REST 查询/对数/写日志（通道配方预填生效） |
+| 结构目标（核心验收） | **发现轮全砍**：可疑票据问工具 8→5 次、轮数 9→6，**零 Read yml / 零读 .env / 零读 docker-compose**——5 次工具调用全为 REST 查询/对数/写日志（通道配方预填生效） |
 | 刷新测试（层1+层2） | 词典追加临时词条 → 空闲 192s 后同会话再问 → `WARN 会话空闲 192s 超 60s，重建（重注预置上下文）` + spawn resume=False + **新词条直接进 plan 依据列**（「可疑明细拆分」词条被引用出数）——三层刷新机制完整工作 |
 | 预置上下文实测大小 | ①模型摘要 30.4K 字符（23 cube + 10 view + 279 成员行，含布尔标注）+ ②通道 964 + ③词典 3.6K ≈ **55KB/次注入**（§10.3 估算 10-15KB 偏低，已按实测修正认知） |
 | 端到端耗时 | **未改善，且低于基线**：可疑票据问 127s vs 上午 85.8s——主因是**下午 GLM API 整体变慢**（同长度 18.7K 字符最终答案生成 53.3s vs 上午 20.9s，输出速率 906→351 字符/s；14:29 会话 53.6s 首轮 thinking 同证），非 D3 引入 |

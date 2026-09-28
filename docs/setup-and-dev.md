@@ -32,7 +32,7 @@ D:\develop\cube\
 ### 1.2 前置检查
 
 1. **Docker Desktop 已在运行**（托盘鲸鱼图标稳定）。验证：
-   ```powershell
+   ```bash
    docker info
    ```
 2. **确认 Oracle 版本 ≥ 11.2.0.3**（Instant Client 19c 的下限，否则 Thick 模式也连不上）：
@@ -137,8 +137,8 @@ CUBEJS_DEV_MODE=true
 
 ### 1.4 构建与启动
 
-```powershell
-cd D:\develop\cube
+```bash
+cd /d/develop/cube
 docker compose build     # 首次：拉基础镜像 + Instant Client + pip 依赖，几分钟
 docker compose up -d
 docker logs cube -f      # 看到 [preload] oracledb forced to THICK mode 即生效
@@ -205,14 +205,14 @@ D:\develop\cube\
 
 **① 克隆源码（锁定与镜像一致的版本）**
 
-```powershell
-cd D:\develop\cube
+```bash
+cd /d/develop/cube
 git clone --depth 1 --branch v1.7.42 https://github.com/cube-js/cube.git cube-repo
 ```
 
 **② 一次性初始化：容器内构建**（在 Linux 容器里做，保证产物跨 OS 兼容）
 
-```powershell
+```bash
 docker compose run --rm cube sh -c "cd /cube-build && yarn install && yarn tsc"
 ```
 
@@ -220,7 +220,7 @@ docker compose run --rm cube sh -c "cd /cube-build && yarn install && yarn tsc"
 
 **③ 日常二开循环**：改 `/cube-build/packages/<某包>` 源码 → 重建该包 → link 进运行时 → 重启：
 
-```powershell
+```bash
 # 例：修改 schema-compiler
 docker compose run --rm cube sh -c "cd /cube-build/packages/cubejs-schema-compiler && yarn build && yarn link"
 docker compose run --rm cube sh -c "cd /cube && yarn link @cubejs-backend/schema-compiler"
@@ -233,11 +233,11 @@ docker compose restart cube
 
 **④ 验证**
 
-```powershell
+```bash
 docker compose restart cube
 docker logs cube -f
-# 浏览器 http://localhost:4000/#/build 重跑 regress\*_queries.json 里的查询，
-# 结果应与 regress\*_baseline.json 基线一致
+# 浏览器 http://localhost:4000/#/build 重跑 regress/*_queries.json 里的查询，
+# 结果应与 regress/*_baseline.json 基线一致
 ```
 
 ### 2.4 什么时候才需要更重的方案
@@ -258,7 +258,7 @@ docker logs cube -f
 
 **方式一：导出镜像直接搬（推荐，保证两端完全一致）**
 
-```powershell
+```bash
 # Windows 侧导出
 docker save cube-oracle:local -o cube-oracle-local.tar
 # 拷贝整个 D:\develop\cube 目录 + cube-oracle-local.tar 到 Ubuntu

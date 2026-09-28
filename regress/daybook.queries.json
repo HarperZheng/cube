@@ -40,5 +40,14 @@
       "order": {"daybook_view.income_amt": "desc"},
       "limit": 5
     }
+  },
+  {
+    "name": "收入日结-单位×项目×预算科目",
+    "query": {
+      "measures": ["daybook_view.income_amt"],
+      "dimensions": ["daybook_view.im_agen_name", "daybook_view.item_name", "daybook_view.sub_name"],
+      "order": {"daybook_view.income_amt": "desc"},
+      "limit": 100
+    }
   }
 ]

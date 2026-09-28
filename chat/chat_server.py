@@ -2,7 +2,7 @@
 """chat_server.py —— Cube AI Agent v2 桥（HTTP ⇄ claude 会话）
 
 v2（docs/cube-dataqa-topic/11-chat-agent开发计划-v2.md）：后台 = 独立 claude 全代理，
-claude 通过 cube-ask skill 原生五步与 Cube 语义层互通；本文件瘦身为桥——
+claude 通过 cube-ask skill 原生问数契约（主链四步+条件步）与 Cube 语义层互通；本文件瘦身为桥——
 v1 五步管线（_pipeline/_missing_members/_assembled_query/pending 历史）已删除，
 保留 HTTP/CORS/会话锁 + ask/nomatch/error 补审计（v1 12 节逻辑收编）。
 
@@ -10,15 +10,18 @@ D3（11 号文档 §10）：首轮 prompt 预置上下文（①模型摘要 ②�
 _preset_context 每问现扫零缓存）+ 会话重建（层2 空闲 SESSION_TTL / 层3 链轮数
 SESSION_MAX_TURNS，触发即丢 claude_sid 按首轮重注，WARN 留痕）。
 
-日志（docs/cube-dataqa-topic/14-日志规格.md，R2）：
-  结果层：logs/qa-log.jsonl（自 regress/ 迁移，审计主链路，双写不变）
+日志（docs/cube-dataqa-topic/14-日志规格.md，R3）：
+  结果层：logs/qa-log.jsonl（自 regress/ 迁移，审计主链路，R3 桥单写——answer 行由
+          _qa_log_answer 从最终三态 JSON 机械派生，agent 零写日志；ask/nomatch/error
+          行 _qa_log_outcome 补审计）
   推理层：logs/agent/（R2 扁平化，无 sessionId 子目录）——spawn 的 stream-json
           事件流（官方格式原样）+ index.jsonl（串 resume/重建链条，行内带 sessionId）
   运维层：logs/bridge-YYYY-MM-DD.log（R2 §4.6，按日）——<ISO+08:00> <LEVEL> [组件] 消息，
-          [bridge]/[claude]/[agent]；Popen 增量读逐行打点，tail -f 实时看五步
+          [bridge]/[claude]/[agent]；Popen 增量读逐行打点，tail -f 实时看问数过程
 
 POST /chat  {question, sessionId} → 三态响应（桥透传 claude 输出）：
-  {"type":"answer", title, plan, tables, answer, assumption, truncated, rows, hitPreAgg}
+  {"type":"answer", title, plan, tables, answer, assumption, truncated, rows, hitPreAgg, audited}
+  （audited = 高风险对数通过标记，前端 foot 徽标「已与 Oracle 对数一致」；未对数 false/省略）
   （tables = 口径平等的表数组，每表 {title, query, rows, total}——17 号文档 tables 平等契约：
    答案需要几个口径就几张表，data/答案级 query 字段已删除，占比分母 = 表级 total；
    title = 概括整个答案的一句话自然语言标题，固化看板默认标题用表级 tables[].title）
@@ -54,7 +57,7 @@ PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # 项
 QA_LOG_PATH = os.environ.get('QA_LOG_PATH', os.path.join(PROJECT_DIR, 'logs', 'qa-log.jsonl'))
 LOG_DIR = os.path.join(PROJECT_DIR, 'logs', 'agent')   # 14 号 R2：推理层 logs/agent/（平铺）
 PORT = int(os.environ.get('CHAT_PORT', '4100'))
-CLAUDE_TIMEOUT = int(os.environ.get('CLAUDE_TIMEOUT', '600'))   # 秒；claude 五步预期 60-180s，
+CLAUDE_TIMEOUT = int(os.environ.get('CLAUDE_TIMEOUT', '600'))   # 秒；claude 问数主链预期 60-180s，
 # 重问（多口径 plan）实测可到 300s+（09-24 模糊问五步完成后差 18s 被杀）——600 保重问跑完
 
 # D3 会话重建（§10.4 层2/层3，同一路径：丢 claude_sid 按首轮重注预置上下文）：
@@ -65,12 +68,12 @@ SESSION_MAX_TURNS = int(os.environ.get('SESSION_MAX_TURNS', '20'))
 
 # 桥给 claude 的首轮指令（v2 文档 §5.2 + D3 §10.3）：skill 点名 + 三态 JSON 约束 +
 # AskUserQuestion 禁用 + 预置上下文跳过声明（末尾接【预置上下文】块与问题，见 _first_prompt）
-CLAUDE_INSTRUCTION = """用 cube-ask skill 处理下面的用户问题，执行其五步契约（语义解析 → meta 核验 → 组装 → cube.js query → 答案纪律）。
+CLAUDE_INSTRUCTION = """用 cube-ask skill 处理下面的用户问题，执行其契约（主链：语义解析 → 组装 → cube.js query → 答案纪律；条件步：执行报错才 meta 核验诊断，高风险才 db.js 对数）。
 约束：
 1. 歧义时不要用 AskUserQuestion（本环境无交互 UI）——输出 {"type":"ask","question":"...","options":["...","..."]}
 2. 确实查不了时输出 {"type":"nomatch","question":"...","gaps":["..."]}
-3. 回答时输出 {"type":"answer","title":"一句话标题","plan":[["自然语言","cube.member","依据"]],"tables":[{"title":"表标题","query":{"measures":[],"dimensions":[],"filters":[],"timeDimensions":[],"order":{},"limit":100},"rows":[],"total":null}],"answer":"口径声明+拍板结论+数据范围","assumption":"...","truncated":false,"rows":0,"hitPreAgg":null}
-   tables = 口径平等的表数组（17 号文档 tables 平等契约）：答案需要几个口径就几张表，
+3. 回答时输出 {"type":"answer","title":"一句话标题","plan":[["自然语言","cube.member","依据"]],"tables":[{"title":"表标题","query":{"measures":[],"dimensions":[],"filters":[],"timeDimensions":[],"order":{},"limit":100},"rows":[],"total":null}],"answer":"口径声明+拍板结论+数据范围","assumption":"...","truncated":false,"rows":0,"hitPreAgg":null,"audited":false}
+   tables = 口径平等的表数组：答案需要几个口径就几张表，
    单口径 1 张，没有主次之分。每表四个字段——
    title：表级标题，写清口径身份（如「口径A：单位×项目（收入日结）」）；
    query：该表可执行的完整 query；
@@ -78,19 +81,42 @@ CLAUDE_INSTRUCTION = """用 cube-ask skill 处理下面的用户问题，执行�
    禁止 {scope, rows} 等嵌套包装；
    total：该表占比分母，用不带 dimensions 的全量查询拿（禁把截断行加总当总数），
    无分母语义置 null。禁止跨口径合计——占比只在表内算，每表独立 total
+   并列总数合并：仅当同主语并列子问（一句话几个同级小问题，各要一个
+   总数，如"今天新增开具/已缴/入国库各多少笔"）且各口径都是单行聚合（无 dimensions，
+   各返回一行一个数）时——tables 只返回一张合并表：rows 拼成一行，键=各口径度量
+   成员名（列名=成员名末段，接受原列名）；query=首条口径的完整 query（构建器/固化
+   用；跨 cube 多度量拼一条是无效 query，禁止）；title 概括全部口径（含各自时间轴）；
+   total 置 null（跨口径无分母）。什么不合：任一子问带 dimensions（多行明细）、
+   子问间非并列、混合（有的总数有的分组）→ 各表各的，平等渲染；同一 cube
+   多个度量一条 query 出多列，不属此分叉。
    answer 只写口径声明、歧义拍板结论、数据范围、截断说明——表格数据不进文本（前端只渲染 tables）
    title = 概括整个答案的一句话自然语言标题（≤30 字），含口径关键语义（如 filters
    决定的「已核销」），不要列名堆砌（例：「各单位票据核销情况（已核销份数）」）；
-   多口径时覆盖全部口径、不跟任何单表——固化看板默认标题用表级 tables[].title（15 号文档 §16）
+   多口径时覆盖全部口径、不跟任何单表——固化看板默认标题用表级 tables[].title
    rows = 全部表行数之和；truncated = 任一表可能截断（行数==limit）即 true
+   audited = 高风险对数（skill 第5步：金额度量/对外汇报/写入文档）通过时 true，
+   前端 foot 徽标展示「已与 Oracle 对数一致」；未做对数置 false 或省略
+   hitPreAgg = 读 query 输出的命中自报行判定——cube.js query 每笔查询后必打
+   [预聚合命中] xxx / [未命中预聚合] 走源库 行：见 [预聚合命中] 置 true，
+   见 [未命中预聚合] 置 false；多笔查询任一命中即 true；无查询场景保持 null
 4. 无论任何情况，最终只输出一个上述三态 JSON 对象（不要 markdown 围栏、不要任何解释文字）
-5. 追加问数日志（logs/qa-log.jsonl）时在 JSON 里加 "source":"ui" 字段；多口径时加
-   "queries":[各表 query 一条]（"query" 字段保留记首表，过渡兼容）
+5. 问数日志（logs/qa-log.jsonl）由桥从你最终输出的 JSON 机械派生——不要自己追加、
+   不要为日志构造任何内容；保证约束 3 的契约字段（plan/tables[].query/assumption/
+   truncated/rows）齐全即可
 6. 本 prompt 附有【预置上下文】（模型摘要/查询通道/口径词典，机械提取自模型文件原文）：
    跳过读模型文件（conf/model/**）与口径词典，直接进语义解析产出计划表；
    查询通道凭据已预填，禁止读 .env / docker-compose.yml
 7. 预置摘要与 meta 核验输出冲突时，以 meta 为准（meta 是编译事实，摘要只是搬运）——
-   成员在 meta 里有而摘要里没有时照查；第2步 meta 核验照跑不省（硬 gate）
+   成员在 meta 里有而摘要里没有时照查；meta 核验仅执行报错时进（skill 第4步
+   重入 gate：修正后计划须 meta 通过才重查），query 正常返回不跑；
+   高风险（金额度量/对外汇报/写入文档）才做第5步 db.js 对数，通过时 answer 加 "audited":true
+8. 多笔查询（并列子问/多口径）合并为一次 Bash 调用：逐笔落盘
+   regress/tmp-query-1.json、tmp-query-2.json … 后一次容器内循环跑完、跑完即删——
+   每次 Bash 调用有 ~5s 管道税（进程创建+输出捕获），N 笔单发多花 (N-1)×5s 且多
+   1-2 轮思考：
+   docker exec cube sh -c 'for f in /cube/regress/tmp-query-*.json; do echo "== $f =="; node /cube/agent/cube.js query -f "$f"; done; rm -f /cube/regress/tmp-query-*.json'
+   单笔查询仍走 ②查询通道的单文件形态；失败重查：重写对应 tmp 文件再跑同一循环
+   （glob 只命中现存文件，不误跑已删笔）
 
 【预置上下文】
 """
@@ -192,14 +218,14 @@ def _extract_model_block():
 
 
 def _extract_channel_block():
-    """② 通道配方（§10.3）：REST 执行器 Invoke-CubeQuery（query 包装只此一处）
-    + Authorization 预填（.env 现读，单一来源仍是 .env）+ docker exec 备选形态——
-    通道发现实据（§10.1）：agent 在 PowerShell 下主动绕开 docker exec 自己找 REST，
-    烧掉读 .env/docker-compose/构造 header 三轮，预填后这三轮消失。secret 解析失败
-    降级为提示语（agent 回读 .env），不阻塞。
-    2026-09-27 改版：旧裸 body 模板致每会话首发必摔（网关只取 body.query →
-    "Query param is required"，agent 自愈 ~26s，且会话重建后重摔）——配方里
-    不再出现任何裸 body 形态，唯一入口是函数，想抄错都没得抄。
+    """② 通道配方（§10.3）：docker exec cube.js 主通道（skill 同款）+ curl REST
+    备选（宿主机 bash，Authorization 预填——.env 现读，单一来源仍是 .env）。
+    预填动机（§10.1）：嵌套引号难写对曾把 agent 逼出 skill 规定的通道自己找 REST，
+    烧掉读 .env/docker-compose/构造 header 三轮，预填后这三轮消失。
+    两条铁律：禁止裸 body（网关只取 body.query → "Query param is required"，
+    agent 自愈 ~26s 且会话重建后重摔）；禁止内联中文 body（git-bash curl 走 GBK
+    必 500）——中文 body 落盘 UTF-8 文件再 -d @file。secret 解析失败降级为提示语
+    （agent 回读 .env），不阻塞。
     """
     secret = ''
     try:
@@ -213,24 +239,24 @@ def _extract_channel_block():
         pass
     port = os.environ.get('CUBEJS_API_PORT', '4000')   # compose ports 4000:4000
     if secret:
-        auth = "Authorization = '%s'" % secret
+        auth = secret
     else:   # .env 缺失/无 secret——降级提示，agent 自行读取（轮次兜底）
-        auth = "Authorization = '<读 .env 的 CUBEJS_API_SECRET>'"
-    return """REST（PowerShell 环境推荐，免嵌套转义；执行器定义一次，多查询直接调用）：
-  $U = 'http://localhost:%s/cubejs-api/v1/load'; $H = @{ %s }
-  function Invoke-CubeQuery($measures,$dimensions,$order,$filters=@(),$timeDimensions=@(),$limit=200){
-    $b = @{ query = @{ measures=$measures; dimensions=$dimensions; filters=$filters; timeDimensions=$timeDimensions; order=$order; limit=$limit } } | ConvertTo-Json -Depth 8
-    Invoke-RestMethod -Uri $U -Method Post -Headers $H -ContentType 'application/json' -Body $b
-  }
-  $r = Invoke-CubeQuery @('cube.measure') @('cube.dimension') @{}    # 基本调用；条目形状——filters: @(@{member='...';operator='equals';values=@('v')})；timeDimensions: @(@{dimension='...';dateRange=@('2026-01-01','2026-12-31')})，键名是 dimension 不是 member
-  输出纪律：只打 行数($r.data.Count)+总量+top10 样本（Select-Object -First 10），全量打印会撞 tool 输出 30000 字符截断
-  # query 外壳只在本函数出现——网关只取 body.query；docker exec 的 cube.js query '<json>' 才吃裸 JSON，两者别混
-  meta 核验：Invoke-RestMethod -Uri 'http://localhost:%s/cubejs-api/v1/meta' -Headers @{ %s }
-docker exec 备选（Bash 环境）：
-  docker exec cube sh -c "node /cube/agent/cube.js query '<json>'"（JSON 内 " 需转义 \\"；复杂查询落盘 regress/tmp-query.json 用 -f /cube/regress/tmp-query.json，用后即删）
-  meta 核验：docker exec cube sh -c "node /cube/agent/cube.js meta <cube名>"
-  对数：docker exec cube sh -c "node /cube/agent/db.js sql '<sql>'"（sh 单引号内字面量写成 '\\''值'\\''，漏转义典型症状 ORA-01722）""" % (
-        port, auth, port, auth)
+        auth = '<读 .env 的 CUBEJS_API_SECRET>'
+    return """docker exec 主通道（skill 同款，容器内跑，宿主机零 Node 依赖）：
+  第0步 check：docker exec cube sh -c "node /cube/agent/cube.js check"
+  meta（第4步失败诊断用）：docker exec cube sh -c "node /cube/agent/cube.js meta <cube名>"
+  query（第3步执行）：docker exec cube sh -c "node /cube/agent/cube.js query '<json>'"
+    （JSON 内 " 转义 \\"；复杂 query 落盘 regress/tmp-query.json →
+    docker exec cube sh -c "node /cube/agent/cube.js query -f /cube/regress/tmp-query.json"，用后即删）
+  对数（第5步，高风险才做）：docker exec cube sh -c "node /cube/agent/db.js sql '<sql>'"（sh 单引号内字面量写成 '\\''值'\\''，漏转义典型症状 ORA-01722）
+curl REST 备选（宿主机 bash 有 curl/jq，容器内没有）：
+  H="Authorization: %s"; U='http://localhost:%s/cubejs-api/v1/load'
+  jq -n '{query:{measures:["cube.measure"],dimensions:[],filters:[],timeDimensions:[],order:{},limit:100}}' > regress/tmp-query.json
+  curl -s -H "$H" -H 'Content-Type: application/json' -d @regress/tmp-query.json "$U" | jq '{rows:(.data|length), sample:.data[0:10]}'
+  meta 核验：curl -s -H "$H" 'http://localhost:%s/cubejs-api/v1/meta' | jq '.cubes[0:5]'
+  # body 外壳 {query:{...}} 只在 curl 形态需要——网关只取 body.query，裸 body 摔 "Query param is required"；
+  # cube.js query '<json>' 才吃裸 JSON，两者别混。禁止内联中文 body（git-bash 走 GBK 必 500）——落盘 UTF-8 文件再 -d @file
+  # 输出纪律：只打 行数+总量+top10 样本，全量打印会撞 tool 输出 30000 字符截断""" % (auth, port, port)
 
 
 def _extract_dict_block():
@@ -271,6 +297,23 @@ def _claude_bin():
     if not path:
         raise RuntimeError('claude CLI 未找到（宿主机 PATH）——桥依赖 claude CLI')
     return path
+
+
+def _git_bash():
+    """git-bash 路径：CLAUDE_CODE_GIT_BASH_PATH 优先，常见安装位兜底，找不到返回 None。
+    claude CLI 靠它选 Bash 工具；定位不到会回退 PowerShell 工具、绕开 bash 通道。
+    env 变量必须指向 bash.exe 本体——本机系统级环境变量指到 git-bash.exe（GUI 启动器，
+    isfile 通过但不能当 shell，claude 同样回退 PowerShell），故校验 basename。
+    不走 shutil.which('bash')——PATH 里可能命中 WindowsApps 的 WSL bash stub。"""
+    path = os.environ.get('CLAUDE_CODE_GIT_BASH_PATH')
+    if path and os.path.basename(path).lower() == 'bash.exe' and os.path.isfile(path):
+        return path
+    for cand in (r'D:\develop\Git\bin\bash.exe',
+                 r'C:\Program Files\Git\bin\bash.exe',
+                 r'C:\Program Files (x86)\Git\bin\bash.exe'):
+        if os.path.isfile(cand):
+            return cand
+    return None
 
 
 def _now_iso():
@@ -402,7 +445,9 @@ def _spawn_claude(prompt_text, claude_sid=None, session_id='default', attempt='a
     （[agent] 行，§4.6）；事件流（官方格式原样）落盘 logs/agent/（平铺）；解析取 result 行的
     result/session_id（单对象 json 模式超集）。超时 = 读循环内队列超时 → taskkill /T 杀树
     （Windows 无 select-on-pipe，线程+队列是可移植解）。
-    prompt 走 stdin（中文多行免转义）；Windows 下 .cmd/.bat 经 COMSPEC /c 中转。
+    prompt 走 stdin（中文多行免转义）；Windows 下 .cmd/.bat 经 COMSPEC /c 中转；
+    env 注入 CLAUDE_CODE_GIT_BASH_PATH——spawn 环境里 claude 定位不到 git-bash 会回退
+    PowerShell 工具、绕开 bash 通道（实测 init tools 分叉点）。
     """
     args = ['-p', '--output-format', 'stream-json', '--verbose', '--max-turns', '40']
     args += ['--permission-mode', 'bypassPermissions']
@@ -415,9 +460,16 @@ def _spawn_claude(prompt_text, claude_sid=None, session_id='default', attempt='a
     else:
         cmd = [path] + args
     t0 = time.monotonic()
+    env = dict(os.environ)
+    git_bash = _git_bash()
+    if git_bash:
+        env['CLAUDE_CODE_GIT_BASH_PATH'] = git_bash   # 覆盖：继承值可能是 git-bash.exe（GUI 启动器，无效）
+    # 思考预算封顶（实测 2026-09-28：171s 会话 thinking:text = 21.7:1，每轮 think 5-15s
+    # 是第二大耗时）——2048 压短每轮思考；诊断/拍板质量回退时下调此值或移除
+    env['MAX_THINKING_TOKENS'] = os.environ.get('MAX_THINKING_TOKENS', '2048')
     try:
         proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE, cwd=PROJECT_DIR)
+                                stderr=subprocess.PIPE, cwd=PROJECT_DIR, env=env)
     except OSError as e:
         _oplog('ERROR', 'claude', '进程启动失败: %s' % e)
         raise RuntimeError('claude 进程启动失败: %s' % e)
@@ -658,9 +710,64 @@ def _bridge(question, session, session_id='default'):
     return resp
 
 
+def _cube_prefixes(queries):
+    """成员来源 → cube/view 前缀，去重保序（14 号 §4.1 cube 字段）。
+    入参元素两型：query dict（按 measures→dimensions→filters→timeDimensions 扫）
+    或裸成员名 str（plan 回退用）；联查 view 多前缀逗号并存。"""
+    seen, out = set(), []
+    for q in queries or []:
+        members = []
+        if isinstance(q, dict):
+            members = list(q.get('measures') or []) + list(q.get('dimensions') or [])
+            members += [f.get('member') for f in (q.get('filters') or [])
+                        if isinstance(f, dict) and f.get('member')]
+            members += [td.get('member') for td in (q.get('timeDimensions') or [])
+                        if isinstance(td, dict) and td.get('member')]
+        elif isinstance(q, str):
+            members = [q]
+        for m in members:
+            if isinstance(m, str) and '.' in m:
+                p = m.split('.', 1)[0]
+                if p and p not in seen:
+                    seen.add(p)
+                    out.append(p)
+    return out
+
+
+def _qa_log_answer(question, resp):
+    """answer 行由桥从最终三态 JSON 机械派生（14 号 §4.1 R3 桥单写）——
+    plan/tables[].query/assumption/truncated/rows 全是契约字段现成值，零语义加工，
+    claude 不再手写日志（skill 第6步模板已删）。挂点在 _send 之前（浏览器断连照落）；
+    写失败只留 stderr 痕，不阻塞问答。"""
+    try:
+        tables = resp.get('tables') or []
+        queries = [t.get('query') for t in tables
+                   if isinstance(t, dict) and t.get('query')]
+        prefixes = _cube_prefixes(queries) or _cube_prefixes(
+            [p[1] for p in (resp.get('plan') or [])
+             if isinstance(p, (list, tuple)) and len(p) > 1])
+        row = {
+            'time': _now_iso(),
+            'question': question,
+            'cube': ','.join(prefixes) if prefixes else None,
+            'plan': resp.get('plan'),
+            'queries': queries,
+            'query': queries[0] if queries else None,   # 过渡兼容：读侧迁 queries 后删除
+            'assumption': resp.get('assumption'),
+            'truncated': bool(resp.get('truncated')),
+            'rows': resp.get('rows'),
+            'source': 'ui',
+        }
+        os.makedirs(os.path.dirname(QA_LOG_PATH), exist_ok=True)
+        with open(QA_LOG_PATH, 'a', encoding='utf-8') as fh:
+            fh.write(json.dumps(row, ensure_ascii=False) + '\n')
+    except OSError as e:
+        print('qa-log(answer) 写入失败（不阻塞问答）: %s' % e, file=sys.stderr)
+
+
 def _qa_log_outcome(question, resp):
     """ask/nomatch/error 补审计（v1 12 节逻辑收编进桥）——问了但没出数的问题有痕。
-    answer 主链路的 qa-log 由 claude 按 skill 第5步写入（source: ui）。"""
+    answer 行由 _qa_log_answer 从最终 JSON 派生（14 号 §4.1 R3：qa-log 桥单写）。"""
     entry = {
         'time': _now_iso(),
         'question': question,
@@ -703,7 +810,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         if self.path == '/':
-            self._send(200, {'service': 'cube-ai-agent', 'version': 'v2-bridge（claude 全代理，14 号日志 R2）',
+            self._send(200, {'service': 'cube-ai-agent', 'version': 'v2-bridge（claude 全代理，14 号日志 R3：qa-log 桥单写）',
                              'sessions': {k: v.get('claude_sid') for k, v in _SESSIONS.items()},
                              'claude_cli': bool(shutil.which('claude') or shutil.which('claude.cmd'))})
         else:
@@ -741,6 +848,8 @@ class Handler(BaseHTTPRequestHandler):
             return
         if resp.get('type') != 'answer':
             _qa_log_outcome(question, resp)   # ask/nomatch 也落审计（answered: false）
+        else:
+            _qa_log_answer(question, resp)   # answer 行桥派生（14 号 §4.1 R3 桥单写，_send 前落）
         try:
             self._send(200, resp)
             _oplog('INFO ', 'bridge', '响应已送 %s sessionId=%s' % (resp.get('type'), session_id))
@@ -751,7 +860,7 @@ class Handler(BaseHTTPRequestHandler):
 
 
 if __name__ == '__main__':
-    os.makedirs(LOG_DIR, exist_ok=True)   # logs/agent/（skill 追加 logs/qa-log.jsonl 需 logs/ 已在）
-    print('Cube AI Agent v2 桥监听 :%d（POST /chat → claude 会话；日志 14 号 R2：'
-          'logs/qa-log.jsonl + logs/agent/ + logs/bridge-YYYY-MM-DD.log）' % PORT)
+    os.makedirs(LOG_DIR, exist_ok=True)   # logs/agent/（_log_spawn 落盘需目录已在；qa-log 由 _qa_log_answer 自建目录）
+    print('Cube AI Agent v2 桥监听 :%d（POST /chat → claude 会话；日志 14 号 R3：'
+          'logs/qa-log.jsonl（桥单写） + logs/agent/ + logs/bridge-YYYY-MM-DD.log）' % PORT)
     ThreadingHTTPServer(('0.0.0.0', PORT), Handler).serve_forever()

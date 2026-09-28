@@ -136,7 +136,7 @@
     panel.className = 'ext-chat-panel';
     panel.innerHTML =
       '<div class="ext-chat-head"><span class="t">AI 问数</span>' +
-      '<span class="sub">五步契约 · 语义层直查</span>' +
+      '<span class="sub">问数契约 · 语义层直查</span>' +
       '<button class="ext-chat-min" title="收起">—</button></div>' +
       '<div class="ext-chat-msgs"></div>' +
       '<div class="ext-chat-inputbar">' +
@@ -305,7 +305,7 @@
     ensurePanel();
     var div = document.createElement('div');
     div.className = 'ext-chat-loading';
-    div.textContent = '语义解析 → 核验 → 组装 → 查询中…';
+    div.textContent = '语义解析 → 组装 → 查询中…';
     els.msgs.appendChild(div);
     els.msgs.scrollTop = els.msgs.scrollHeight;
     return div;
@@ -389,7 +389,8 @@
       html += '<div class="ext-chat-assump">口径：<b>' + esc(d.assumption) + '</b></div>';
     }
     var foot = ['共 ' + (d.rows || 0) + ' 行'];
-    if (d.truncated) foot.push('<span class="ext-chat-warn">⚠ 可能截断（共 ' + esc(d.totalRows) + ' 组）</span>');
+    if (d.audited) foot.push('✓ 已与 Oracle 对数一致');
+    if (d.truncated) foot.push('<span class="ext-chat-warn">⚠ 可能截断</span>');
     if (d.hitPreAgg) foot.push('命中预聚合: ' + esc(d.hitPreAgg));
     html += '<div class="ext-chat-foot">' + foot.join('<span>·</span>') + '</div>';
     var div = addMsg('ai', html);

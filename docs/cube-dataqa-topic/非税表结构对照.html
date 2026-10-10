@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>非税收缴表结构对照（docx 设计稿 × 23-数据源说明）</title>
+<style>
+  body { font-family: "Microsoft YaHei", "PingFang SC", sans-serif; margin: 24px auto; max-width: 1080px; color: #1f2328; padding: 0 16px; }
+  h1 { font-size: 20px; }
+  .meta { color: #57606a; font-size: 13px; margin-bottom: 12px; }
+  .legend { display: flex; gap: 16px; margin: 12px 0 18px; font-size: 13px; flex-wrap: wrap; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .chip { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+  .chip.green { background: #e6f4ea; border: 1px solid #1a7f37; }
+  .chip.black { background: #ffffff; border: 1px solid #1f2328; }
+  .chip.red   { background: #ffebe9; border: 1px solid #d1242f; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th, td { border: 1px solid #d0d7de; padding: 5px 10px; text-align: left; vertical-align: top; }
+  th { background: #f6f8fa; position: sticky; top: 0; }
+  td.num { color: #57606a; width: 40px; text-align: right; }
+  td.name { font-family: Consolas, monospace; font-weight: 600; white-space: nowrap; }
+  tr.g td.name { color: #1a7f37; background: #e6f4ea; }
+  tr.r td.name { color: #d1242f; background: #ffebe9; }
+  tr.b td.name { color: #1f2328; }
+  tr.module td { background: #dff1ff; font-weight: 700; border-color: #aacbe8; }
+  .dim { color: #57606a; }
+</style>
+</head>
+<body>
+
+<h1>非税收缴业务相关表结构对照</h1>
+<div class="meta">以《11.财政非税收缴数据库表设计.docx》为主（63 张去重表），标注《23-数据源说明》是否收录。生成于 2026-09-30。</div>
+
+<div class="legend">
+  <span><i class="chip green"></i>docx 有，23 数据源说明也有（交集，10 张）</span>
+  <span><i class="chip black"></i>docx 有，23 未列（53 张）</span>
+  <span><i class="chip red"></i>仅 23 有，docx 设计稿未包含（10 张，票据侧）</span>
+</div>
+
+<table>
+  <thead>
+    <tr><th>#</th><th>表名</th><th>中文名称</th><th>23 数据源说明</th><th>备注</th></tr>
+  </thead>
+  <tbody>
+
+  <tr class="module"><td colspan="5">一、缴款书（资金收缴，业务起点）</td></tr>
+  <tr class="g"><td class="num">1</td><td class="name">FNE_PAYBOOK</td><td>财政缴款书主表</td><td>✓ ①资金收缴</td><td>PK: FPID；缴款书头信息，收缴数据根节点</td></tr>
+  <tr class="g"><td class="num">2</td><td class="name">FNE_PAYBOOK_ITEM</td><td>财政缴款书明细表</td><td>✓ ①资金收缴</td><td>FK: FPID (1:N)；征收项目、金额明细，金额统计走本表</td></tr>
+  <tr class="b"><td class="num">3</td><td class="name">FNE_PAYCODE_MAPPING</td><td>财政缴款书映射表</td><td>—</td><td>缴款码 ↔ 缴款日期映射</td></tr>
+  <tr class="b"><td class="num">4</td><td class="name">FNE_PAYINFO_RECEIVED</td><td>缴款信息资金到账结果</td><td>—</td><td>银行侧到账回执，按缴款码</td></tr>
+  <tr class="b"><td class="num">5</td><td class="name">FNE_QRY_PAYBOOK</td><td>缴款信息查询表</td><td>—</td><td>对外查询视图性质，含缴款状态 FSTATS</td></tr>
+  <tr class="b"><td class="num">6</td><td class="name">FNE_QRY_PAYBOOK_ITEM</td><td>缴款信息查询明细表</td><td>—</td><td>FK: FPID (1:N)</td></tr>
+
+  <tr class="module"><td colspan="5">二、清分（确定中央/省/市/县归属）</td></tr>
+  <tr class="g"><td class="num">7</td><td class="name">FNE_FundDivide</td><td>资金分解明细表</td><td>✓ ②清分划拨</td><td>FK: FPAYBOOKSUBID；分层比例确定归属，连接收缴与划拨</td></tr>
+  <tr class="b"><td class="num">8</td><td class="name">FNE_FundDivide_Temp</td><td>临时资金分解明细表</td><td>—</td><td>清分过程暂存，与正式表同构</td></tr>
+  <tr class="b"><td class="num">9</td><td class="name">FNE_CLEAR_RECEIPT</td><td>清分回执数据</td><td>—</td><td>银行划款结果回执</td></tr>
+  <tr class="b"><td class="num">10</td><td class="name">FNE_CLEAR_RECONCILED</td><td>清分划转对账信息接收表</td><td>—</td><td>对账体系（26 曾判"数据空缺"，表结构已设计）</td></tr>
+
+  <tr class="module"><td colspan="5">三、划拨（汇总 → 划转指令 → 银行反馈）</td></tr>
+  <tr class="g"><td class="num">11</td><td class="name">FNE_Transfer_Collect</td><td>划拨汇总表</td><td>✓ ②清分划拨</td><td>FK: FPARENTID；划拨侧汇总结果</td></tr>
+  <tr class="g"><td class="num">12</td><td class="name">FNE_Collect_To_Transfer</td><td>汇总划拨流水表</td><td>✓ ②清分划拨</td><td>FK: FTRANSNO；收缴汇总成待划拨批次</td></tr>
+  <tr class="g"><td class="num">13</td><td class="name">FNE_Capital_Transfer</td><td>资金划转主表</td><td>✓ ②清分划拨</td><td>PK: FTRANSNO；划转指令与批次信息</td></tr>
+  <tr class="b"><td class="num">14</td><td class="name">FNE_Capital_Trans_Item</td><td>资金划转明细表</td><td>—</td><td>划转按科目/级次明细（23 的划拨模块漏列）</td></tr>
+  <tr class="g"><td class="num">15</td><td class="name">FNE_Transfer_Bank_Msg</td><td>商业银行资金划转表</td><td>✓ ②清分划拨</td><td>FK: FTRANSNO (1:N)；银行侧反馈报文与状态</td></tr>
+
+  <tr class="module"><td colspan="5">四、缴库（资金进入国库）</td></tr>
+  <tr class="b"><td class="num">16</td><td class="name">FNE_Treasury_Collect</td><td>应缴库信息</td><td>—</td><td>缴库前汇总中间态</td></tr>
+  <tr class="b"><td class="num">17</td><td class="name">FNE_Treasury_To_Transfer</td><td>应缴库流水表</td><td>—</td><td>缴库前流水中间态</td></tr>
+  <tr class="g"><td class="num">18</td><td class="name">FNE_Treasury_Transfer</td><td>资金缴库单（主表）</td><td>✓ ③资金缴库</td><td>PK: FTRANSNO；缴库单头信息</td></tr>
+  <tr class="g"><td class="num">19</td><td class="name">FNE_Treasury_Trans_Item</td><td>资金缴库明细表</td><td>✓ ③资金缴库</td><td>FK: FPARENTID (1:N)；缴入国库款项明细</td></tr>
+  <tr class="g"><td class="num">20</td><td class="name">FNE_Treasury_Transfer_Msg</td><td>缴库资金划转信息表</td><td>✓ ③资金缴库</td><td>FK: FTRANSNO (1:N)；缴库交互报文</td></tr>
+  <tr class="b"><td class="num">21</td><td class="name">FNE_TREASURY_TIPS_CFM</td><td>收缴落地Tips缴库入库确认</td><td>—</td><td>TIPS 缴库入库确认</td></tr>
+
+  <tr class="module"><td colspan="5">五、对账（日结 / 专户 / 到账）</td></tr>
+  <tr class="b"><td class="num">22</td><td class="name">FNE_RECONCILE_FUNDS</td><td>专户资金对账表</td><td>—</td><td>按账户日对账（docx 中重复出现两次）</td></tr>
+  <tr class="b"><td class="num">23</td><td class="name">FNE_RECONCILE_FUNDS_DETAIL</td><td>专户资金对账明细表</td><td>—</td><td>FK: FPID (1:N)</td></tr>
+  <tr class="b"><td class="num">24</td><td class="name">FNE_RECONCILE_FUNDS_NOTICE</td><td>账户资金日结完成通知表</td><td>—</td><td>日结通知</td></tr>
+  <tr class="b"><td class="num">25</td><td class="name">FNE_RECONCILE_PAY_NOTICE</td><td>交易确认日结完成通知表</td><td>—</td><td>日结通知</td></tr>
+  <tr class="b"><td class="num">26</td><td class="name">FNE_RECONCILE_PAY_RESULT</td><td>交易确认日结结果</td><td>—</td><td>按缴款码对账结果</td></tr>
+  <tr class="b"><td class="num">27</td><td class="name">FNE_DAYEND_FUNDSFLOWS</td><td>待对账的资金流水信息</td><td>—</td><td>日切对账</td></tr>
+  <tr class="b"><td class="num">28</td><td class="name">FNE_DAYEND_FUNDSFLOWS_ITEM</td><td>待对账的资金流水明细信息</td><td>—</td><td>FK: FPID (1:N)</td></tr>
+  <tr class="b"><td class="num">29</td><td class="name">FNE_DAYEND_FUNDSRECEIVED</td><td>待对账的资金到账信息</td><td>—</td><td>日切对账</td></tr>
+  <tr class="b"><td class="num">30</td><td class="name">FNE_DAYEND_FUNDSRECEIVED_ITEM</td><td>待对账的资金到账明细信息</td><td>—</td><td>FK: FPID (1:N)</td></tr>
+  <tr class="b"><td class="num">31</td><td class="name">FNE_DAYEND_PAYINFO</td><td>待对账的缴款信息</td><td>—</td><td>日切对账</td></tr>
+  <tr class="b"><td class="num">32</td><td class="name">FNE_DAYEND_PAYINFO_ITEM</td><td>待对账的缴款明细信息</td><td>—</td><td>FK: FPID (1:N)</td></tr>
+  <tr class="b"><td class="num">33</td><td class="name">FNE_PAYINFO_RECONCILED</td><td>资金到账对账信息接收表</td><td>—</td><td>按缴款码，含已/未形成收入金额</td></tr>
+
+  <tr class="module"><td colspan="5">六、财政记账 / 写收入</td></tr>
+  <tr class="b"><td class="num">34</td><td class="name">FNE_INCOME_DAYBOOK</td><td>收入流水账</td><td>—</td><td>收入类型 1-6/11-13 等，含是否生成缴库/记账数据标志</td></tr>
+  <tr class="b"><td class="num">35</td><td class="name">FNE_INCOME_SOURCE_DATA</td><td>写收入中间临时表</td><td>—</td><td>写收入过程暂存</td></tr>
+  <tr class="b"><td class="num">36</td><td class="name">FIA_ACCT_SET</td><td>记账数据设置表</td><td>—</td><td>记账数据发送方式/类型配置</td></tr>
+  <tr class="b"><td class="num">37</td><td class="name">FIA_ACCT_SET_ITEM</td><td>记账数据设置明细表</td><td>—</td><td>FK: FPID (1:N)</td></tr>
+  <tr class="b"><td class="num">38</td><td class="name">FIA_ACCT_EXP_RECORD</td><td>总账数据导出记录表</td><td>—</td><td>导出批次记录</td></tr>
+
+  <tr class="module"><td colspan="5">七、退付（收入退付 / 技术性差错退付）</td></tr>
+  <tr class="b"><td class="num">39</td><td class="name">FNE_BACKPAY</td><td>收入退付申请主表</td><td>—</td><td>退付申请，含工作流字段</td></tr>
+  <tr class="b"><td class="num">40</td><td class="name">FNE_BACKPAY_ITEM</td><td>收入退付申请明细表</td><td>—</td><td>FK: FPID (1:N)</td></tr>
+  <tr class="b"><td class="num">41</td><td class="name">FNE_BACKPAY_AGENSUM</td><td>收入退付申请单位汇总主表</td><td>—</td><td>单位汇总上报</td></tr>
+  <tr class="b"><td class="num">42</td><td class="name">FNE_BACKPAY_AGENSUM_ITEM</td><td>收入退付申请单位汇总从表</td><td>—</td><td>FK: FPID (1:N)，含分成串 FrefundShare</td></tr>
+  <tr class="b"><td class="num">43</td><td class="name">FNE_BACKPAY_RECEIPT</td><td>收入退付回执表</td><td>—</td><td>银行退付结果</td></tr>
+  <tr class="b"><td class="num">44</td><td class="name">FNE_REFUND</td><td>技术性差错退付信息</td><td>—</td><td>差错退付</td></tr>
+
+  <tr class="module"><td colspan="5">八、划缴代扣</td></tr>
+  <tr class="b"><td class="num">45</td><td class="name">FNE_PAYPLAN_DETAIL</td><td>划缴明细表</td><td>—</td><td>代扣协议缴款明细，含滞纳金</td></tr>
+  <tr class="b"><td class="num">46</td><td class="name">FNE_PAYPLAN_DETAIL_ITEM</td><td>划缴明细项目表</td><td>—</td><td>FK: FPID (1:N)</td></tr>
+
+  <tr class="module"><td colspan="5">九、TIPS 国库对接（前置报文）</td></tr>
+  <tr class="b"><td class="num">47</td><td class="name">TIPS_PAYTREASURY</td><td>缴库信息表</td><td>—</td><td>划转凭证号 FTAXVOUNO (18位)</td></tr>
+  <tr class="b"><td class="num">48</td><td class="name">TIPS_PAYTREASURY_HISTORY</td><td>缴库信息表（失败历史缴库业务）</td><td>—</td><td>同上，失败历史</td></tr>
+  <tr class="b"><td class="num">49</td><td class="name">TIPS_PAYTREASURY_TAXTYPE</td><td>缴库信息_税票明细</td><td>—</td><td>FK: FPID (1:N)，税种金额</td></tr>
+  <tr class="b"><td class="num">50</td><td class="name">TIPS_PAY_TAXTYPE_HISTORY</td><td>缴库信息_税票明细（失败历史明细）</td><td>—</td><td>同上，失败历史</td></tr>
+  <tr class="b"><td class="num">51</td><td class="name">TIPS_TRA_BILL</td><td>交易流水表（报文3129）</td><td>—</td><td>对账日/包流水号/总笔数金额</td></tr>
+  <tr class="b"><td class="num">52</td><td class="name">TIPS_TRA_BILL_DETAIL</td><td>交易流水明细表</td><td>—</td><td>FK: FBILLID；税票号码=电子缴款书流水号</td></tr>
+  <tr class="b"><td class="num">53</td><td class="name">TIPS_INTRE_BILL</td><td>入库流水表（报文3139）</td><td>—</td><td>入库凭证日期/总金额</td></tr>
+  <tr class="b"><td class="num">54</td><td class="name">TIPS_INTRE_BILL_DETAIL</td><td>入库流水明细表</td><td>—</td><td>FK: FBILLID；凭证类型 0缴库/1退库/2更正调库/6退库退回</td></tr>
+  <tr class="b"><td class="num">55</td><td class="name">TIPS_PACK_MSG</td><td>批量报文回执接收表</td><td>—</td><td>报文内容 CLOB</td></tr>
+  <tr class="b"><td class="num">56</td><td class="name">TIPS_DATAGRAM</td><td>接收的实时报文回执接收表</td><td>—</td><td>报文内容 CLOB</td></tr>
+  <tr class="b"><td class="num">57</td><td class="name">TIPS_PROTOCOL</td><td>三方协议表-TIPS前置</td><td>—</td><td>协议号/纳税人/付款账户</td></tr>
+  <tr class="b"><td class="num">58</td><td class="name">TIPS_USER_IN_OU</td><td>登录登出信息表-TIPS前置</td><td>—</td><td>前置系统登录登出</td></tr>
+
+  <tr class="module"><td colspan="5">十、基础配置 / 支撑</td></tr>
+  <tr class="b"><td class="num">59</td><td class="name">FAB_COLLECT_OFFICE</td><td>征收机关表</td><td>—</td><td>征收机关代码/名称，按区划</td></tr>
+  <tr class="b"><td class="num">60</td><td class="name">FAB_Item_ChangeRegion</td><td>项目清分区划转换表</td><td>—</td><td>执收项目 → 执收区划转换</td></tr>
+  <tr class="b"><td class="num">61</td><td class="name">FAB_TIPS_PROTOCOL</td><td>三方协议表</td><td>—</td><td>缴款人签约协议（非 TIPS 前置版）</td></tr>
+  <tr class="b"><td class="num">62</td><td class="name">FNE_WORKDATE</td><td>工作日表</td><td>—</td><td>是否为工作日</td></tr>
+  <tr class="b"><td class="num">63</td><td class="name">FNE_COMMON_NOTICE</td><td>适配器信息通知表</td><td>—</td><td>适配器轮询通知/日志</td></tr>
+
+  <tr class="module"><td colspan="5">十一、票据侧（仅 23 数据源说明有，docx 设计稿未包含）</td></tr>
+  <tr class="r"><td class="num">64</td><td class="name">UNE_CBILL</td><td>电子票据主表</td><td>✓ ④开具票据</td><td>PK: FBILLID；票种、号码</td></tr>
+  <tr class="r"><td class="num">65</td><td class="name">UNE_CBILL_ITEM</td><td>电子票据明细表</td><td>✓ ④开具票据</td><td>FK: FPID (1:N)</td></tr>
+  <tr class="r"><td class="num">66</td><td class="name">UNE_PAYBOOK</td><td>汇缴通知书主表</td><td>✓ ⑤汇缴</td><td>FK: FCOMCBILLID；划款指令</td></tr>
+  <tr class="r"><td class="num">67</td><td class="name">UNE_PAYBOOK_ITEM</td><td>汇缴通知书明细表</td><td>✓ ⑤汇缴</td><td>FK: FPID (1:N)</td></tr>
+  <tr class="r"><td class="num">68</td><td class="name">UNE_PAYBOOK_CONFIRM</td><td>收款确认表</td><td>✓ ⑤汇缴</td><td>FK: FPAYCODE；收款确认状态</td></tr>
+  <tr class="r"><td class="num">69</td><td class="name">UNE_WRITEOFF</td><td>冲红信息表</td><td>✓ ⑥冲红作废</td><td>票据冲红、红票信息</td></tr>
+  <tr class="r"><td class="num">70</td><td class="name">UNE_HBILL</td><td>手工票据表</td><td>✓ ⑥冲红作废</td><td>线下手工开票（本库无数据）</td></tr>
+  <tr class="r"><td class="num">71</td><td class="name">UNE_HBILL_ITEM</td><td>手工票据明细表</td><td>✓ ⑥冲红作废</td><td>23 中与 UNE_HBILL 并列（UNE_HBILL / ITEM）</td></tr>
+  <tr class="r"><td class="num">72</td><td class="name">UBE_STOCK_INVALID</td><td>票据库存作废主表</td><td>✓ ⑥冲红作废</td><td>未使用票据作废申请</td></tr>
+  <tr class="r"><td class="num">73</td><td class="name">UBE_STOCK_INVALID_ITEM</td><td>票据库存作废明细表</td><td>✓ ⑥冲红作废</td><td>FK: FPID (1:N)</td></tr>
+
+  </tbody>
+</table>
+
+<div class="meta" style="margin-top:14px">
+  合计 73 行：docx 设计稿 63 张（绿 10 / 黑 53）＋ 仅 23 有 10 张（红）。绿=交集；黑=docx 独有；红=票据侧，需另找设计文档补齐。
+</div>
+
+</body>
+</html>

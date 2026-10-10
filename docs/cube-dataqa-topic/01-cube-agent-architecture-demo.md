@@ -39,7 +39,7 @@
    | `chat/chat_server.py` | HTTP 桥 :4100（**在用**） | 聊天窗后端：HTTP ⇄ `claude -p` 子进程，会话锁 / 预置上下文 / 三态透传 | 由 claude 会话间接调 |
    | `agent/mcp-server.js` | MCP server（**拟新增，下一步演进**） | 四 tool：cube_check / cube_meta / cube_query / cube_sql | 同 cube.js，见 §六 |
    | `agent/cube_tools.py` | Python 函数 tool（**拟新增**） | 自研 agent 对接 | POST `/v1/load` |
-   | `agent/ledger.js` | CLI（**设计定稿，未落盘**，18 号） | 未建模清单 survey / check / show | 读 `conf/unmodel/*.json` |
+   | `agent/unmodel.js` | CLI（docker exec，**在用**，18 号） | 未建模清单 survey / show（check 已撤回） | 直连 Oracle + 读写 `conf/`（绕过语义层） |
 
 3. **调用方决定"何时/如何组织"，语义层决定"怎么查"** —— 换 tool 层协议不动语义。
 
@@ -59,7 +59,7 @@
 | `conf/model/` | **语义层本体**（源） | `cubes/`（dims 5 + facts_cbill 2 + facts_income 4 + facts_paybook 1 + facts_stock 8 + facts_writeoff 3 = **23 cube**）、`views/`（11 个 view + view_groups.yml）、`macros/ptd.jinja`、`globals.py`（分表枚举/列交集） | cube-modeling skill / 人工 | Cube server 热编译；chat 桥预置上下文每问现扫 |
 | `conf/dashboards/` | **固化存照** | `<publicId>.json`（11 位 base62），固化查询的 query + 图表类型 | embed-patch.js（playground ext-publish.js 固化动作） | embed-dashboard.html 消费面 |
 | `conf/embed/` | **消费面资产** | `embed-patch.js`（路由认领）、`embed-dashboard.html`、`assets/echarts.min.js` | 人工 | preload.js require embed-patch.js；embed 页面 |
-| `conf/unmodel/` | **未建模清单**（设计定稿，未落盘） | `<cube>.json`：源列盘点 + 五类分类 + trigger_semantics | agent/ledger.js（拟新增） | cube-ask skill 撞缺口时 show |
+| `conf/unmodel/` | **未建模清单**（已落盘） | `<cube>.json`：源列盘点 + 四类分类 + trigger_semantics | agent/unmodel.js survey | cube-ask skill 撞缺口时 show（B′ 按需拉取） |
 
 conf 哲学的四条原则：
 
@@ -92,7 +92,7 @@ conf 哲学的四条原则：
 │  │ tool 层（协议适配，不含语义）              │                         │  claude -p 子进程 │  │
 │  │  agent/cube.js   check/meta/query/snap/diff│                        │  cube-ask skill  │  │
 │  │  agent/db.js     9 子命令库表探查          │                         │  (stream-json)   │  │
-│  │  agent/ledger.js (拟新增)                  │                         └────────┬─────────┘  │
+│  │  agent/unmodel.js (在用)                   │                         └────────┬─────────┘  │
 │  └──────────────────┬───────────────────────┘                                  │docker exec │
 │                     │ 容器内 localhost:4000                                     └──────┬─────┘
 │                     ▼                                                                 │    │
@@ -101,7 +101,7 @@ conf 哲学的四条原则：
 │  │ conf/model/  23 cube + 11 view + 宏 + globals │  │ chat/ chat_server.py         │  │    │
 │  │ conf/dashboards/  固化存照 <publicId>.json    │  │ logs/  qa-log + agent/ + 桥日志│  │    │
 │  │ conf/embed/  embed-patch + embed-dashboard    │  │ playground-ext/ 四件套        │  │    │
-│  │ conf/unmodel/  未建模清单(设计定稿)           │  │  ext-drill/ext-chat/ext-publish│  │    │
+│  │ conf/unmodel/  未建模清单(已落盘)            │  │  ext-drill/ext-chat/ext-publish│  │    │
 │  └──────────────────────────────────────────────┘  └──────────────────────────────┘  │    │
 │                                                                                       │    │
 │  ┌─ Docker (cube-net: 192.168.220.0/24, 避开 172.18) ─────────────────────────────┐   │    │
@@ -271,8 +271,8 @@ sequenceDiagram
 > **闭环协议**：问数撞缺口（nomatch）→ 用户拍板 → 切入建模（第 0 步接力 + snap）→
 > 改完增量验收（验收 query = 主 query ∪ 新增成员，一条查询）→ 交付。
 > 三段式状态机与两道切换硬门见 [16-问数到补建模的闭环流程.md](16-问数到补建模的闭环流程.md)；
-> 未建模清单工程化（`conf/unmodel/<cube>.json` + `agent/ledger.js`）见
-> [18-未建模清单.md](18-未建模清单.md)（设计定稿，未落盘）。
+> 未建模清单工程化（`conf/unmodel/<cube>.json` + `agent/unmodel.js`）见
+> [18-未建模清单.md](18-未建模清单.md)（已实施 2026-09-29）。
 
 ---
 
@@ -309,18 +309,18 @@ tool 形态、四 tool 表与代码骨架见 [01-cube-agent-architecture.md](01-
 
 ---
 
-## 八、日志与观测（三层）
+## 八、日志与观测（两层；原推理层 logs/agent/ 已随 14 号 R5 撤销）
 
-`D:\develop\cube\logs\`（14 号日志规格，R2）：
+`D:\develop\cube\logs\`（14 号日志规格，R2；R5 撤推理层）：
 
 | 层 | 文件 | 内容 |
 |---|---|---|
 | 结果层 | `logs/qa-log.jsonl`（自 regress/ 迁移） | 每问一行的审计主链路；**桥单写（14 号 §4.1 R3）**——answer 行 `_qa_log_answer` 从最终 JSON 派生（agent 零动作），ask/nomatch/error 桥补 `{outcome, answered:false}`；多口径 `queries[]` |
-| 推理层 | `logs/agent/index.jsonl` + `HHMMSS_a<attempt>.jsonl` + `_stderr.log`（扁平化，无 sessionId 子目录） | spawn 的 stream-json 事件流（官方格式原样）+ resume/重建链条索引 |
-| 运维层 | `logs/bridge-YYYY-MM-DD.log` | 经典单行 `<ISO+08:00> <LEVEL> [组件] 消息`，[bridge]/[claude]/[agent]；tail -f 实时看五步 |
+| 运维层 | `logs/bridge-YYYY-MM-DD.log` | 经典单行 `<ISO+08:00> <LEVEL> [组件] 消息`，[bridge]/[claude]/[agent]；claude 事件逐行打点（thinking/tool_use/tool_result 全量），tail -f 实时看问数过程 |
 
-推理在哪看：`logs/agent/*.jsonl`、`~/.claude/projects/D--develop-cube/<sid>.jsonl`、
-`claude --resume`。compose 已加 `TZ=Asia/Shanghai`（cubestored 硬编码 UTC，接受）。
+推理在哪看：`logs/bridge-*.log` 的 [agent] 行（过程全量打点）、
+`~/.claude/projects/D--develop-cube/<sid>.jsonl`、`claude --resume`。
+compose 已加 `TZ=Asia/Shanghai`（cubestored 硬编码 UTC，接受）。
 
 ---
 
@@ -353,7 +353,7 @@ tool 形态、四 tool 表与代码骨架见 [01-cube-agent-architecture.md](01-
 | 层 | 位置 | 职责 | 变更频率 |
 |---|---|---|---|
 | 调用方 | skill 会话 / 聊天窗 / 自研 agent | 何时取数、组织问题、汇总结论 | 常变 |
-| tool 层 | cube.js / db.js / chat 桥（现状）；mcp-server.js / cube_tools.py / ledger.js（演进） | 协议转换 + 行数上限等防护 | 少变 |
+| tool 层 | cube.js / db.js / chat 桥 / unmodel.js（现状）；mcp-server.js / cube_tools.py（演进） | 协议转换 + 行数上限等防护 | 少变 |
 | 语义层 | conf/model + Cube server :4000 | 口径、join、权限、SQL 生成 | 随业务变 |
 | 数据层 | Oracle 11g 172.18.163.68 (YN0411) | 原始数据 | 不动 |
 
@@ -366,6 +366,6 @@ tool 形态、四 tool 表与代码骨架见 [01-cube-agent-architecture.md](01-
 3. ✅ **playground-ext 前端增强**——ext-drill（下钻）/ ext-chat（问数）/ ext-publish（固化）+ embed 看板消费面
 4. ✅ **闭环协议**——问数到补建模三段式 + 增量验收（16 号）
 5. ✅ **logs/ 三层观测**——qa-log + stream-json + 桥日志（14 号）
-6. ⬜ **未建模清单工程化**——`conf/unmodel/` + `agent/ledger.js`（18 号设计定稿，未落盘）
+6. ✅ **未建模清单工程化**——`conf/unmodel/` + `agent/unmodel.js` survey/show（18 号；2026-09-29 实施：daybook 首册 30 条＋ask d 话术 B′＋modeling ②7/③-5，容器实测通过）
 7. ⬜ **MCP server（下一步演进）**——统一插头，体验升级，与 skill / chat 桥共存过渡
 8. ⬜ **Python 函数 tool**——自研 agent 对接，与 MCP 共享同一套 tool 语义

@@ -20,11 +20,12 @@ D:\develop\cube\
 ├── .env                      # Oracle 连接配置
 ├── requirements.txt          # Python 动态模型依赖（oracledb）
 ├── conf\                     # 挂载到 /cube/conf
-│   └── model\
+│   ├── model\
 │       ├── globals.py        # Jinja/TemplateContext 辅助函数
 │       ├── cubes\            # cube 模型（bill_kpi.yml、facts_* 等）
 │       └── views\            # view 模型
-├── agent\                    # 挂载到 /cube/agent（cube.js、db.js）
+│   └── unmodel\              # 未建模清单（<cube>.json，unmodel.js survey 写）
+├── agent\                    # 挂载到 /cube/agent（cube.js、db.js、unmodel.js）
 ├── regress\                  # 回归查询与基线（*_queries.json / *_baseline.json）
 └── docs\                     # 阅读成果与本文档
 ```

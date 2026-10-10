@@ -10,6 +10,21 @@
 >
 > 阅读成果编号 11（修订版：Access Policies 按参数逐个给出 YAML 示例）。
 
+## 版本核对：官方最新文档关键新知（2026-10-10，curl 核对 docs.cube.dev 概念页/参数参考页/行级/成员级/security context/REST query format）
+
+| # | 新知 | 出处 | 与本文/项目实测的差异与影响 |
+|---|---|---|---|
+| 1 | **row_level filters 官方支持 `and`/`or` 组合**——与 `equals`/`contains` 同一格式条款（REST 同款布尔逻辑）：`or`/`and` 属性值为 filter 数组、可嵌套；同一逻辑算子内不能混 dimension/measure filter | 参数参考页 row_level 节 + REST query format | 本文"多条过滤之间 AND 组合"只讲了**平铺**多条 filter；嵌套 `or` 是官方现成能力，项目框架版本支持度待实测 |
+| 2 | **同成员被多条策略授予时，行过滤取并集（union）**；成员跨策略 union、一次查询的成员间 intersect（"For each queried member, the visible rows are the union of the row filters of the policies that grant that member"） | 概念页 Policy evaluation | 多策略重叠场景的行级语义=并集——项目"双互补条款"恰好互不重叠所以未触发；同组多策略各配一条 filter 即 OR 的另一声明式写法 |
+| 3 | **YAML conditions `if` 只支持 and/or/not、成员访问、方法调用——不支持 `==`/比较/三元**（JS 模型才支持）；`if` 须为布尔 | 参数参考页 Supported operators | 用户组判定走 `group` 参数 + `groups.includes()` 方法调用，不写 `==` 表达式 |
+| 4 | 定义了策略的 cube/view，**其他组自动拒绝**（无需默认拒绝策略） | 概念页 Info + 参数参考 | 已与本文一致 |
+| 5 | mask 体系：成员级 `mask` 参数（SQL mask / 静态值）、默认 NULL、`CUBEJS_ACCESS_POLICY_MASK_STRING/NUMBER/BOOLEAN/TIME` 环境变量定制默认；**SQL mask 不作用于 ungrouped 查询**（SQL API SELECT *），静态 mask 全场景生效；条件脱敏 = `CASE WHEN rowFilter THEN 真值 ELSE mask`，查询含等价 filter 时自动真值 | 概念页 Data masking | 成员级 `mask` 参数（部分脱敏）是本文未覆盖的能力 |
+| 6 | **member-level：查 view 时 view 规则替代 cube 规则（不叠加）**；row-level/masking：view + cube 双侧叠加 | 概念页 Member-level/Row-level access | 与 SQL 视图列语义一致；行级维度注册留 cube 层不受影响 |
+| 7 | **row_level `values` 可同时引用多个 securityContext 属性**（IN 多属性，如 country + customCountryProperty） | 参数参考页 row_level | 多区划/层级上卷的现成路径 |
+| 8 | 组来源 = `context_to_groups`（securityContext.groups，默认 `['default']`）；一个用户可属多组 | 概念页 Custom mapping | 已与本文一致；JWT `groups` 数组即判定载体 |
+
+---
+
 ## 总览：认证 vs 授权
 
 Cube 的访问控制分为两块：

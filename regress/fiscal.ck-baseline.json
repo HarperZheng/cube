@@ -1,0 +1,47 @@
+{
+  "purpose": "非税收入资金模块建模口径基线（P7 前置）——CK 直查关键合计，建模后逐一对数（26-资金模块建模开发方案 §一#4、§6.2）",
+  "generated_at": "2026-10-10",
+  "data_source": "ck_yunnan0508",
+  "database": "yunnan0508",
+  "tables": {
+    "fne_paybook_full_high": { "rows": 1272, "freceiveddate_filled_rows": 869 },
+    "fne_funddivide_transfer": { "rows": 728 }
+  },
+  "baselines": [
+    {
+      "key": "amt",
+      "cube": "fiscal_collection",
+      "measure": "amt",
+      "sql": "SELECT sum(famt) FROM fne_paybook_full_high",
+      "value": "18332207203.132"
+    },
+    {
+      "key": "entered_amt",
+      "cube": "fiscal_collection",
+      "measure": "entered_amt",
+      "sql": "SELECT sum(fimamt) FROM fne_paybook_full_high WHERE freceiveddate != ''",
+      "value": "29354220.76",
+      "note": "口径 2026-10-09 定稿：fisenter 实测不可用（97% 空），改按 freceiveddate 过滤，869/1272 行（68%）"
+    },
+    {
+      "key": "im_amt",
+      "cube": "fiscal_allocation",
+      "measure": "im_amt",
+      "sql": "SELECT sum(fimamt) FROM fne_funddivide_transfer",
+      "value": "16016079467.68",
+      "note": "与 fpf 全表 sum(fimamt) 完全相等（16,016,079,467.68），双侧可对数"
+    },
+    {
+      "key": "trans_amt",
+      "cube": "fiscal_allocation",
+      "measure": "trans_amt",
+      "sql": "SELECT sum(ftransamt) FROM fne_funddivide_transfer",
+      "value": "72507.62",
+      "note": "数值极小——划拨段数据基本未发生，与链路覆盖结论一致"
+    }
+  ],
+  "reference": {
+    "fpf_fimamt_all": "16016079467.68",
+    "note": "参考值：fpf 全表 sum(fimamt)，用于 im_amt 交叉验证"
+  }
+}

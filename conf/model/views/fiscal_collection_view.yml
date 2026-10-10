@@ -1,0 +1,93 @@
+# 财政收入交付视图—— 非税收入全景 P8（26-资金模块建模开发方案 §七）
+# 消费方（BI/前端/REST）统一从 view 查；cube 层只留原料。
+# folders 分侧（初步设计 §4.6）：缴收分侧成员归两个 folder；AI 区分侧别主力 = ai_context 规则 + title 侧别字样。
+views:
+  - name: fiscal_collection_view
+    title: 财政收入明细+汇总
+    description: 缴款全景（缴款书×项目行明细粒度）；财政收入明细、按单位/科目/项目/区划汇总
+    meta:
+      ai_context: >-
+        财政收入视图。分组必须用 *_code 成员（chg_agency_code/rec_rgn_code/item_code/sub_code）；
+        对应 *_name 是该编码全部别名的字典序拼接（' / '），测试环境一码多名脏数据，仅跟随展示、不作准、不用于分组。
+        金额：明细金额用 amt；到账金额用 entered_amt（sum(fimamt) WHERE freceiveddate 非空）；
+        ftotalamt（total_amt）是整票金额复印在每明细行，禁 sum。数量 number 仅在按 units 分组时可加。
+        科目分两侧：缴款侧 sub_*（缴款书票面），收入侧 rec_sub_*（清分归属），不可跨侧混用、不可相加；
+        rec_* 前缀成员均为收入侧口径。资金进专户还是国库用 bgt_style（1国库 2专户 3代收 4其他）。
+        时间过滤用 pay_date（fdate 派生，缴款日期）；到账看 received_date（资金到账/前端"收入日期"），
+        划拨入库到账在 allocation 视图（enter_date），两者口径不同勿混用。
+        收入单位（rec_agency_code）与归口业务处室（chgfin_dept_id）暂无名称列，只出编码。
+        payer_name 已脱敏。
+    cubes:
+      - join_path: fiscal_collection
+        includes:
+          - count
+          - amt
+          - entered_amt
+          - total_amt
+          - number
+          - pay_code
+          - pay_date
+          - pay_time
+          - received_date
+          - enter_date
+          - clear_date
+          - eff_date
+          - bus_type
+          - state
+          - pay_channel
+          - units
+          - chg_agency_code
+          - chg_agency_name
+          - chg_rgn_code
+          - chg_rgn_name
+          - rec_rgn_code
+          - rec_rgn_name
+          - item_code
+          - item_name
+          - sub_code
+          - sub_name
+          - rec_sub_code
+          - rec_sub_name
+          - rec_agency_code
+          - chgfin_dept_id
+          - funds_nature_code
+          - funds_nature_name
+          - rec_funds_nature_code
+          - rec_funds_nature_name
+          - rec_bgt_agen_code
+          - rec_bgt_agen_name
+          - income_sort_code
+          - income_sort_name
+          - acc_agen_code
+          - acc_agen_name
+          - rec_bank_code
+          - rec_bank_name
+          - rec_acct_bank
+          - rec_acct_name
+          - rec_acct_type
+          - bgt_style
+          - calc_source
+          - payer_name
+        excludes:
+          - fpid             # 技术键——view 不继承 public:false，显式挡
+          - fid
+          - paybook_sub_id
+          - data_tag
+    folders:
+      - name: income_side
+        includes:
+          - rec_rgn_code
+          - rec_rgn_name
+          - rec_sub_code
+          - rec_sub_name
+          - rec_funds_nature_code
+          - rec_funds_nature_name
+          - rec_bgt_agen_code
+          - rec_bgt_agen_name
+          - rec_agency_code
+      - name: paybook_side
+        includes:
+          - sub_code
+          - sub_name
+          - funds_nature_code
+          - funds_nature_name

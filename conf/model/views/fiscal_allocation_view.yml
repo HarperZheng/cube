@@ -1,0 +1,74 @@
+# 清分流向交付视图—— 非税收入全景 P8
+views:
+  - name: fiscal_allocation_view
+    title: 划入划出/跨区划流向
+    description: 清分流向事实（fdt，唯一带 from→to 的粒度）；划入划出、收入来源、专户国库
+    meta:
+      ai_context: >-
+        资金流向视图，一行一笔清分，from→to 由区划/单位成对字段表达：划出方看 chg_rgn_code/chg_agency_code，
+        划入方看 rec_rgn_code/rec_agency_code，方向不可混用（"划入划出"按方向过滤，勿用同一字段）。
+        金额：分入金额用 im_amt，划拨金额用 trans_amt；分组必须用 *_code，*_name 为别名拼接展示、不作准。
+        收入类型（正常/跨区划）用 income_type（区划比对 v1，上/下级分入待层级 ETL）；
+        是否分成/分解来源用 calc_source（1不分成 2分成 3提留 4余额），分成比例无数据列。
+        一笔清分多轮划拨只留最近一轮（trans_no/enter_date/trans_date 均为 _last），历史轮次不可查；
+        是否汇总用 collect_flag（fcollectid 非空衍生）。
+        划拨/入库到账日期用 enter_date（报文侧）；与缴款书侧 received_date（collection 视图）口径不同勿混用。
+        资金归口用 bgt_style（1国库 2专户）+ rec_acct_type 互校。时间过滤用 pay_date（fdate）。
+        划出方区划名称（chg_rgn_name）与划入方单位名称暂无数据列，只出编码。
+    cubes:
+      - join_path: fiscal_allocation
+        includes:
+          - count
+          - im_amt
+          - trans_amt
+          - pay_code
+          - pay_date
+          - clear_date
+          - trans_date
+          - enter_date
+          - chg_agency_code
+          - chg_agency_name
+          - chg_rgn_code
+          - rec_rgn_code
+          - rec_rgn_name
+          - item_code
+          - item_name
+          - rec_sub_code
+          - rec_sub_name
+          - rec_agency_code
+          - rec_funds_nature_code
+          - rec_funds_nature_name
+          - rec_bgt_agen_code
+          - rec_bgt_agen_name
+          - rec_bank_code
+          - rec_bank_name
+          - rec_acct_type
+          - bgt_style
+          - calc_source
+          - is_transfer
+          - trans_stats
+          - reconcile_status
+          - collect_flag
+          - trans_no
+          - income_type
+        excludes:
+          - fid
+          - paybook_sub_id
+          - data_tag
+    folders:
+      - name: transfer_in
+        includes:
+          - rec_rgn_code
+          - rec_rgn_name
+          - rec_sub_code
+          - rec_sub_name
+          - rec_agency_code
+          - rec_funds_nature_code
+          - rec_funds_nature_name
+          - rec_bgt_agen_code
+          - rec_bgt_agen_name
+      - name: transfer_out
+        includes:
+          - chg_agency_code
+          - chg_agency_name
+          - chg_rgn_code

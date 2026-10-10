@@ -1,0 +1,249 @@
+# 清分流向事实（fne_funddivide_transfer，728 行/56 列）—— 非税收入全景 P7 建模
+# docs/cube-dataqa-topic/26-资金模块建模开发方案.md §六
+# FUNDDIVIDE+COLLECT+CAPITAL 三表打平；一行一笔清分，from→to 由区划/单位成对字段表达
+# 口径：收入类型 v1 只做区划比对（层级依赖初步设计核实项 7 ETL）；是否汇总=fcollectid 非空
+# ⚠️ CK 23.3.15 限制（2026-10-10 实测）：派生表同层 2 个及以上子查询 LEFT JOIN 时，
+#    外层查询无法解析星号展开列（UNKNOWN_IDENTIFIER）；归一化分 4 层嵌套、每层仅 1 个 join。
+cubes:
+  - name: fiscal_allocation
+    title: 清分流向
+    description: |
+      清分流向事实 fne_funddivide_transfer，一行一笔清分。
+      划入划出/收入来源/专户国库/划转状态；场景 3/10/11/14/15/16（§3.3）。
+      消费方统一从 fiscal_allocation_view 查；cube 层只留原料。
+    public: true
+    data_source: ck_yunnan0508
+
+    sql: |
+      SELECT * FROM (
+        SELECT * FROM (
+          SELECT * FROM (
+            SELECT t.*, c.chg_agency_name_canon FROM fne_funddivide_transfer t
+            LEFT JOIN (SELECT fchgagencode,
+                              arrayStringConcat(arraySort(groupUniqArray(fchgagenname)), ' / ') AS chg_agency_name_canon
+                       FROM fne_funddivide_transfer GROUP BY fchgagencode) c ON t.fchgagencode = c.fchgagencode
+          ) x1
+          LEFT JOIN (SELECT frecrgncode,
+                            arrayStringConcat(arraySort(groupUniqArray(frecrgnname)), ' / ') AS rec_rgn_name_canon
+                     FROM fne_funddivide_transfer WHERE frecrgncode != '' GROUP BY frecrgncode) r ON x1.frecrgncode = r.frecrgncode
+        ) x2
+        LEFT JOIN (SELECT fitemcode,
+                          arrayStringConcat(arraySort(groupUniqArray(fitemname)), ' / ') AS item_name_canon
+                   FROM fne_funddivide_transfer WHERE fitemcode != '' GROUP BY fitemcode) i ON x2.fitemcode = i.fitemcode
+      ) x3
+      LEFT JOIN (SELECT frecsubcode,
+                        arrayStringConcat(arraySort(groupUniqArray(frecsubname)), ' / ') AS rec_sub_name_canon
+                 FROM fne_funddivide_transfer WHERE frecsubcode != '' GROUP BY frecsubcode) rs ON x3.frecsubcode = rs.frecsubcode
+
+    measures:
+      - name: count
+        title: 清分记录数
+        drill_members: [pay_date, chg_agency_name, rec_rgn_name, rec_sub_name]
+        type: count
+      - name: im_amt
+        title: 分入金额(元)
+        description: fimamt 合计——清分收入口径
+        sql: "{CUBE}.`fimamt`"
+        type: sum
+      - name: trans_amt
+        title: 划拨金额(元)
+        description: ftransamt 合计——划拨口径
+        sql: "{CUBE}.`ftransamt`"
+        type: sum
+
+    dimensions:
+      # ── 码名对（fdt 有名称列的 4 个归一化；执收区划无名称列）──
+      - name: chg_agency_code
+        title: 划出方单位编码
+        sql: "{CUBE}.`fchgagencode`"
+        type: string
+      - name: chg_agency_name
+        title: 划出方单位名称
+        description: 归一化拼接，仅展示
+        sql: chg_agency_name_canon
+        type: string
+      - name: chg_rgn_code
+        title: 划出方区划编码
+        description: fchgrgncode——fdt 无名称列（§2.2）
+        sql: "{CUBE}.`fchgrgncode`"
+        type: string
+      - name: rec_rgn_code
+        title: 划入方区划编码
+        description: 收入归属区划——行级过滤维度（JWT region_code 注入，§3.1）
+        sql: "{CUBE}.`frecrgncode`"
+        type: string
+      - name: rec_rgn_name
+        title: 划入方区划名称
+        description: 归一化拼接，仅展示
+        sql: rec_rgn_name_canon
+        type: string
+      - name: item_code
+        title: 项目编码
+        sql: "{CUBE}.`fitemcode`"
+        type: string
+      - name: item_name
+        title: 项目名称
+        description: 归一化拼接，仅展示
+        sql: item_name_canon
+        type: string
+      - name: rec_sub_code
+        title: 预算科目（收入归属）
+        sql: "{CUBE}.`frecsubcode`"
+        type: string
+      - name: rec_sub_name
+        title: 预算科目名称（收入归属）
+        description: 归一化拼接，仅展示
+        sql: rec_sub_name_canon
+        type: string
+      - name: rec_agency_code
+        title: 划入方单位编码
+        description: frecagenidcode——名称列缺口，待 ETL
+        sql: "{CUBE}.`frecagenidcode`"
+        type: string
+
+      # ── 缴收分侧/流向状态 ──
+      - name: rec_funds_nature_code
+        title: 资金性质编码（收入归属）
+        sql: "{CUBE}.`frecfundsnaturecode`"
+        type: string
+      - name: rec_funds_nature_name
+        title: 资金性质名称（收入归属）
+        sql: "{CUBE}.`frecfundsnaturename`"
+        type: string
+      - name: rec_bgt_agen_code
+        title: 收入方预算归类编码
+        description: frecbgtagencode（ETL 补充，待核）
+        sql: "{CUBE}.`frecbgtagencode`"
+        type: string
+      - name: rec_bgt_agen_name
+        title: 收入方预算归类名称
+        sql: "{CUBE}.`frecbgtagenname`"
+        type: string
+      - name: rec_bank_code
+        title: 划转收款银行编码
+        description: ftransrecbankcode——fdt 无 frecbankcode（核实项 15 勘误）
+        sql: "{CUBE}.`ftransrecbankcode`"
+        type: string
+      - name: rec_bank_name
+        title: 划转收款银行名称
+        sql: "{CUBE}.`ftransrecbankname`"
+        type: string
+      - name: rec_acct_type
+        title: 收入账户类型
+        description: frecaccttype 字典 136 八枚举——与 bgt_style 互校（专户/国库）
+        sql: "{CUBE}.`frecaccttype`"
+        type: string
+      - name: bgt_style
+        title: 资金管理方式
+        description: fbgtstyle：1国库 2专户 3代收 4其他
+        sql: "{CUBE}.`fbgtstyle`"
+        type: string
+      - name: calc_source
+        title: 分解来源
+        description: fcalcsource：1不分成 2分成 3提留 4余额
+        sql: "{CUBE}.`fcalcsource`"
+        type: string
+      - name: is_transfer
+        title: 是否划转
+        description: fistransfer 0否 1是（_last=最近一轮）
+        sql: "{CUBE}.`fistransfer_last`"
+        type: string
+      - name: trans_stats
+        title: 划转状态
+        description: ftransstats：0未发 1已发 7失败 9成功 14校验不通过——明细行状态，非批次单据状态
+        sql: "{CUBE}.`ftransstats`"
+        type: string
+      - name: reconcile_status
+        title: 到账对账状态
+        description: freconcilestatus：0未对账 1成功 2失败
+        sql: "{CUBE}.`freconcilestatus`"
+        type: string
+      - name: collect_flag
+        title: 是否汇总
+        description: fcollectid 非空衍生；不用 fcollectpid（=前划拨汇总ID）
+        sql: "if(empty({CUBE}.`fcollectid`), '0', '1')"
+        type: string
+      - name: trans_no
+        title: 划拨凭证号
+        description: ftransno_last——多轮划拨只留最近轮（初步设计 §八.7）
+        sql: "{CUBE}.`ftransno_last`"
+        type: string
+      - name: pay_code
+        title: 缴款码
+        sql: "{CUBE}.`fpaycode`"
+        type: string
+      - name: income_type
+        title: 收入类型
+        description: 区划比对 v1：fchgrgn=frecrgn→正常，否则跨区划；上/下级分入需层级 ETL（核实项 7）后补全——源端 FIMTYPE 无"上级分入"值
+        sql: "if({CUBE}.`fchgrgncode` = {CUBE}.`frecrgncode`, '1正常', '9跨区划')"
+        type: string
+
+      # ── 时间维度 ──
+      - name: pay_date
+        title: 缴款日期
+        sql: "toDateOrNull({CUBE}.`fdate`)"
+        type: time
+      - name: clear_date
+        title: 清分日期
+        sql: "toDateOrNull({CUBE}.`fcleardate`)"
+        type: time
+      - name: trans_date
+        title: 划转日期
+        description: ftransdate_last（最近一轮）
+        sql: "toDateOrNull({CUBE}.`ftransdate_last`)"
+        type: time
+      - name: enter_date
+        title: 划拨到账日期
+        description: fenterdate_last（最近一轮）
+        sql: "toDateOrNull({CUBE}.`fenterdate_last`)"
+        type: time
+
+      # ── 技术键 ──
+      - name: fid
+        title: 清分记录ID
+        description: FNE_FundDivide.FID——multi-fact 合并 join 路径（核实项 9）
+        sql: "{CUBE}.`fid`"
+        type: string
+        public: false
+      - name: paybook_sub_id
+        title: 缴款书明细ID
+        description: fpaybooksubid——→ fiscal_collection.fid 的 join 路径（核实项 9）
+        sql: "{CUBE}.`fpaybooksubid`"
+        type: string
+        public: false
+      - name: data_tag
+        title: 数据标签
+        sql: "{CUBE}.`fdatatag`"
+        type: string
+        public: false
+
+# 行级权限：三条款骨架与五要素语义见 26-资金模块建模开发方案 §3.2，JWT 约定见 §3.1；
+# fdt 无缴款人字段，不需要 member_masking。
+# allocation 差异点：① 财政用户看流向需双区划 OR（§3.2 AND/OR #2），v1 先按 rec_rgn_code=本（只看划入）；
+# ② 场景 14 的 AND（chg_agency=本 AND rec_rgn=本单位区划）需 JWT 双有（§3.2 AND/OR #3）。
+    access_policy:
+      # ① 财政用户：划入方区划=本区划（双区划 OR 扩展挂 §3.2 验证）
+      - group: "*"
+        conditions:
+          - if: "{ securityContext.region_code }"
+        row_level:
+          filters:
+            - member: rec_rgn_code
+              operator: equals
+              values: ["{ securityContext.region_code }"]
+      # ② 单位用户：划出方单位=本单位（场景 14 的 AND rec_rgn 扩展挂 §3.2 验证）
+      - group: "*"
+        conditions:
+          - if: "{ securityContext.agency_code }"
+        row_level:
+          filters:
+            - member: chg_agency_code
+              operator: equals
+              values: ["{ securityContext.agency_code }"]
+      # ③ 平台/管理用户：双无属性 → 全量放行
+      - group: "*"
+        conditions:
+          - if: "{ not securityContext.region_code }"
+          - if: "{ not securityContext.agency_code }"
+        row_level:
+          allow_all: true

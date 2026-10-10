@@ -1,18 +1,11 @@
-# view_groups—— P5（docs/cube-dataqa-topic/01-design.md §9.2）
+# view_groups—— 26-资金模块建模开发方案 §7.3（fiscal_fund 组挂两 view）
 # AI 代理/前端按分组快速发现视图（/v1/meta 顶层返回 viewGroups）。
-# 原 ticket_cuv/ticket_verification 两幽灵 view 已由 writeoff_view 替代（P4.5）。
+# 旧模型（fiscal_payment/ticket_mgmt 组与 daybook/cbill/paybook/stock/writeoff 系列视图）
+# 已于 2026-10-10 移除，全量备份在 conf_backup_20261010/。
 view_groups:
-  - name: fiscal_payment
-    title: 财政缴款
-    description: 缴款书、用票相关视图
+  - name: fiscal_fund
+    title: 财政资金（非税全景）
+    description: 非税收入全景资金模块视图（CK 宽表 yunnan0508）
     includes:
-      - paybook_view
-      - usage_view
-  - name: ticket_mgmt
-    title: 票据管理
-    description: 领票、审验、监管、单位管理视图
-    includes:
-      - outbound_view
-      - writeoff_view
-      - superv_view
-      - agen_view
+      - fiscal_collection_view
+      - fiscal_allocation_view

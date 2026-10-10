@@ -1,0 +1,346 @@
+# 财政缴款全景事实（fne_paybook_full_high，1,272 行/129 列）—— 非税收入全景 P7 建模
+# docs/cube-dataqa-topic/26-非税收入全景建模初步设计.md §三 / 26-资金模块建模开发方案 §五
+# 缴收分侧：无前缀=缴款票面、rec_*=收入归属（§4.3）；码名对：code 分组 + name 展示（§4.2）
+# 口径：到账金额按 freceiveddate 衍生（fisenter='1' 实测不可用）；ftotalamt 禁 sum（fan trap）
+# ⚠️ CK 23.3.15 限制（2026-10-10 实测）：派生表同层 2 个及以上子查询 LEFT JOIN 时，
+#    外层查询无法解析星号展开列（UNKNOWN_IDENTIFIER）；归一化分 5 层嵌套、每层仅 1 个 join。
+cubes:
+  - name: fiscal_collection
+    title: 财政缴款全景
+    description: |
+      缴款全景事实 fne_paybook_full_high，明细粒度缴款书×项目行。
+      覆盖缴款+代收+收入归属+划拨状态(_last)；场景 1/2/4/5/6/7/8/12（§3.3.1）。
+      消费方统一从 fiscal_collection_view 查；cube 层只留原料。
+    public: true
+    data_source: ck_yunnan0508
+
+    sql: |
+      SELECT * FROM (
+        SELECT * FROM (
+          SELECT * FROM (
+            SELECT * FROM (
+              SELECT t.*, c.chg_agency_name_canon FROM fne_paybook_full_high t
+              LEFT JOIN (SELECT fchgagencode,
+                                arrayStringConcat(arraySort(groupUniqArray(fchgagenname)), ' / ') AS chg_agency_name_canon
+                         FROM fne_paybook_full_high GROUP BY fchgagencode) c ON t.fchgagencode = c.fchgagencode
+            ) x1
+            LEFT JOIN (SELECT frecrgncode,
+                              arrayStringConcat(arraySort(groupUniqArray(frecrgnname)), ' / ') AS rec_rgn_name_canon
+                       FROM fne_paybook_full_high WHERE frecrgncode != '' GROUP BY frecrgncode) r ON x1.frecrgncode = r.frecrgncode
+          ) x2
+          LEFT JOIN (SELECT fitemcode,
+                            arrayStringConcat(arraySort(groupUniqArray(fitemname)), ' / ') AS item_name_canon
+                     FROM fne_paybook_full_high WHERE fitemcode != '' GROUP BY fitemcode) i ON x2.fitemcode = i.fitemcode
+        ) x3
+        LEFT JOIN (SELECT fsubcode,
+                          arrayStringConcat(arraySort(groupUniqArray(fsubname)), ' / ') AS sub_name_canon
+                   FROM fne_paybook_full_high WHERE fsubcode != '' GROUP BY fsubcode) s ON x3.fsubcode = s.fsubcode
+      ) x4
+      LEFT JOIN (SELECT frecsubcode,
+                        arrayStringConcat(arraySort(groupUniqArray(frecsubname)), ' / ') AS rec_sub_name_canon
+                 FROM fne_paybook_full_high WHERE frecsubcode != '' GROUP BY frecsubcode) rs ON x4.frecsubcode = rs.frecsubcode
+
+    measures:
+      - name: count
+        title: 缴款明细行数
+        drill_members: [pay_date, chg_agency_name, rec_sub_name, item_name, payer_name]
+        type: count
+      - name: amt
+        title: 缴款金额(元)
+        description: famt 合计——缴款明细口径
+        drill_members: [pay_date, chg_agency_name, item_name]
+        sql: "{CUBE}.`famt`"
+        type: sum
+      - name: entered_amt
+        title: 到账金额(元)
+        description: sum(fimamt) WHERE freceiveddate 非空——2026-10-09 口径（fisenter='1' 实测不可用：'1'仅1行/空×1234）；完整判定=三条件（fisenter+fenterdate+ftrnasreconciledate），v1 按单条件
+        sql: "{CUBE}.`fimamt`"
+        type: sum
+        filters:
+          - sql: "{CUBE}.`freceiveddate` != ''"
+      - name: total_amt
+        title: 票面金额(元)
+        description: 整票金额复印在每明细行（fan trap）——仅供明细下钻，禁 sum，max=该组最大票面金额
+        sql: "{CUBE}.`ftotalamt`"
+        type: max
+      - name: number
+        title: 执收数量
+        description: fnumber 合计——跨计量单位混总无意义，按 units 分组时才可加（初步设计 §八.9）
+        sql: "{CUBE}.`fnumber`"
+        type: sum
+
+    dimensions:
+      # ── 码名对（初步设计 §4.2）：code 分组 + name 展示；5 个归一化 + 执收区划原值 ──
+      - name: chg_agency_code
+        title: 执收单位编码
+        sql: "{CUBE}.`fchgagencode`"
+        type: string
+      - name: chg_agency_name
+        title: 执收单位名称
+        description: 全部别名字典序拼接（' / '）——一码多名测试脏数据，仅展示不作准，分组用 code（§4.4）
+        sql: chg_agency_name_canon
+        type: string
+      - name: rec_rgn_code
+        title: 收入区划编码
+        description: 收入归属区划（frecrgncode）——行级过滤维度，JWT region_code 注入于此（§3.1）
+        sql: "{CUBE}.`frecrgncode`"
+        type: string
+      - name: rec_rgn_name
+        title: 收入区划名称
+        description: 归一化拼接，仅展示
+        sql: rec_rgn_name_canon
+        type: string
+      - name: chg_rgn_code
+        title: 执收区划编码
+        sql: "{CUBE}.`fchgrgncode`"
+        type: string
+      - name: chg_rgn_name
+        title: 执收区划名称
+        description: 原值不归一化（§4.2：名称列是 ETL 补充，2026-10-09 拍板）
+        sql: "{CUBE}.`fchgrgnname`"
+        type: string
+      - name: item_code
+        title: 项目编码
+        sql: "{CUBE}.`fitemcode`"
+        type: string
+      - name: item_name
+        title: 项目名称
+        description: 归一化拼接，仅展示
+        sql: item_name_canon
+        type: string
+      - name: sub_code
+        title: 预算科目（缴款票面）
+        description: 缴款书票面申报的科目口径（fsubcode）
+        sql: "{CUBE}.`fsubcode`"
+        type: string
+      - name: sub_name
+        title: 预算科目名称（缴款票面）
+        description: 归一化拼接，仅展示
+        sql: sub_name_canon
+        type: string
+      - name: rec_sub_code
+        title: 预算科目（收入归属）
+        description: 清分/分成后资金实际归属的科目口径（frecsubcode）
+        sql: "{CUBE}.`frecsubcode`"
+        type: string
+      - name: rec_sub_name
+        title: 预算科目名称（收入归属）
+        description: 归一化拼接，仅展示
+        sql: rec_sub_name_canon
+        type: string
+
+      # ── 缴收分侧其余成员（§4.3）──
+      - name: funds_nature_code
+        title: 资金性质编码（缴款票面）
+        sql: "{CUBE}.`ffundsnaturecode`"
+        type: string
+      - name: funds_nature_name
+        title: 资金性质名称（缴款票面）
+        sql: "{CUBE}.`ffundsnaturename`"
+        type: string
+      - name: rec_funds_nature_code
+        title: 资金性质编码（收入归属）
+        sql: "{CUBE}.`frecfundsnaturecode`"
+        type: string
+      - name: rec_funds_nature_name
+        title: 资金性质名称（收入归属）
+        sql: "{CUBE}.`frecfundsnaturename`"
+        type: string
+      - name: rec_bgt_agen_code
+        title: 收入方预算归类编码
+        sql: "{CUBE}.`frecbgtagencode`"
+        type: string
+      - name: rec_bgt_agen_name
+        title: 收入方预算归类名称
+        sql: "{CUBE}.`frecbgtagenname`"
+        type: string
+
+      # ── 无名称实体（§4.3：只 code，不造名字）──
+      - name: rec_agency_code
+        title: 收入单位编码
+        description: frecagenidcode——名称列缺口，待 ETL 补（核实项 7）
+        sql: "{CUBE}.`frecagenidcode`"
+        type: string
+      - name: chgfin_dept_id
+        title: 归口业务处室ID
+        description: fchgfindeptid，1259/1272（99%）；fdeptid/fbusinessorgcode 实测全 0 不建（核实项 13/14）
+        sql: "{CUBE}.`fchgfindeptid`"
+        type: string
+
+      # ── 普通维度 ──
+      - name: bus_type
+        title: 业务类型
+        description: fbustype（直缴/汇缴）
+        sql: "{CUBE}.`fbustype`"
+        type: string
+      - name: income_sort_code
+        title: 收入类别编码
+        sql: "{CUBE}.`fincomesortcode`"
+        type: string
+      - name: income_sort_name
+        title: 收入类别名称
+        sql: "{CUBE}.`fincomesortname`"
+        type: string
+      - name: acc_agen_code
+        title: 代理单位编码
+        sql: "{CUBE}.`faccagencode`"
+        type: string
+      - name: acc_agen_name
+        title: 代理单位名称
+        sql: "{CUBE}.`faccagenname`"
+        type: string
+      - name: rec_bank_code
+        title: 收款银行编码
+        sql: "{CUBE}.`frecbankcode`"
+        type: string
+      - name: rec_bank_name
+        title: 收款银行名称
+        sql: "{CUBE}.`frecbankname`"
+        type: string
+      - name: rec_acct_bank
+        title: 收款账户开户行名称
+        description: frecacctbank（fpf）；不用 fbankoutlet（=网点编码）
+        sql: "{CUBE}.`frecacctbank`"
+        type: string
+      - name: rec_acct_name
+        title: 收款账户名称
+        sql: "{CUBE}.`frecacctname`"
+        type: string
+      - name: rec_acct_type
+        title: 收款账户类型
+        description: frecaccttype 字典 136：0虚拟/1财政专户/2汇缴专户/3待解缴/4单位监管/5国库/7单位清分/9其他
+        sql: "{CUBE}.`frecaccttype`"
+        type: string
+      - name: bgt_style
+        title: 资金管理方式
+        description: fbgtstyle：1国库 2专户 3代收 4其他（实测无 3）
+        sql: "{CUBE}.`fbgtstyle`"
+        type: string
+      - name: calc_source
+        title: 分解来源
+        description: fcalcsource：1不分成 2分成 3提留 4余额——是否分成 = ≠'1'，分成比例无数据列
+        sql: "{CUBE}.`fcalcsource`"
+        type: string
+      - name: pay_channel
+        title: 缴款渠道
+        sql: "{CUBE}.`fpaychannel`"
+        type: string
+      - name: state
+        title: 缴款书状态
+        sql: "{CUBE}.`fstate`"
+        type: string
+      - name: pay_code
+        title: 缴款码
+        description: fpaycode——票据流 join 桥（§3.5）
+        sql: "{CUBE}.`fpaycode`"
+        type: string
+      - name: units
+        title: 计量单位
+        sql: "{CUBE}.`funits`"
+        type: string
+
+      # ── 时间维度（全 String → toDateOrNull，初步设计 §八.5；time_shift 同期对比靠 pay_date）──
+      - name: pay_date
+        title: 缴款日期
+        description: fdate（fpaytime 派生落地列）——跨日缴款勿用 ffilldate（§2.1）
+        sql: "toDateOrNull({CUBE}.`fdate`)"
+        type: time
+      - name: pay_time
+        title: 缴款时刻
+        description: fpaytime 原始来源（含时分秒），明细展示用
+        sql: "{CUBE}.`fpaytime`"
+        type: string
+      - name: received_date
+        title: 资金到账日期
+        description: freceiveddate——前端"收入日期"即绑它；与 enter_date 口径不同勿混用
+        sql: "toDateOrNull({CUBE}.`freceiveddate`)"
+        type: time
+      - name: enter_date
+        title: 划拨到账日期
+        description: fenterdate（报文侧入库/划拨到账）
+        sql: "toDateOrNull({CUBE}.`fenterdate`)"
+        type: time
+      - name: clear_date
+        title: 清分日期
+        description: fcleardate——独立口径，与缴款日期无关
+        sql: "toDateOrNull({CUBE}.`fcleardate`)"
+        type: time
+      - name: eff_date
+        title: 缴款书有效期
+        description: feffdate——欠缴催缴判定（场景 12：fstate=待缴款 + 已过期）
+        sql: "toDateOrNull({CUBE}.`feffdate`)"
+        type: time
+
+      # ── 敏感字段（§4.3：建维度 + mask 脱敏）──
+      - name: payer_name
+        title: 缴款人名称
+        description: fpayername——access_policy 脱敏；fpayerno/fpayerid 账号敏感不建维度
+        sql: "{CUBE}.`fpayername`"
+        type: string
+
+      # ── 技术键（可建但 public: false，§4.3）──
+      - name: fpid
+        title: 缴款书ID
+        sql: "{CUBE}.`fpid`"
+        type: string
+        public: false
+      - name: fid
+        title: 明细行ID
+        sql: "{CUBE}.`fid`"
+        type: string
+        public: false
+      - name: paybook_sub_id
+        title: 缴款书明细ID
+        sql: "{CUBE}.`fpaybooksubid`"
+        type: string
+        public: false
+      - name: data_tag
+        title: 数据标签
+        description: fdatatag 实测全空（核实项 5）
+        sql: "{CUBE}.`fdatatag`"
+        type: string
+        public: false
+
+# 行级权限：三条款骨架与五要素语义见 26-资金模块建模开发方案 §3.2（group/conditions/member_level/member_masking/row_level），
+# JWT 占位符与 claims 约定见 §3.1，白名单制硬语义见 §3.2（未命中任何策略=整表拒绝 1=0）。
+# collection 差异点：① 财政用户区划过滤落 rec_rgn_code（收入归属区划=财政口径），不是执收区划；
+# ② payer_name 脱敏（excludes+masking 同条策略）；③ rec_rgn_code 空值行丢行已核（初步设计 §9.2 #16）。
+# 完整过程同 daybook/cbill（docs/11、03-行级权限记录）。
+    access_policy:
+      # ① 财政用户：JWT 带 region_code → 收入归属区划=本区划
+      - group: "*"
+        conditions:
+          - if: "{ securityContext.region_code }"
+        member_level:
+          excludes: [payer_name]
+        member_masking:
+          includes: [payer_name]
+        row_level:
+          filters:
+            - member: rec_rgn_code
+              operator: equals
+              values: ["{ securityContext.region_code }"]
+      # ② 单位用户：JWT 带 agency_code → 执收单位=本单位（场景 13）
+      - group: "*"
+        conditions:
+          - if: "{ securityContext.agency_code }"
+        member_level:
+          excludes: [payer_name]
+        member_masking:
+          includes: [payer_name]
+        row_level:
+          filters:
+            - member: chg_agency_code
+              operator: equals
+              values: ["{ securityContext.agency_code }"]
+      # ③ 平台/管理用户：region、agency 均无 → 全量放行（两条 conditions AND）
+      - group: "*"
+        conditions:
+          - if: "{ not securityContext.region_code }"
+          - if: "{ not securityContext.agency_code }"
+        member_level:
+          excludes: [payer_name]
+        member_masking:
+          includes: [payer_name]
+        row_level:
+          allow_all: true

@@ -12,7 +12,6 @@ cubes:
       覆盖缴款+代收+收入归属+划拨状态(_last)；场景 1/2/4/5/6/7/8/12（§3.3.1）。
       消费方统一从 fiscal_collection_view 查；cube 层只留原料。
     public: true
-    data_source: ck_yunnan0508
 
     sql: |
       SELECT * FROM (
@@ -43,17 +42,19 @@ cubes:
     measures:
       - name: count
         title: 缴款明细行数
-        drill_members: [pay_date, chg_agency_name, rec_sub_name, item_name, payer_name]
+        drill_members: [ pay_date, chg_agency_name, rec_sub_name, item_name, payer_name ]
         type: count
       - name: amt
         title: 缴款金额(元)
         description: famt 合计——缴款明细口径
-        drill_members: [pay_date, chg_agency_name, item_name]
+        drill_members: [ pay_date, chg_agency_name, item_name ]
         sql: "{CUBE}.`famt`"
         type: sum
       - name: entered_amt
         title: 到账金额(元)
-        description: sum(fimamt) WHERE freceiveddate 非空——2026-10-09 口径（fisenter='1' 实测不可用：'1'仅1行/空×1234）；完整判定=三条件（fisenter+fenterdate+ftrnasreconciledate），v1 按单条件
+        description: sum(fimamt) WHERE freceiveddate 非空——2026-10-09 口径（fisenter='1'
+          实测不可用：'1'仅1行/空×1234）；完整判定=三条件（fisenter+fenterdate+ftrnasreconciledate），v1
+          按单条件
         sql: "{CUBE}.`fimamt`"
         type: sum
         filters:
@@ -163,7 +164,8 @@ cubes:
         type: string
       - name: chgfin_dept_id
         title: 归口业务处室ID
-        description: fchgfindeptid，1259/1272（99%）；fdeptid/fbusinessorgcode 实测全 0 不建（核实项 13/14）
+        description: fchgfindeptid，1259/1272（99%）；fdeptid/fbusinessorgcode 实测全 0 不建（核实项
+          13/14）
         sql: "{CUBE}.`fchgfindeptid`"
         type: string
 
@@ -227,6 +229,8 @@ cubes:
         type: string
       - name: state
         title: 缴款书状态
+        description: fstate：1正常(待缴款) 2作废 3已缴款确认——欠缴判定=1正常+eff_date 过期（场景 12；实测 3=1257
+          行占绝对主体）
         sql: "{CUBE}.`fstate`"
         type: string
       - name: pay_code
@@ -301,46 +305,62 @@ cubes:
         type: string
         public: false
 
-# 行级权限：三条款骨架与五要素语义见 26-资金模块建模开发方案 §3.2（group/conditions/member_level/member_masking/row_level），
-# JWT 占位符与 claims 约定见 §3.1，白名单制硬语义见 §3.2（未命中任何策略=整表拒绝 1=0）。
-# collection 差异点：① 财政用户区划过滤落 rec_rgn_code（收入归属区划=财政口径），不是执收区划；
-# ② payer_name 脱敏（excludes+masking 同条策略）；③ rec_rgn_code 空值行丢行已核（初步设计 §9.2 #16）。
-# 完整过程同 daybook/cbill（docs/11、03-行级权限记录）。
+    # 行级权限：三条款骨架与五要素语义见 26-资金模块建模开发方案 §3.2（group/conditions/member_level/member_masking/row_level），
+    # JWT 占位符与 claims 约定见 §3.1，白名单制硬语义见 §3.2（未命中任何策略=整表拒绝 1=0）。
+    # collection 差异点：① 财政用户区划过滤落 rec_rgn_code（收入归属区划=财政口径），不是执收区划；
+    # ② payer_name 脱敏（excludes+masking 同条策略）；③ rec_rgn_code 空值行丢行已核（初步设计 §9.2 #16）。
+    # 完整过程同 daybook/cbill（docs/11、03-行级权限记录）。
     access_policy:
       # ① 财政用户：JWT 带 region_code → 收入归属区划=本区划
       - group: "*"
         conditions:
           - if: "{ securityContext.region_code }"
         member_level:
-          excludes: [payer_name]
+          excludes: [ payer_name ]
         member_masking:
-          includes: [payer_name]
+          includes: [ payer_name ]
         row_level:
           filters:
             - member: rec_rgn_code
               operator: equals
-              values: ["{ securityContext.region_code }"]
+              values: [ "{ securityContext.region_code }" ]
       # ② 单位用户：JWT 带 agency_code → 执收单位=本单位（场景 13）
       - group: "*"
         conditions:
           - if: "{ securityContext.agency_code }"
         member_level:
-          excludes: [payer_name]
+          excludes: [ payer_name ]
         member_masking:
-          includes: [payer_name]
+          includes: [ payer_name ]
         row_level:
           filters:
             - member: chg_agency_code
               operator: equals
-              values: ["{ securityContext.agency_code }"]
+              values: [ "{ securityContext.agency_code }" ]
       # ③ 平台/管理用户：region、agency 均无 → 全量放行（两条 conditions AND）
       - group: "*"
         conditions:
           - if: "{ not securityContext.region_code }"
           - if: "{ not securityContext.agency_code }"
         member_level:
-          excludes: [payer_name]
+          excludes: [ payer_name ]
         member_masking:
-          includes: [payer_name]
+          includes: [ payer_name ]
         row_level:
           allow_all: true
+    pre_aggregations:
+      - name: main
+        measures:
+          - fiscal_collection.count
+          - fiscal_collection.amt
+        dimensions:
+          - fiscal_collection.state
+        timeDimension: fiscal_collection.pay_date
+        granularity: month
+        # CK 23.3.15 强制：预聚合必须带 indexes（MergeTree ORDER BY 即主键），
+        # 缺失报 UserError "doesn't support pre-aggregations without indexes"
+        indexes:
+          - name: main_idx
+            columns:
+              - fiscal_collection.state
+              - fiscal_collection.pay_date.month

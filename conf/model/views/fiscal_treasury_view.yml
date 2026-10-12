@@ -1,0 +1,46 @@
+# 缴库入库交付视图—— 非税收入全景 P10（26-资金模块建模开发方案 §八）
+# 消费方（BI/前端/REST）统一从 view 查；cube 层只留原料。
+# 不建 folders：缴库入库无缴收分侧需求（单侧口径），成员约 20 个一屏可览——
+# folder 是 UI 分组，无分侧不硬造；AI 区分口径主力 = ai_context + title。
+views:
+  - name: fiscal_treasury_view
+    title: 缴库入库明细+汇总
+    description: 缴库入库事实（ftm，去重后明细粒度缴库单×科目）；已入国库笔数/金额、按科目/区划汇总
+    meta:
+      ai_context: >-
+        缴库入库视图，一行一笔缴库明细（缴库单×科目，已按明细去重）；缴库单数用 bill_count，明细笔数用 count。
+        三环节状态：缴库回执成功 status='9'；已入国库 enter_status='1'；对账成功 reconcile_status='1'。
+        "已入国库多少笔/金额"= count/amt + enter_status='1'，时间轴必须用 enter_date（入国库日期）；
+        缴库单量/日报趋势按 build_date（缴库日期=建单日），两者口径不同勿混用。
+        金额：明细金额用 amt；total_amt 是整单金额复印在每明细行，禁 sum。
+        分组用 sub_code；sub_name 是全部别名字典序拼接（一码多名脏数据），仅展示不作准。
+        缴库单科目是清分归属口径，与 collection 视图的缴款票面科目（sub_*）不可混用。
+        双侧区划：资金来源侧 chg_rgn_code、收入归属侧 rec_rgn_code，均无名称列只出编码。
+        分成比例 share_rate 是位串编码（多段定长比例序列），仅供原样展示，人工解读口径二期再定。
+        缴库数据暂无执收单位/缴款码维度（源列全空），按单位或缴款书查缴库暂不可行，单位用户查询为空属预期。
+    cubes:
+      - join_path: fiscal_treasury
+        includes:
+          - count
+          - bill_count
+          - amt
+          - total_amt
+          - trans_no
+          - sub_code
+          - sub_name
+          - sub_level
+          - sub_level_name
+          - status
+          - enter_status
+          - reconcile_status
+          - share_rate
+          - chg_rgn_code
+          - rec_rgn_code
+          - pay_acct_name
+          - rec_acct_name
+          - build_date
+          - enter_date
+          - reconcile_date
+        excludes:
+          - fid             # 技术键——view 不继承 public:false，显式挡
+          - fpid

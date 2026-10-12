@@ -1,4 +1,4 @@
-# view_groups—— 26-资金模块建模开发方案 §7.3（fiscal_fund 组挂两 view）
+# view_groups—— 26-资金模块建模开发方案 §8.4（fiscal_fund 组挂三 view）
 # AI 代理/前端按分组快速发现视图（/v1/meta 顶层返回 viewGroups）。
 # 旧模型（fiscal_payment/ticket_mgmt 组与 daybook/cbill/paybook/stock/writeoff 系列视图）
 # 已于 2026-10-10 移除，全量备份在 conf_backup_20261010/。
@@ -9,3 +9,4 @@ view_groups:
     includes:
       - fiscal_collection_view
       - fiscal_allocation_view
+      - fiscal_treasury_view

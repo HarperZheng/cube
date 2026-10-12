@@ -1,0 +1,228 @@
+# 缴库入库事实（fne_treasury_transfer_new，505 行/90 列，去重后 76 明细/70 单）—— 非税收入全景 P10 建模
+# docs/cube-dataqa-topic/26-资金模块建模开发方案.md §七
+# 粒度：主 sql 按 fid 去重（505→76，一行一笔"缴库单×科目"明细）；扇出源 ftranscollectid 不进维度（开放项 #7）
+# 口径：三环节 status='9'（回执）/enter_status='1'（已入国库）/reconcile_status='1'（对账）；
+#       "已入国库 N 笔"= count + enter_status='1'，时间轴用 enter_date；缴库量/日报按 build_date；
+#       ftotalamt=整单金额复印禁 sum（fan trap 实测）；fchgagencode 全空→无单位维度（②条款空结果属预期）
+# ⚠️ CK 23.3.15 惯例：每层仅 1 个 join、显式 ON；去重 any() 确定性依据=除 ftranscollectid 外同 fid 全恒定（2026-10-12 逐列验证）
+cubes:
+  - name: fiscal_treasury
+    title: 缴库入库
+    description: |
+      缴库入库事实 fne_treasury_transfer_new，明细粒度缴库单×科目（按 fid 去重）。
+      缴库回执/入国库/对账三环节状态；已入国库笔数与金额、按科目/区划汇总。
+      消费方统一从 fiscal_treasury_view 查；cube 层只留原料。
+    public: true
+
+    sql: |
+      SELECT * FROM (
+        SELECT fid,
+               any(fpid) AS fpid, any(ftransno) AS ftransno,
+               any(fsubcode) AS fsubcode, any(fsubname) AS fsubname,
+               any(fsublevel) AS fsublevel, any(fsublevelname) AS fsublevelname,
+               any(fstatus) AS fstatus, any(fenterstatus) AS fenterstatus,
+               any(freconcilestatus) AS freconcilestatus, any(fsharerate) AS fsharerate,
+               any(fchgrgncode) AS fchgrgncode, any(frecrgncode) AS frecrgncode,
+               any(fchgagencode) AS fchgagencode,
+               any(fpayacctname) AS fpayacctname, any(frecacctname) AS frecacctname,
+               any(fdate) AS fdate, any(fenterdate) AS fenterdate,
+               any(freconciledate) AS freconciledate,
+               any(famt) AS famt, any(ftotalamt) AS ftotalamt
+        FROM fne_treasury_transfer_new
+        GROUP BY fid
+      ) t
+      LEFT JOIN (SELECT fsubcode,
+                        arrayStringConcat(arraySort(groupUniqArray(fsubname)), ' / ') AS sub_name_canon
+                 FROM fne_treasury_transfer_new WHERE fsubcode != '' GROUP BY fsubcode) s
+      ON t.fsubcode = s.fsubcode
+
+    measures:
+      - name: count
+        title: 缴库明细笔数
+        description: 去重后一行一笔缴库明细（缴库单×科目）——"已入国库多少笔"的主口径
+        drill_members: [build_date, trans_no, sub_code, sub_name, enter_status]
+        type: count
+      - name: bill_count
+        title: 缴库单数
+        description: ftransno 去重计数——一张缴库单多科目行时 count 会计多，单数用它
+        drill_members: [build_date, trans_no, enter_status]
+        sql: "{CUBE}.`ftransno`"
+        type: countDistinct
+      - name: amt
+        title: 缴库金额(元)
+        description: famt 合计——缴库明细口径（去重后 sum 正确；不去重会虚高 6.6 倍）
+        drill_members: [build_date, trans_no, sub_code]
+        sql: "{CUBE}.`famt`"
+        type: sum
+      - name: total_amt
+        title: 缴库单票面金额(元)
+        description: 整单金额复印在每明细行（fan trap 实测：同单各科目行 ftotalamt 同值=各行 famt 之和）——仅供明细下钻，禁 sum，max=该组最大票面金额
+        sql: "{CUBE}.`ftotalamt`"
+        type: max
+
+    dimensions:
+      # ── 码名对（初步设计 §4.2）：本表仅科目有名称列；12 码/13 名一码多名实测 ──
+      - name: sub_code
+        title: 预算科目（缴库）
+        description: fsubcode——缴库单科目=清分归属口径（与 collection 视图 rec_sub_* 同源），勿与缴款票面 sub_* 混用
+        sql: "{CUBE}.`fsubcode`"
+        type: string
+      - name: sub_name
+        title: 预算科目名称（缴库）
+        description: 归一化拼接（12 码/13 名一码多名实测），仅展示不作准
+        sql: sub_name_canon
+        type: string
+
+      # ── 普通维度（枚举写全，约定 #5）──
+      - name: trans_no
+        title: 缴库编号
+        description: ftransno——缴库单业务单号（70 张）
+        sql: "{CUBE}.`ftransno`"
+        type: string
+      - name: status
+        title: 缴库回执状态
+        description: fstatus——9缴库回执成功 0未成功（源校验口径 IN('2','9')，CK 现状仅 0/9）
+        sql: "{CUBE}.`fstatus`"
+        type: string
+      - name: enter_status
+        title: 入库状态
+        description: fenterstatus——1已入国库 0未入库（"已入国库"判定口径，源系统 ETL 校验作业硬口径）
+        sql: "{CUBE}.`fenterstatus`"
+        type: string
+      - name: reconcile_status
+        title: 到账对账状态
+        description: freconcilestatus——1成功 0未对账（与 allocation 同名成员同款）
+        sql: "{CUBE}.`freconcilestatus`"
+        type: string
+      - name: sub_level
+        title: 非税级次编码
+        description: fsublevel——0共享级 2省级（fsublevelname 印证）；初步设计 Blocked 项，2026-10-12 实测已同步解锁
+        sql: "{CUBE}.`fsublevel`"
+        type: string
+      - name: sub_level_name
+        title: 非税级次名称
+        description: fsublevelname 原值——仅 2 值（共享级/省级）不归一
+        sql: "{CUBE}.`fsublevelname`"
+        type: string
+      - name: share_rate
+        title: 分成比例串
+        description: fsharerate——35 位定长比例序列（7 位一段），如 0630000/0370000=63/37 分成，8 种组合；原样展示勿人工解读，衍生解析二期（开放项 #8）
+        sql: "{CUBE}.`fsharerate`"
+        type: string
+      - name: chg_rgn_code
+        title: 执收区划编码
+        description: fchgrgncode——缴库单资金来源侧区划；无名称列（同 fdt）；行级过滤 OR 侧之一
+        sql: "{CUBE}.`fchgrgncode`"
+        type: string
+      - name: rec_rgn_code
+        title: 收入区划编码
+        description: frecrgncode——收入归属区划；无名称列；行级过滤维度（JWT region_code 注入，§3.1）
+        sql: "{CUBE}.`frecrgncode`"
+        type: string
+      - name: pay_acct_name
+        title: 付款账户名称
+        description: fpayacctname——缴库付款方账户名（6 值）；账号类列（fpayacct/fpayacctidcode）敏感不建
+        sql: "{CUBE}.`fpayacctname`"
+        type: string
+      - name: rec_acct_name
+        title: 收款账户名称
+        description: frecacctname——收款方账户名（3 值）；账号类列（frecacct/frecacctidcode）敏感不建
+        sql: "{CUBE}.`frecacctname`"
+        type: string
+
+      # ── 无名称实体（§4.3：只 code，不造名字）──
+      - name: chg_agency_code
+        title: 执收单位编码
+        description: fchgagencode——2026-10-12 实测全空；仅为②条款 access_policy 编译保留（不进 view），
+          单位用户查询空结果属预期，ETL 补列后自动生效（开放项 #9）
+        sql: "{CUBE}.`fchgagencode`"
+        type: string
+
+      # ── 时间维度（全 String → toDateOrNull）──
+      - name: build_date
+        title: 缴库日期（建单日）
+        description: fdate（源 FBUILDDATE，缴库单建单日）——主时间轴，日报/趋势按它；fpaydate 与之 100% 全等不建；与缴款日期（pay_date）是两个口径
+        sql: "toDateOrNull({CUBE}.`fdate`)"
+        type: time
+      - name: enter_date
+        title: 入国库日期
+        description: fenterdate——仅入库成功行有值；"已入国库 N 笔/金额"的时间轴必须用它，勿用 build_date
+        sql: "toDateOrNull({CUBE}.`fenterdate`)"
+        type: time
+      - name: reconcile_date
+        title: 对账日期
+        description: freconciledate——仅对账成功行有值
+        sql: "toDateOrNull({CUBE}.`freconciledate`)"
+        type: time
+
+      # ── 技术键（可建但 public: false，§4.3）──
+      - name: fid
+        title: 缴库明细ID
+        description: 去重键——主 sql GROUP BY 它（505→76）；同 fid 的 ftranscollectid 多值行已合并
+        sql: "{CUBE}.`fid`"
+        type: string
+        public: false
+      - name: fpid
+        title: 缴库单ID
+        sql: "{CUBE}.`fpid`"
+        type: string
+        public: false
+
+    # 行级权限：三条款骨架与五要素语义见 26-资金模块建模开发方案 §3.2，JWT 占位符与 claims 约定见 §3.1，
+    # 白名单制硬语义见 §3.2（未命中任何策略=整表拒绝 1=0）。
+    # treasury 差异点：① 财政用户双区划 OR（照 allocation 现款，§3.2 AND/OR #2 已验证）——缴库单双侧区划均有值，
+    #   rec_rgn_code 有 530100 下级行，equals 单边会丢行——OR 恰好兜住；
+    # ② 单位用户条款照挂但源列 fchgagencode 全空（2026-10-12 实测）——命中即空结果（属预期），
+    #   ETL 补列后自动生效；③ rec 双无 allow_all。ftm 无缴款人字段，不需要 member_masking。
+    access_policy:
+      # ① 财政用户：双区划 OR——资金来源侧或归属侧含本区划均可见（allocation ① 同款）
+      - group: "*"
+        conditions:
+          - if: "{ securityContext.region_code }"
+        row_level:
+          filters:
+            - or:
+                - member: chg_rgn_code
+                  operator: equals
+                  values: [ "{ securityContext.region_code }" ]
+                - member: rec_rgn_code
+                  operator: equals
+                  values: [ "{ securityContext.region_code }" ]
+      # ② 单位用户：照挂——fchgagencode 全空，命中=空结果（ETL 补列后自动生效，ai_context 已写明）
+      - group: "*"
+        conditions:
+          - if: "{ securityContext.agency_code }"
+        row_level:
+          filters:
+            - member: chg_agency_code
+              operator: equals
+              values: [ "{ securityContext.agency_code }" ]
+      # ③ 平台/管理用户：region、agency 均无 → 全量放行（两条 conditions AND）
+      - group: "*"
+        conditions:
+          - if: "{ not securityContext.region_code }"
+          - if: "{ not securityContext.agency_code }"
+        row_level:
+          allow_all: true
+
+    pre_aggregations:
+      - name: main
+        measures:
+          - fiscal_treasury.count
+          - fiscal_treasury.amt
+        dimensions:
+          - fiscal_treasury.status
+          - fiscal_treasury.enter_status
+          - fiscal_treasury.reconcile_status
+        timeDimension: fiscal_treasury.build_date
+        granularity: month
+        # CK 23.3.15 强制：预聚合必须带 indexes（MergeTree ORDER BY 即主键），
+        # 缺失报 UserError "doesn't support pre-aggregations without indexes"
+        # bill_count（countDistinct）不进预聚合，现算
+        indexes:
+          - name: main_idx
+            columns:
+              - fiscal_treasury.status
+              - fiscal_treasury.enter_status
+              - fiscal_treasury.reconcile_status
+              - fiscal_treasury.build_date.month

@@ -12,7 +12,6 @@ cubes:
       划入划出/收入来源/专户国库/划转状态；场景 3/10/11/14/15/16（§3.3）。
       消费方统一从 fiscal_allocation_view 查；cube 层只留原料。
     public: true
-    data_source: ck_yunnan0508
 
     sql: |
       SELECT * FROM (
@@ -219,18 +218,22 @@ cubes:
 
 # 行级权限：三条款骨架与五要素语义见 26-资金模块建模开发方案 §3.2，JWT 约定见 §3.1；
 # fdt 无缴款人字段，不需要 member_masking。
-# allocation 差异点：① 财政用户看流向需双区划 OR（§3.2 AND/OR #2），v1 先按 rec_rgn_code=本（只看划入）；
+# allocation 差异点：① 财政用户双区划 OR（chg_rgn=本 OR rec_rgn=本，§3.2 AND/OR #1/#2）——2026-10-10 实测通过；
 # ② 场景 14 的 AND（chg_agency=本 AND rec_rgn=本单位区划）需 JWT 双有（§3.2 AND/OR #3）。
     access_policy:
-      # ① 财政用户：划入方区划=本区划（双区划 OR 扩展挂 §3.2 验证）
+      # ① 财政用户：双区划 OR——本区划划出+划入均可见（嵌套 or: 条款，REST 同款）
       - group: "*"
         conditions:
           - if: "{ securityContext.region_code }"
         row_level:
           filters:
-            - member: rec_rgn_code
-              operator: equals
-              values: ["{ securityContext.region_code }"]
+            - or:
+                - member: chg_rgn_code
+                  operator: equals
+                  values: ["{ securityContext.region_code }"]
+                - member: rec_rgn_code
+                  operator: equals
+                  values: ["{ securityContext.region_code }"]
       # ② 单位用户：划出方单位=本单位（场景 14 的 AND rec_rgn 扩展挂 §3.2 验证）
       - group: "*"
         conditions:

@@ -143,3 +143,17 @@ CUBEJS_DS_<NAME>_PRE_AGGREGATIONS_DB_HOST=...
 - 查询并发：https://docs.cube.dev/admin/connect-to-data/querying-concurrency
 - 多租户 vs 多数据源：https://docs.cube.dev/embedding/multitenancy
 - 环境变量总表：https://docs.cube.dev/reference/environment-variables
+
+## 本项目现状（2026-10-10 实测）
+
+- default 已由 Oracle 换为 CK（yunnan0508），**单源模式**：.env 不声明 `CUBEJS_DATASOURCES`；
+  fiscal 两 cube（fiscal_collection/fiscal_allocation）不声明 `data_source`，全走默认。
+- **多源模式的判定只看 `CUBEJS_DATASOURCES` 环境变量**（shared/env.js `dataSources`/`isMultipleDataSources`），
+  不看有没有 `CUBEJS_DS_*` 变量。未声明时（单源模式）`data_source: <任意名>` 被直接放行
+  （`assertDataSource` 不查清单），所有连接变量落到裸 `CUBEJS_DB_*`——声明了命名源名但不配
+  env **不报错、静默回落默认源**。反过来说：配了 `CUBEJS_DS_*` 块但不声明 `CUBEJS_DATASOURCES`，
+  该块**不会被读**（死配置）。
+- `CUBEJS_DS_ORACLE_YN0411_*` 保留为 agent/db.js（Oracle 探索工具）专用连接；恢复 Oracle 为
+  默认源时需同时恢复 `CUBEJS_DATASOURCES`（如 `default,oracle_yn0411`）。
+- env_file 只在容器**创建**时注入：改 .env 后 `docker compose restart cube` 不重读，
+  必须 `docker compose up -d --force-recreate cube`。

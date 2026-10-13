@@ -79,26 +79,27 @@
 ### 3.2 部署定案：接口在 Cube 本身（:4000），preload hook 挂载注入
 
 - **机制**：`./preload.js:/preload.js` 是现有启动注入点（已承载 oracledb
-  thick、11g 分页改写等补丁），追加一段 require-hook：拦
-  `require('@cubejs-backend/api-gateway')`，包一层 `ApiGateway.prototype.initApp`，
-  在网关 express app 装配后追加挂载。**不动镜像、不 clone 源码仓、
-  不 build 不 link**；不选 yarn link 二开（全套工具链成本）与挂载覆盖
-  dist（动镜像、升级 drift）、兄弟服务（已定案接口在 :4000 本体）。
+  thick、11g 分页改写等补丁），追加一段 hook：拦 http.createServer，
+  在 Cube 路由之前认领 `/agent/*` 命名空间（embed-patch 同款模式，该
+  通路已在本项目长跑）——认领的路径全量自答，其余原样放行。
+  **不动镜像、不 clone 源码仓、不 build 不 link**；不选 yarn link 二开
+  （全套工具链成本）与挂载覆盖 dist（动镜像、升级 drift）、兄弟服务
+  （已定案接口在 :4000 本体）。
 - **路由前缀：顶层 `/agent`**，不塞 `/cubejs-api/v1/` 下——避开网关
   自有路由的通配遮蔽，与端点表一致。
-- **零内部依赖原则**：契约模块只拿 Express app 挂载点，不 import 网关
-  内部编译器/协调器——`/agent/query` 内部 loopback 调 `:4000/load`，
+- **零内部依赖原则**：契约模块只依赖 Node 原生 http/fs/crypto，不 import
+  网关任何内部模块——`/agent/query` 内部 loopback 调 `:4000/load`，
   meta/unmodel 直接读挂载卷（`conf/model/*.yml`、`conf/unmodel/*.json`）。
 - **挂载改动仅一行**：compose 里 `./agent:/cube/agent`（旧 CLI 工具）
   换成 `./agent-api:/cube/agent-api`（契约模块），preload.js 追加 hook 段，
   其余挂载不动。
 
-代码布局（`agent-api/`，纯 CommonJS，依赖 express/fs/js-yaml 从同进程
+代码布局（`agent-api/`，纯 CommonJS，依赖 fs/js-yaml 从同进程
 `/cube/node_modules` 解析，零打包）：
 
 ```
 agent-api/
-├── index.js       # agentRouter()：bearer 鉴权 + fail-closed 授权表 + 子路由装配
+├── index.js       # claim 骨架：bearer 鉴权 + fail-closed 授权表 + 子路由懒加载
 ├── meta.js        # GET /agent/meta · /agent/meta/:cube（扫 conf/model yml，mtime 缓存）
 ├── query.js       # POST /agent/query（loopback /load + 错误四分类
 │                  #   + truncated 标注 + hitPreAgg 命中自报）
@@ -110,15 +111,15 @@ agent-api/
 - **鉴权**：本地 bearer 中间件读同进程 `CUBEJS_API_SECRET`（hook 挂载在
   网关自有路由之外，checkAuth 覆盖不到，语义一致但不共用实现）。
 - **已知代价与对策**：契约进程=网关进程，handler 顶层 try/catch，异常转
-  结构化错误，绝不向 express 抛；yml 扫描按 mtime 缓存；hook 依赖官方
-  导出形态（`ApiGateway` 类 + `initApp` 方法），实现第 0 步探针核验
-  （`docker exec cube node -e "...prototype"` 后硬编码），失败模式全部
+  结构化错误，绝不向 http 层抛；yml 扫描按 mtime 缓存；hook 只依赖 Node
+  原生 http API（零 Cube 内部形态依赖，升级无探针步骤），失败模式全部
   显性（启动日志缺 `[preload] /agent routes mounted` 行 + `/agent/tools`
   404）；js-yaml 若未提升到根则取 schema-compiler 内部路径。
 - **开发循环**：改 `agent-api/*.js` → `docker compose restart cube`
   一条命令；index.js 对子模块懒加载 + `require.cache` 失效，改 handler
   文件不用重启，动 index.js 骨架或 preload hook 段才需 restart。
-- **升级故事**：镜像升级 = 重跑一次探针，导出名/方法名未变即零动作；
+- **升级故事**：镜像升级 = 冒烟一遍 `/agent/tools` 200 即零动作（hook 只
+  依赖 Node http API，无镜像内部形态依赖）；
   转正退路：将来要类型检查时六文件逻辑 1:1 搬进 `src/agent/*.ts` 走
   yarn link，hook 拆除。
 - **落地替换**：本项目 `agent/` 三个 CLI js（cube.js/unmodel.js/db.js）

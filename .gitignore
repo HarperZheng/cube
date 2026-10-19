@@ -14,6 +14,7 @@ __pycache__/
 *.pyc
 
 # 临时 / 调试残留
+.tmp/
 .tmp-*/
 regress/tmp-query.json
 query.json
@@ -24,3 +25,4 @@ agent-svc/node_modules/
 # 系统
 Thumbs.db
 .DS_Store
+*.rar

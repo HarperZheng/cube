@@ -1,0 +1,1924 @@
+{
+  "savedAt": "2026-10-12T03:52:39.613Z",
+  "results": [
+    {
+      "name": "1-财政收入明细(按缴款月)",
+      "query": {
+        "measures": [
+          "fiscal_collection_view.amt"
+        ],
+        "timeDimensions": [
+          {
+            "dimension": "fiscal_collection_view.pay_date",
+            "granularity": "month"
+          }
+        ],
+        "order": {
+          "fiscal_collection_view.pay_date": "asc"
+        }
+      },
+      "resultSet": {
+        "data": [
+          {
+            "fiscal_collection_view.pay_date.month": "2021-12-01T00:00:00.000",
+            "fiscal_collection_view.amt": "833",
+            "fiscal_collection_view.pay_date": "2021-12-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2022-01-01T00:00:00.000",
+            "fiscal_collection_view.amt": "13301",
+            "fiscal_collection_view.pay_date": "2022-01-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2022-02-01T00:00:00.000",
+            "fiscal_collection_view.amt": "40779",
+            "fiscal_collection_view.pay_date": "2022-02-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2022-03-01T00:00:00.000",
+            "fiscal_collection_view.amt": "19815",
+            "fiscal_collection_view.pay_date": "2022-03-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2022-04-01T00:00:00.000",
+            "fiscal_collection_view.amt": "15985631415",
+            "fiscal_collection_view.pay_date": "2022-04-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2022-05-01T00:00:00.000",
+            "fiscal_collection_view.amt": "494",
+            "fiscal_collection_view.pay_date": "2022-05-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2022-06-01T00:00:00.000",
+            "fiscal_collection_view.amt": "4112.9",
+            "fiscal_collection_view.pay_date": "2022-06-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2022-07-01T00:00:00.000",
+            "fiscal_collection_view.amt": "23",
+            "fiscal_collection_view.pay_date": "2022-07-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2022-08-01T00:00:00.000",
+            "fiscal_collection_view.amt": "17617.79",
+            "fiscal_collection_view.pay_date": "2022-08-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2022-09-01T00:00:00.000",
+            "fiscal_collection_view.amt": "5453.68",
+            "fiscal_collection_view.pay_date": "2022-09-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2022-10-01T00:00:00.000",
+            "fiscal_collection_view.amt": "38188.35",
+            "fiscal_collection_view.pay_date": "2022-10-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2022-11-01T00:00:00.000",
+            "fiscal_collection_view.amt": "236799.19",
+            "fiscal_collection_view.pay_date": "2022-11-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2022-12-01T00:00:00.000",
+            "fiscal_collection_view.amt": "2222928573.36",
+            "fiscal_collection_view.pay_date": "2022-12-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2023-02-01T00:00:00.000",
+            "fiscal_collection_view.amt": "44876",
+            "fiscal_collection_view.pay_date": "2023-02-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2023-03-01T00:00:00.000",
+            "fiscal_collection_view.amt": "4086",
+            "fiscal_collection_view.pay_date": "2023-03-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2023-04-01T00:00:00.000",
+            "fiscal_collection_view.amt": "5819",
+            "fiscal_collection_view.pay_date": "2023-04-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2023-05-01T00:00:00.000",
+            "fiscal_collection_view.amt": "1014",
+            "fiscal_collection_view.pay_date": "2023-05-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2023-06-01T00:00:00.000",
+            "fiscal_collection_view.amt": "43409.45",
+            "fiscal_collection_view.pay_date": "2023-06-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2023-07-01T00:00:00.000",
+            "fiscal_collection_view.amt": "1171872",
+            "fiscal_collection_view.pay_date": "2023-07-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2023-08-01T00:00:00.000",
+            "fiscal_collection_view.amt": "24457.08",
+            "fiscal_collection_view.pay_date": "2023-08-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2023-09-01T00:00:00.000",
+            "fiscal_collection_view.amt": "128914.88",
+            "fiscal_collection_view.pay_date": "2023-09-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2023-10-01T00:00:00.000",
+            "fiscal_collection_view.amt": "600",
+            "fiscal_collection_view.pay_date": "2023-10-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2023-11-01T00:00:00.000",
+            "fiscal_collection_view.amt": "37408.6",
+            "fiscal_collection_view.pay_date": "2023-11-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2023-12-01T00:00:00.000",
+            "fiscal_collection_view.amt": "3353.3",
+            "fiscal_collection_view.pay_date": "2023-12-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2024-01-01T00:00:00.000",
+            "fiscal_collection_view.amt": "164244.582",
+            "fiscal_collection_view.pay_date": "2024-01-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2024-02-01T00:00:00.000",
+            "fiscal_collection_view.amt": "46039471.7",
+            "fiscal_collection_view.pay_date": "2024-02-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2024-03-01T00:00:00.000",
+            "fiscal_collection_view.amt": "2864.62",
+            "fiscal_collection_view.pay_date": "2024-03-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2024-04-01T00:00:00.000",
+            "fiscal_collection_view.amt": "28982824.78",
+            "fiscal_collection_view.pay_date": "2024-04-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2024-05-01T00:00:00.000",
+            "fiscal_collection_view.amt": "22063",
+            "fiscal_collection_view.pay_date": "2024-05-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2024-06-01T00:00:00.000",
+            "fiscal_collection_view.amt": "5836.24",
+            "fiscal_collection_view.pay_date": "2024-06-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2024-07-01T00:00:00.000",
+            "fiscal_collection_view.amt": "1405.28",
+            "fiscal_collection_view.pay_date": "2024-07-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2024-08-01T00:00:00.000",
+            "fiscal_collection_view.amt": "610281.59",
+            "fiscal_collection_view.pay_date": "2024-08-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2024-09-01T00:00:00.000",
+            "fiscal_collection_view.amt": "6446.64",
+            "fiscal_collection_view.pay_date": "2024-09-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2024-10-01T00:00:00.000",
+            "fiscal_collection_view.amt": "141015.21",
+            "fiscal_collection_view.pay_date": "2024-10-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2024-11-01T00:00:00.000",
+            "fiscal_collection_view.amt": "7935.54",
+            "fiscal_collection_view.pay_date": "2024-11-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2024-12-01T00:00:00.000",
+            "fiscal_collection_view.amt": "140047.64",
+            "fiscal_collection_view.pay_date": "2024-12-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2025-01-01T00:00:00.000",
+            "fiscal_collection_view.amt": "30695653.3",
+            "fiscal_collection_view.pay_date": "2025-01-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2025-02-01T00:00:00.000",
+            "fiscal_collection_view.amt": "423",
+            "fiscal_collection_view.pay_date": "2025-02-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2025-03-01T00:00:00.000",
+            "fiscal_collection_view.amt": "27734.88",
+            "fiscal_collection_view.pay_date": "2025-03-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2025-04-01T00:00:00.000",
+            "fiscal_collection_view.amt": "15413.2",
+            "fiscal_collection_view.pay_date": "2025-04-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2025-06-01T00:00:00.000",
+            "fiscal_collection_view.amt": "5196.29",
+            "fiscal_collection_view.pay_date": "2025-06-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2025-07-01T00:00:00.000",
+            "fiscal_collection_view.amt": "1084",
+            "fiscal_collection_view.pay_date": "2025-07-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2025-09-01T00:00:00.000",
+            "fiscal_collection_view.amt": "1777.33",
+            "fiscal_collection_view.pay_date": "2025-09-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2025-10-01T00:00:00.000",
+            "fiscal_collection_view.amt": "4582.36",
+            "fiscal_collection_view.pay_date": "2025-10-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2025-11-01T00:00:00.000",
+            "fiscal_collection_view.amt": "1501",
+            "fiscal_collection_view.pay_date": "2025-11-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2025-12-01T00:00:00.000",
+            "fiscal_collection_view.amt": "1000.02",
+            "fiscal_collection_view.pay_date": "2025-12-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2026-01-01T00:00:00.000",
+            "fiscal_collection_view.amt": "4632",
+            "fiscal_collection_view.pay_date": "2026-01-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2026-04-01T00:00:00.000",
+            "fiscal_collection_view.amt": "1982.32",
+            "fiscal_collection_view.pay_date": "2026-04-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2026-05-01T00:00:00.000",
+            "fiscal_collection_view.amt": "7222",
+            "fiscal_collection_view.pay_date": "2026-05-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2026-06-01T00:00:00.000",
+            "fiscal_collection_view.amt": "14909895.85",
+            "fiscal_collection_view.pay_date": "2026-06-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2026-07-01T00:00:00.000",
+            "fiscal_collection_view.amt": "752.52",
+            "fiscal_collection_view.pay_date": "2026-07-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2026-08-01T00:00:00.000",
+            "fiscal_collection_view.amt": "700.66",
+            "fiscal_collection_view.pay_date": "2026-08-01T00:00:00.000"
+          }
+        ]
+      }
+    },
+    {
+      "name": "2-各单位收入(验证不裂组)",
+      "query": {
+        "measures": [
+          "fiscal_collection_view.amt"
+        ],
+        "dimensions": [
+          "fiscal_collection_view.chg_agency_code",
+          "fiscal_collection_view.chg_agency_name"
+        ],
+        "order": {
+          "fiscal_collection_view.chg_agency_code": "asc"
+        },
+        "limit": 20
+      },
+      "resultSet": {
+        "data": [
+          {
+            "fiscal_collection_view.chg_agency_code": "001",
+            "fiscal_collection_view.chg_agency_name": "测试分成测试",
+            "fiscal_collection_view.amt": "5184"
+          },
+          {
+            "fiscal_collection_view.chg_agency_code": "001001",
+            "fiscal_collection_view.chg_agency_name": "001测试收款 / 测试公安局",
+            "fiscal_collection_view.amt": "308"
+          },
+          {
+            "fiscal_collection_view.chg_agency_code": "105015",
+            "fiscal_collection_view.chg_agency_name": "云龙县长新乡中心学校",
+            "fiscal_collection_view.amt": "1156320"
+          },
+          {
+            "fiscal_collection_view.chg_agency_code": "124002",
+            "fiscal_collection_view.chg_agency_name": "云南一通用单位0303",
+            "fiscal_collection_view.amt": "5597"
+          },
+          {
+            "fiscal_collection_view.chg_agency_code": "124045",
+            "fiscal_collection_view.chg_agency_name": "001 / 测试云南测试环境 / 测试云南测试环境(试用版) / 测试云南测试环境(试用版)(试用版)",
+            "fiscal_collection_view.amt": "18223939573.49"
+          },
+          {
+            "fiscal_collection_view.chg_agency_code": "124100",
+            "fiscal_collection_view.chg_agency_name": "测试1125",
+            "fiscal_collection_view.amt": "12309.68"
+          },
+          {
+            "fiscal_collection_view.chg_agency_code": "124200",
+            "fiscal_collection_view.chg_agency_name": "云南测试环境1219",
+            "fiscal_collection_view.amt": "532"
+          },
+          {
+            "fiscal_collection_view.chg_agency_code": "124576",
+            "fiscal_collection_view.chg_agency_name": "测试云南通用测试单位0720",
+            "fiscal_collection_view.amt": "2057.68"
+          },
+          {
+            "fiscal_collection_view.chg_agency_code": "124577",
+            "fiscal_collection_view.chg_agency_name": "测试测试单位0722",
+            "fiscal_collection_view.amt": "1377.76"
+          },
+          {
+            "fiscal_collection_view.chg_agency_code": "124579",
+            "fiscal_collection_view.chg_agency_name": "测试云南通用Oracle0728",
+            "fiscal_collection_view.amt": "1100"
+          },
+          {
+            "fiscal_collection_view.chg_agency_code": "124880",
+            "fiscal_collection_view.chg_agency_name": "云南saas单位0927",
+            "fiscal_collection_view.amt": "1650"
+          },
+          {
+            "fiscal_collection_view.chg_agency_code": "124992",
+            "fiscal_collection_view.chg_agency_name": "云南信息技术中心 / 信息技术中心",
+            "fiscal_collection_view.amt": "578892"
+          },
+          {
+            "fiscal_collection_view.chg_agency_code": "124993",
+            "fiscal_collection_view.chg_agency_name": "云南体育彩票中心 / 体育彩票中心",
+            "fiscal_collection_view.amt": "700"
+          },
+          {
+            "fiscal_collection_view.chg_agency_code": "124994",
+            "fiscal_collection_view.chg_agency_name": "云南发展改革委员会 / 开票点001 / 开票点002",
+            "fiscal_collection_view.amt": "105848505.17"
+          },
+          {
+            "fiscal_collection_view.chg_agency_code": "125001",
+            "fiscal_collection_view.chg_agency_name": "测试云南医疗测试单位",
+            "fiscal_collection_view.amt": "533"
+          },
+          {
+            "fiscal_collection_view.chg_agency_code": "125019",
+            "fiscal_collection_view.chg_agency_name": "云南医疗单位0729 / 测试云南医疗单位0729",
+            "fiscal_collection_view.amt": "6864.26"
+          },
+          {
+            "fiscal_collection_view.chg_agency_code": "125020",
+            "fiscal_collection_view.chg_agency_name": "测试云南医疗单位0805",
+            "fiscal_collection_view.amt": "1915.12"
+          },
+          {
+            "fiscal_collection_view.chg_agency_code": "125022",
+            "fiscal_collection_view.chg_agency_name": "云南测试单位",
+            "fiscal_collection_view.amt": "9040.84"
+          },
+          {
+            "fiscal_collection_view.chg_agency_code": "125026",
+            "fiscal_collection_view.chg_agency_name": "云南医保测试单位改名 / 开票点一 / 李思维",
+            "fiscal_collection_view.amt": "33128.87"
+          },
+          {
+            "fiscal_collection_view.chg_agency_code": "125029",
+            "fiscal_collection_view.chg_agency_name": "云南医疗测试单位231124",
+            "fiscal_collection_view.amt": "1351.66"
+          }
+        ]
+      }
+    },
+    {
+      "name": "3-按单位划入划出",
+      "query": {
+        "measures": [
+          "fiscal_allocation_view.trans_amt"
+        ],
+        "dimensions": [
+          "fiscal_allocation_view.chg_agency_code",
+          "fiscal_allocation_view.rec_agency_code"
+        ],
+        "order": {
+          "fiscal_allocation_view.chg_agency_code": "asc"
+        },
+        "limit": 20
+      },
+      "resultSet": {
+        "data": [
+          {
+            "fiscal_allocation_view.chg_agency_code": "001",
+            "fiscal_allocation_view.rec_agency_code": "62aa363159804af19811045eeef897f0",
+            "fiscal_allocation_view.trans_amt": "2541"
+          },
+          {
+            "fiscal_allocation_view.chg_agency_code": "001",
+            "fiscal_allocation_view.rec_agency_code": "",
+            "fiscal_allocation_view.trans_amt": "2541"
+          },
+          {
+            "fiscal_allocation_view.chg_agency_code": "001001",
+            "fiscal_allocation_view.rec_agency_code": "642b4dd12583467495a797ac8d30f3de",
+            "fiscal_allocation_view.trans_amt": null
+          },
+          {
+            "fiscal_allocation_view.chg_agency_code": "105015",
+            "fiscal_allocation_view.rec_agency_code": "19477327339d473784d310202b94d06a",
+            "fiscal_allocation_view.trans_amt": null
+          },
+          {
+            "fiscal_allocation_view.chg_agency_code": "124002",
+            "fiscal_allocation_view.rec_agency_code": "46106965801c4908b0b206230d1f8430",
+            "fiscal_allocation_view.trans_amt": null
+          },
+          {
+            "fiscal_allocation_view.chg_agency_code": "124045",
+            "fiscal_allocation_view.rec_agency_code": "36299bf16778469f9c5eafdbf16cc588",
+            "fiscal_allocation_view.trans_amt": "63371"
+          },
+          {
+            "fiscal_allocation_view.chg_agency_code": "124100",
+            "fiscal_allocation_view.rec_agency_code": "5c18ec29b79c401585692d81369ebfaa",
+            "fiscal_allocation_view.trans_amt": null
+          },
+          {
+            "fiscal_allocation_view.chg_agency_code": "124576",
+            "fiscal_allocation_view.rec_agency_code": "d5058204153e43e0b0ef5785bb84cb1d",
+            "fiscal_allocation_view.trans_amt": null
+          },
+          {
+            "fiscal_allocation_view.chg_agency_code": "124577",
+            "fiscal_allocation_view.rec_agency_code": "67455953d68d41e38cad8625309e3d85",
+            "fiscal_allocation_view.trans_amt": null
+          },
+          {
+            "fiscal_allocation_view.chg_agency_code": "124579",
+            "fiscal_allocation_view.rec_agency_code": "ec8eb0f04b50405f95e528cd84cbc26c",
+            "fiscal_allocation_view.trans_amt": null
+          },
+          {
+            "fiscal_allocation_view.chg_agency_code": "124992",
+            "fiscal_allocation_view.rec_agency_code": "dd9c08b7a7b948f795ec3f26f05ccdd9",
+            "fiscal_allocation_view.trans_amt": "324"
+          },
+          {
+            "fiscal_allocation_view.chg_agency_code": "124993",
+            "fiscal_allocation_view.rec_agency_code": "5c3391a145e546c9b5f61a512b590516",
+            "fiscal_allocation_view.trans_amt": "100"
+          },
+          {
+            "fiscal_allocation_view.chg_agency_code": "124994",
+            "fiscal_allocation_view.rec_agency_code": "db33a748c53e4f70b8c71569127f71df",
+            "fiscal_allocation_view.trans_amt": "2936"
+          },
+          {
+            "fiscal_allocation_view.chg_agency_code": "124994",
+            "fiscal_allocation_view.rec_agency_code": "df155e380d804b90be68033d4333a80b",
+            "fiscal_allocation_view.trans_amt": "30"
+          },
+          {
+            "fiscal_allocation_view.chg_agency_code": "124994",
+            "fiscal_allocation_view.rec_agency_code": "",
+            "fiscal_allocation_view.trans_amt": null
+          },
+          {
+            "fiscal_allocation_view.chg_agency_code": "125019",
+            "fiscal_allocation_view.rec_agency_code": "1cc48566b4014c47b37e8e95b91a1a27",
+            "fiscal_allocation_view.trans_amt": null
+          },
+          {
+            "fiscal_allocation_view.chg_agency_code": "125020",
+            "fiscal_allocation_view.rec_agency_code": "57661ea5d7cc40ad8af57fe3909a3323",
+            "fiscal_allocation_view.trans_amt": null
+          },
+          {
+            "fiscal_allocation_view.chg_agency_code": "125022",
+            "fiscal_allocation_view.rec_agency_code": "",
+            "fiscal_allocation_view.trans_amt": null
+          },
+          {
+            "fiscal_allocation_view.chg_agency_code": "125022",
+            "fiscal_allocation_view.rec_agency_code": "9b39415edb664ecca1fda8bd3f42550d",
+            "fiscal_allocation_view.trans_amt": null
+          },
+          {
+            "fiscal_allocation_view.chg_agency_code": "125026",
+            "fiscal_allocation_view.rec_agency_code": "808548570b444a3ca6d9c1b4ed5428b7",
+            "fiscal_allocation_view.trans_amt": "664.62"
+          }
+        ]
+      }
+    },
+    {
+      "name": "4-各代理银行收入",
+      "query": {
+        "measures": [
+          "fiscal_collection_view.amt"
+        ],
+        "dimensions": [
+          "fiscal_collection_view.rec_bank_code",
+          "fiscal_collection_view.rec_bank_name"
+        ],
+        "order": {
+          "fiscal_collection_view.rec_bank_code": "asc"
+        },
+        "limit": 20
+      },
+      "resultSet": {
+        "data": [
+          {
+            "fiscal_collection_view.rec_bank_code": "0000_0002",
+            "fiscal_collection_view.rec_bank_name": "支付宝",
+            "fiscal_collection_view.amt": "1"
+          },
+          {
+            "fiscal_collection_view.rec_bank_code": "0100",
+            "fiscal_collection_view.rec_bank_name": "中国邮政储蓄银行 ",
+            "fiscal_collection_view.amt": "9761.32"
+          },
+          {
+            "fiscal_collection_view.rec_bank_code": "0102",
+            "fiscal_collection_view.rec_bank_name": "中国工商银行 ",
+            "fiscal_collection_view.amt": "15686561.58"
+          },
+          {
+            "fiscal_collection_view.rec_bank_code": "0103",
+            "fiscal_collection_view.rec_bank_name": "中国农业银行 ",
+            "fiscal_collection_view.amt": "4502.36"
+          },
+          {
+            "fiscal_collection_view.rec_bank_code": "0104",
+            "fiscal_collection_view.rec_bank_name": "中国银行 ",
+            "fiscal_collection_view.amt": "801252.02"
+          },
+          {
+            "fiscal_collection_view.rec_bank_code": "0105",
+            "fiscal_collection_view.rec_bank_name": "中国建设银行 ",
+            "fiscal_collection_view.amt": "18285883824.242"
+          },
+          {
+            "fiscal_collection_view.rec_bank_code": "0303",
+            "fiscal_collection_view.rec_bank_name": "中国光大银行 ",
+            "fiscal_collection_view.amt": "500"
+          },
+          {
+            "fiscal_collection_view.rec_bank_code": "1409",
+            "fiscal_collection_view.rec_bank_name": "云南省农村信用社联合社 ",
+            "fiscal_collection_view.amt": "1156320"
+          },
+          {
+            "fiscal_collection_view.rec_bank_code": "9999",
+            "fiscal_collection_view.rec_bank_name": "人民银行",
+            "fiscal_collection_view.amt": "28664480.61"
+          }
+        ]
+      }
+    },
+    {
+      "name": "5-各科目收入(收入归属侧)",
+      "query": {
+        "measures": [
+          "fiscal_collection_view.amt"
+        ],
+        "dimensions": [
+          "fiscal_collection_view.rec_sub_code",
+          "fiscal_collection_view.rec_sub_name"
+        ],
+        "order": {
+          "fiscal_collection_view.rec_sub_code": "asc"
+        },
+        "limit": 20
+      },
+      "resultSet": {
+        "data": [
+          {
+            "fiscal_collection_view.rec_sub_code": "",
+            "fiscal_collection_view.rec_sub_name": null,
+            "fiscal_collection_view.amt": "2314603154.582"
+          },
+          {
+            "fiscal_collection_view.rec_sub_code": "103010201",
+            "fiscal_collection_view.rec_sub_name": "中央农网还贷资金收入 / 中央农网还贷资金收入25 / 普通话水平测试费",
+            "fiscal_collection_view.amt": "15985900313.78"
+          },
+          {
+            "fiscal_collection_view.rec_sub_code": "1030106",
+            "fiscal_collection_view.rec_sub_name": "铁路建设基金收入",
+            "fiscal_collection_view.amt": "495345.65"
+          },
+          {
+            "fiscal_collection_view.rec_sub_code": "1030110",
+            "fiscal_collection_view.rec_sub_name": "民航发展基金收入",
+            "fiscal_collection_view.amt": "28944111"
+          },
+          {
+            "fiscal_collection_view.rec_sub_code": "1030115",
+            "fiscal_collection_view.rec_sub_name": "港口建设费收入",
+            "fiscal_collection_view.amt": "841795.8"
+          },
+          {
+            "fiscal_collection_view.rec_sub_code": "1030121",
+            "fiscal_collection_view.rec_sub_name": "旅游发展基金收入",
+            "fiscal_collection_view.amt": "158472.36"
+          },
+          {
+            "fiscal_collection_view.rec_sub_code": "1030129",
+            "fiscal_collection_view.rec_sub_name": "国家电影事业发展专项资金收入",
+            "fiscal_collection_view.amt": "36668.96"
+          },
+          {
+            "fiscal_collection_view.rec_sub_code": "1030146",
+            "fiscal_collection_view.rec_sub_name": "国有土地收益基金收入",
+            "fiscal_collection_view.amt": "22488"
+          },
+          {
+            "fiscal_collection_view.rec_sub_code": "103014899",
+            "fiscal_collection_view.rec_sub_name": "其他土地出让收入",
+            "fiscal_collection_view.amt": "33"
+          },
+          {
+            "fiscal_collection_view.rec_sub_code": "1030149",
+            "fiscal_collection_view.rec_sub_name": "大中型水库移民后期扶持基金收入",
+            "fiscal_collection_view.amt": "60"
+          },
+          {
+            "fiscal_collection_view.rec_sub_code": "1030219",
+            "fiscal_collection_view.rec_sub_name": "教育资金收入",
+            "fiscal_collection_view.amt": "620"
+          },
+          {
+            "fiscal_collection_view.rec_sub_code": "103040702",
+            "fiscal_collection_view.rec_sub_name": "考试考务费",
+            "fiscal_collection_view.amt": "1360"
+          },
+          {
+            "fiscal_collection_view.rec_sub_code": "103042706",
+            "fiscal_collection_view.rec_sub_name": "教师资格考试费",
+            "fiscal_collection_view.amt": "6531"
+          },
+          {
+            "fiscal_collection_view.rec_sub_code": "103042707",
+            "fiscal_collection_view.rec_sub_name": "普通话水平测试费",
+            "fiscal_collection_view.amt": "433"
+          },
+          {
+            "fiscal_collection_view.rec_sub_code": "103042751",
+            "fiscal_collection_view.rec_sub_name": "预防接种劳务费",
+            "fiscal_collection_view.amt": "1156320"
+          },
+          {
+            "fiscal_collection_view.rec_sub_code": "103042755",
+            "fiscal_collection_view.rec_sub_name": "中等职业学校学费",
+            "fiscal_collection_view.amt": "4713"
+          },
+          {
+            "fiscal_collection_view.rec_sub_code": "103042758",
+            "fiscal_collection_view.rec_sub_name": "高等学校住宿费",
+            "fiscal_collection_view.amt": "16643"
+          },
+          {
+            "fiscal_collection_view.rec_sub_code": "103042762",
+            "fiscal_collection_view.rec_sub_name": "考试考务费",
+            "fiscal_collection_view.amt": "17080"
+          },
+          {
+            "fiscal_collection_view.rec_sub_code": "103045754",
+            "fiscal_collection_view.rec_sub_name": "教材费",
+            "fiscal_collection_view.amt": "860"
+          },
+          {
+            "fiscal_collection_view.rec_sub_code": "1030801",
+            "fiscal_collection_view.rec_sub_name": "国外捐赠收入",
+            "fiscal_collection_view.amt": "100"
+          }
+        ]
+      }
+    },
+    {
+      "name": "6-各项目收入(专户国库+跨年对比)",
+      "query": {
+        "measures": [
+          "fiscal_collection_view.amt"
+        ],
+        "dimensions": [
+          "fiscal_collection_view.item_code",
+          "fiscal_collection_view.bgt_style"
+        ],
+        "timeDimensions": [
+          {
+            "dimension": "fiscal_collection_view.pay_date",
+            "granularity": "year",
+            "dateRange": [
+              "2025-01-01",
+              "2026-12-31"
+            ]
+          }
+        ],
+        "order": {
+          "fiscal_collection_view.item_code": "asc"
+        },
+        "limit": 20
+      },
+      "resultSet": {
+        "data": [
+          {
+            "fiscal_collection_view.item_code": "10300009003",
+            "fiscal_collection_view.bgt_style": "",
+            "fiscal_collection_view.pay_date.year": "2025-01-01T00:00:00.000",
+            "fiscal_collection_view.amt": "0.01",
+            "fiscal_collection_view.pay_date": "2025-01-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.item_code": "1030102010011",
+            "fiscal_collection_view.bgt_style": "1",
+            "fiscal_collection_view.pay_date.year": "2025-01-01T00:00:00.000",
+            "fiscal_collection_view.amt": "3074.4",
+            "fiscal_collection_view.pay_date": "2025-01-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.item_code": "1030102010011",
+            "fiscal_collection_view.bgt_style": "",
+            "fiscal_collection_view.pay_date.year": "2026-01-01T00:00:00.000",
+            "fiscal_collection_view.amt": "65417.59",
+            "fiscal_collection_view.pay_date": "2026-01-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.item_code": "1030102010011",
+            "fiscal_collection_view.bgt_style": "",
+            "fiscal_collection_view.pay_date.year": "2025-01-01T00:00:00.000",
+            "fiscal_collection_view.amt": "28577979",
+            "fiscal_collection_view.pay_date": "2025-01-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.item_code": "1030102010011",
+            "fiscal_collection_view.bgt_style": "1",
+            "fiscal_collection_view.pay_date.year": "2026-01-01T00:00:00.000",
+            "fiscal_collection_view.amt": "1950",
+            "fiscal_collection_view.pay_date": "2026-01-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.item_code": "103010201002",
+            "fiscal_collection_view.bgt_style": "",
+            "fiscal_collection_view.pay_date.year": "2025-01-01T00:00:00.000",
+            "fiscal_collection_view.amt": "9311",
+            "fiscal_collection_view.pay_date": "2025-01-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.item_code": "103010201002",
+            "fiscal_collection_view.bgt_style": "",
+            "fiscal_collection_view.pay_date.year": "2026-01-01T00:00:00.000",
+            "fiscal_collection_view.amt": "1000",
+            "fiscal_collection_view.pay_date": "2026-01-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.item_code": "103010201004",
+            "fiscal_collection_view.bgt_style": "1",
+            "fiscal_collection_view.pay_date.year": "2025-01-01T00:00:00.000",
+            "fiscal_collection_view.amt": "5943",
+            "fiscal_collection_view.pay_date": "2025-01-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.item_code": "103010201004",
+            "fiscal_collection_view.bgt_style": "1",
+            "fiscal_collection_view.pay_date.year": "2026-01-01T00:00:00.000",
+            "fiscal_collection_view.amt": "585",
+            "fiscal_collection_view.pay_date": "2026-01-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.item_code": "103010201004",
+            "fiscal_collection_view.bgt_style": "",
+            "fiscal_collection_view.pay_date.year": "2025-01-01T00:00:00.000",
+            "fiscal_collection_view.amt": "872.36",
+            "fiscal_collection_view.pay_date": "2025-01-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.item_code": "1030106001",
+            "fiscal_collection_view.bgt_style": "",
+            "fiscal_collection_view.pay_date.year": "2025-01-01T00:00:00.000",
+            "fiscal_collection_view.amt": "12735",
+            "fiscal_collection_view.pay_date": "2025-01-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.item_code": "1030110001",
+            "fiscal_collection_view.bgt_style": "1",
+            "fiscal_collection_view.pay_date.year": "2025-01-01T00:00:00.000",
+            "fiscal_collection_view.amt": "2405.18",
+            "fiscal_collection_view.pay_date": "2025-01-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.item_code": "1030110001",
+            "fiscal_collection_view.bgt_style": "",
+            "fiscal_collection_view.pay_date.year": "2025-01-01T00:00:00.000",
+            "fiscal_collection_view.amt": "1835247.62",
+            "fiscal_collection_view.pay_date": "2025-01-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.item_code": "1030110001",
+            "fiscal_collection_view.bgt_style": "",
+            "fiscal_collection_view.pay_date.year": "2026-01-01T00:00:00.000",
+            "fiscal_collection_view.amt": "20100.66",
+            "fiscal_collection_view.pay_date": "2026-01-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.item_code": "1030110001",
+            "fiscal_collection_view.bgt_style": "1",
+            "fiscal_collection_view.pay_date.year": "2026-01-01T00:00:00.000",
+            "fiscal_collection_view.amt": "1701.28",
+            "fiscal_collection_view.pay_date": "2026-01-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.item_code": "1030115001",
+            "fiscal_collection_view.bgt_style": "1",
+            "fiscal_collection_view.pay_date.year": "2026-01-01T00:00:00.000",
+            "fiscal_collection_view.amt": "6213.16",
+            "fiscal_collection_view.pay_date": "2026-01-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.item_code": "1030115001",
+            "fiscal_collection_view.bgt_style": "",
+            "fiscal_collection_view.pay_date.year": "2025-01-01T00:00:00.000",
+            "fiscal_collection_view.amt": "3049.99",
+            "fiscal_collection_view.pay_date": "2025-01-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.item_code": "1030115001",
+            "fiscal_collection_view.bgt_style": "1",
+            "fiscal_collection_view.pay_date.year": "2025-01-01T00:00:00.000",
+            "fiscal_collection_view.amt": "4730.38",
+            "fiscal_collection_view.pay_date": "2025-01-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.item_code": "1030115001",
+            "fiscal_collection_view.bgt_style": "",
+            "fiscal_collection_view.pay_date.year": "2026-01-01T00:00:00.000",
+            "fiscal_collection_view.amt": "400.66",
+            "fiscal_collection_view.pay_date": "2026-01-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.item_code": "1030121001",
+            "fiscal_collection_view.bgt_style": "1",
+            "fiscal_collection_view.pay_date.year": "2025-01-01T00:00:00.000",
+            "fiscal_collection_view.amt": "2848.44",
+            "fiscal_collection_view.pay_date": "2025-01-01T00:00:00.000"
+          }
+        ]
+      }
+    },
+    {
+      "name": "7-各资金性质收入",
+      "query": {
+        "measures": [
+          "fiscal_collection_view.amt"
+        ],
+        "dimensions": [
+          "fiscal_collection_view.rec_funds_nature_code",
+          "fiscal_collection_view.rec_funds_nature_name"
+        ],
+        "order": {
+          "fiscal_collection_view.rec_funds_nature_code": "asc"
+        },
+        "limit": 20
+      },
+      "resultSet": {
+        "data": [
+          {
+            "fiscal_collection_view.rec_funds_nature_code": "",
+            "fiscal_collection_view.rec_funds_nature_name": "",
+            "fiscal_collection_view.amt": "2314603154.582"
+          },
+          {
+            "fiscal_collection_view.rec_funds_nature_code": "11",
+            "fiscal_collection_view.rec_funds_nature_name": "一般公共预算收入",
+            "fiscal_collection_view.amt": "1184377.16"
+          },
+          {
+            "fiscal_collection_view.rec_funds_nature_code": "12",
+            "fiscal_collection_view.rec_funds_nature_name": "政府性基金预算收入",
+            "fiscal_collection_view.amt": "16016379742.39"
+          },
+          {
+            "fiscal_collection_view.rec_funds_nature_code": "2",
+            "fiscal_collection_view.rec_funds_nature_name": "财政专户管理资金",
+            "fiscal_collection_view.amt": "39329"
+          },
+          {
+            "fiscal_collection_view.rec_funds_nature_code": "5",
+            "fiscal_collection_view.rec_funds_nature_name": "其他",
+            "fiscal_collection_view.amt": "600"
+          }
+        ]
+      }
+    },
+    {
+      "name": "8-各收入类别收入",
+      "query": {
+        "measures": [
+          "fiscal_collection_view.amt"
+        ],
+        "dimensions": [
+          "fiscal_collection_view.income_sort_code",
+          "fiscal_collection_view.income_sort_name"
+        ],
+        "order": {
+          "fiscal_collection_view.income_sort_code": "asc"
+        },
+        "limit": 20
+      },
+      "resultSet": {
+        "data": [
+          {
+            "fiscal_collection_view.income_sort_code": "",
+            "fiscal_collection_view.income_sort_name": "",
+            "fiscal_collection_view.amt": "600"
+          },
+          {
+            "fiscal_collection_view.income_sort_code": "101",
+            "fiscal_collection_view.income_sort_name": "政府性基金收入",
+            "fiscal_collection_view.amt": "18285222472.21"
+          },
+          {
+            "fiscal_collection_view.income_sort_code": "102",
+            "fiscal_collection_view.income_sort_name": "专项收入",
+            "fiscal_collection_view.amt": "30951894.082"
+          },
+          {
+            "fiscal_collection_view.income_sort_code": "103",
+            "fiscal_collection_view.income_sort_name": "行政事业性收费收入",
+            "fiscal_collection_view.amt": "16031930.84"
+          },
+          {
+            "fiscal_collection_view.income_sort_code": "104",
+            "fiscal_collection_view.income_sort_name": "罚没收入",
+            "fiscal_collection_view.amt": "306"
+          }
+        ]
+      }
+    },
+    {
+      "name": "10-其他区划分入本区划",
+      "query": {
+        "measures": [
+          "fiscal_allocation_view.im_amt"
+        ],
+        "dimensions": [
+          "fiscal_allocation_view.rec_rgn_code",
+          "fiscal_allocation_view.rec_rgn_name"
+        ],
+        "order": {
+          "fiscal_allocation_view.rec_rgn_code": "asc"
+        },
+        "limit": 20
+      },
+      "resultSet": {
+        "data": [
+          {
+            "fiscal_allocation_view.rec_rgn_code": "000000",
+            "fiscal_allocation_view.rec_rgn_name": "中央",
+            "fiscal_allocation_view.im_amt": "4516.12"
+          },
+          {
+            "fiscal_allocation_view.rec_rgn_code": "530000",
+            "fiscal_allocation_view.rec_rgn_name": "云南省本级",
+            "fiscal_allocation_view.im_amt": "16016072677.53"
+          },
+          {
+            "fiscal_allocation_view.rec_rgn_code": "530100",
+            "fiscal_allocation_view.rec_rgn_name": "昆明市本级",
+            "fiscal_allocation_view.im_amt": "1778.7"
+          },
+          {
+            "fiscal_allocation_view.rec_rgn_code": "530102",
+            "fiscal_allocation_view.rec_rgn_name": "五华区",
+            "fiscal_allocation_view.im_amt": "495.33"
+          },
+          {
+            "fiscal_allocation_view.rec_rgn_code": "532929",
+            "fiscal_allocation_view.rec_rgn_name": "云龙县",
+            "fiscal_allocation_view.im_amt": "0"
+          }
+        ]
+      }
+    },
+    {
+      "name": "11-本区划分到其他区划",
+      "query": {
+        "measures": [
+          "fiscal_allocation_view.trans_amt"
+        ],
+        "dimensions": [
+          "fiscal_allocation_view.chg_rgn_code"
+        ],
+        "order": {
+          "fiscal_allocation_view.chg_rgn_code": "asc"
+        },
+        "limit": 20
+      },
+      "resultSet": {
+        "data": [
+          {
+            "fiscal_allocation_view.chg_rgn_code": "530000",
+            "fiscal_allocation_view.trans_amt": "67425.62"
+          },
+          {
+            "fiscal_allocation_view.chg_rgn_code": "530100",
+            "fiscal_allocation_view.trans_amt": "5082"
+          },
+          {
+            "fiscal_allocation_view.chg_rgn_code": "530102",
+            "fiscal_allocation_view.trans_amt": null
+          },
+          {
+            "fiscal_allocation_view.chg_rgn_code": "532929",
+            "fiscal_allocation_view.trans_amt": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "12-欠缴催缴(正常+已过期)",
+      "query": {
+        "measures": [
+          "fiscal_collection_view.count"
+        ],
+        "filters": [
+          {
+            "member": "fiscal_collection_view.state",
+            "operator": "equals",
+            "values": [
+              "1"
+            ]
+          }
+        ],
+        "timeDimensions": [
+          {
+            "dimension": "fiscal_collection_view.eff_date",
+            "dateRange": [
+              "1900-01-01",
+              "2026-10-09"
+            ]
+          }
+        ]
+      },
+      "resultSet": {
+        "data": [
+          {
+            "fiscal_collection_view.count": "1"
+          }
+        ]
+      }
+    },
+    {
+      "name": "13-本单位收入明细(JWT agency)",
+      "query": {
+        "measures": [
+          "fiscal_collection_view.amt",
+          "fiscal_collection_view.count"
+        ],
+        "timeDimensions": [
+          {
+            "dimension": "fiscal_collection_view.pay_date",
+            "granularity": "month"
+          }
+        ],
+        "order": {
+          "fiscal_collection_view.pay_date": "asc"
+        }
+      },
+      "resultSet": {
+        "data": [
+          {
+            "fiscal_collection_view.pay_date.month": "2021-12-01T00:00:00.000",
+            "fiscal_collection_view.amt": "833",
+            "fiscal_collection_view.count": "6",
+            "fiscal_collection_view.pay_date": "2021-12-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2022-01-01T00:00:00.000",
+            "fiscal_collection_view.amt": "13301",
+            "fiscal_collection_view.count": "18",
+            "fiscal_collection_view.pay_date": "2022-01-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2022-02-01T00:00:00.000",
+            "fiscal_collection_view.amt": "40779",
+            "fiscal_collection_view.count": "42",
+            "fiscal_collection_view.pay_date": "2022-02-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2022-03-01T00:00:00.000",
+            "fiscal_collection_view.amt": "19815",
+            "fiscal_collection_view.count": "74",
+            "fiscal_collection_view.pay_date": "2022-03-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2022-04-01T00:00:00.000",
+            "fiscal_collection_view.amt": "15985631415",
+            "fiscal_collection_view.count": "24",
+            "fiscal_collection_view.pay_date": "2022-04-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2022-05-01T00:00:00.000",
+            "fiscal_collection_view.amt": "494",
+            "fiscal_collection_view.count": "5",
+            "fiscal_collection_view.pay_date": "2022-05-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2022-06-01T00:00:00.000",
+            "fiscal_collection_view.amt": "4112.9",
+            "fiscal_collection_view.count": "7",
+            "fiscal_collection_view.pay_date": "2022-06-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2022-07-01T00:00:00.000",
+            "fiscal_collection_view.amt": "23",
+            "fiscal_collection_view.count": "1",
+            "fiscal_collection_view.pay_date": "2022-07-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2022-08-01T00:00:00.000",
+            "fiscal_collection_view.amt": "17617.79",
+            "fiscal_collection_view.count": "47",
+            "fiscal_collection_view.pay_date": "2022-08-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2022-09-01T00:00:00.000",
+            "fiscal_collection_view.amt": "5453.68",
+            "fiscal_collection_view.count": "22",
+            "fiscal_collection_view.pay_date": "2022-09-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2022-10-01T00:00:00.000",
+            "fiscal_collection_view.amt": "38188.35",
+            "fiscal_collection_view.count": "46",
+            "fiscal_collection_view.pay_date": "2022-10-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2022-11-01T00:00:00.000",
+            "fiscal_collection_view.amt": "236799.19",
+            "fiscal_collection_view.count": "31",
+            "fiscal_collection_view.pay_date": "2022-11-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2022-12-01T00:00:00.000",
+            "fiscal_collection_view.amt": "2222928573.36",
+            "fiscal_collection_view.count": "68",
+            "fiscal_collection_view.pay_date": "2022-12-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2023-02-01T00:00:00.000",
+            "fiscal_collection_view.amt": "44876",
+            "fiscal_collection_view.count": "8",
+            "fiscal_collection_view.pay_date": "2023-02-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2023-03-01T00:00:00.000",
+            "fiscal_collection_view.amt": "4086",
+            "fiscal_collection_view.count": "5",
+            "fiscal_collection_view.pay_date": "2023-03-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2023-04-01T00:00:00.000",
+            "fiscal_collection_view.amt": "5819",
+            "fiscal_collection_view.count": "23",
+            "fiscal_collection_view.pay_date": "2023-04-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2023-05-01T00:00:00.000",
+            "fiscal_collection_view.amt": "1014",
+            "fiscal_collection_view.count": "11",
+            "fiscal_collection_view.pay_date": "2023-05-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2023-06-01T00:00:00.000",
+            "fiscal_collection_view.amt": "43409.45",
+            "fiscal_collection_view.count": "35",
+            "fiscal_collection_view.pay_date": "2023-06-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2023-07-01T00:00:00.000",
+            "fiscal_collection_view.amt": "1171872",
+            "fiscal_collection_view.count": "23",
+            "fiscal_collection_view.pay_date": "2023-07-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2023-08-01T00:00:00.000",
+            "fiscal_collection_view.amt": "24457.08",
+            "fiscal_collection_view.count": "23",
+            "fiscal_collection_view.pay_date": "2023-08-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2023-09-01T00:00:00.000",
+            "fiscal_collection_view.amt": "128914.88",
+            "fiscal_collection_view.count": "8",
+            "fiscal_collection_view.pay_date": "2023-09-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2023-10-01T00:00:00.000",
+            "fiscal_collection_view.amt": "600",
+            "fiscal_collection_view.count": "6",
+            "fiscal_collection_view.pay_date": "2023-10-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2023-11-01T00:00:00.000",
+            "fiscal_collection_view.amt": "37408.6",
+            "fiscal_collection_view.count": "13",
+            "fiscal_collection_view.pay_date": "2023-11-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2023-12-01T00:00:00.000",
+            "fiscal_collection_view.amt": "3353.3",
+            "fiscal_collection_view.count": "15",
+            "fiscal_collection_view.pay_date": "2023-12-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2024-01-01T00:00:00.000",
+            "fiscal_collection_view.amt": "164244.582",
+            "fiscal_collection_view.count": "14",
+            "fiscal_collection_view.pay_date": "2024-01-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2024-02-01T00:00:00.000",
+            "fiscal_collection_view.amt": "46039471.7",
+            "fiscal_collection_view.count": "15",
+            "fiscal_collection_view.pay_date": "2024-02-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2024-03-01T00:00:00.000",
+            "fiscal_collection_view.amt": "2864.62",
+            "fiscal_collection_view.count": "25",
+            "fiscal_collection_view.pay_date": "2024-03-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2024-04-01T00:00:00.000",
+            "fiscal_collection_view.amt": "28982824.78",
+            "fiscal_collection_view.count": "20",
+            "fiscal_collection_view.pay_date": "2024-04-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2024-05-01T00:00:00.000",
+            "fiscal_collection_view.amt": "22063",
+            "fiscal_collection_view.count": "19",
+            "fiscal_collection_view.pay_date": "2024-05-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2024-06-01T00:00:00.000",
+            "fiscal_collection_view.amt": "5836.24",
+            "fiscal_collection_view.count": "22",
+            "fiscal_collection_view.pay_date": "2024-06-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2024-07-01T00:00:00.000",
+            "fiscal_collection_view.amt": "1405.28",
+            "fiscal_collection_view.count": "10",
+            "fiscal_collection_view.pay_date": "2024-07-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2024-08-01T00:00:00.000",
+            "fiscal_collection_view.amt": "610281.59",
+            "fiscal_collection_view.count": "72",
+            "fiscal_collection_view.pay_date": "2024-08-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2024-09-01T00:00:00.000",
+            "fiscal_collection_view.amt": "6446.64",
+            "fiscal_collection_view.count": "41",
+            "fiscal_collection_view.pay_date": "2024-09-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2024-10-01T00:00:00.000",
+            "fiscal_collection_view.amt": "141015.21",
+            "fiscal_collection_view.count": "68",
+            "fiscal_collection_view.pay_date": "2024-10-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2024-11-01T00:00:00.000",
+            "fiscal_collection_view.amt": "7935.54",
+            "fiscal_collection_view.count": "48",
+            "fiscal_collection_view.pay_date": "2024-11-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2024-12-01T00:00:00.000",
+            "fiscal_collection_view.amt": "140047.64",
+            "fiscal_collection_view.count": "94",
+            "fiscal_collection_view.pay_date": "2024-12-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2025-01-01T00:00:00.000",
+            "fiscal_collection_view.amt": "30695653.3",
+            "fiscal_collection_view.count": "14",
+            "fiscal_collection_view.pay_date": "2025-01-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2025-02-01T00:00:00.000",
+            "fiscal_collection_view.amt": "423",
+            "fiscal_collection_view.count": "4",
+            "fiscal_collection_view.pay_date": "2025-02-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2025-03-01T00:00:00.000",
+            "fiscal_collection_view.amt": "27734.88",
+            "fiscal_collection_view.count": "47",
+            "fiscal_collection_view.pay_date": "2025-03-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2025-04-01T00:00:00.000",
+            "fiscal_collection_view.amt": "15413.2",
+            "fiscal_collection_view.count": "34",
+            "fiscal_collection_view.pay_date": "2025-04-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2025-06-01T00:00:00.000",
+            "fiscal_collection_view.amt": "5196.29",
+            "fiscal_collection_view.count": "33",
+            "fiscal_collection_view.pay_date": "2025-06-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2025-07-01T00:00:00.000",
+            "fiscal_collection_view.amt": "1084",
+            "fiscal_collection_view.count": "3",
+            "fiscal_collection_view.pay_date": "2025-07-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2025-09-01T00:00:00.000",
+            "fiscal_collection_view.amt": "1777.33",
+            "fiscal_collection_view.count": "16",
+            "fiscal_collection_view.pay_date": "2025-09-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2025-10-01T00:00:00.000",
+            "fiscal_collection_view.amt": "4582.36",
+            "fiscal_collection_view.count": "12",
+            "fiscal_collection_view.pay_date": "2025-10-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2025-11-01T00:00:00.000",
+            "fiscal_collection_view.amt": "1501",
+            "fiscal_collection_view.count": "6",
+            "fiscal_collection_view.pay_date": "2025-11-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2025-12-01T00:00:00.000",
+            "fiscal_collection_view.amt": "1000.02",
+            "fiscal_collection_view.count": "12",
+            "fiscal_collection_view.pay_date": "2025-12-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2026-01-01T00:00:00.000",
+            "fiscal_collection_view.amt": "4632",
+            "fiscal_collection_view.count": "34",
+            "fiscal_collection_view.pay_date": "2026-01-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2026-04-01T00:00:00.000",
+            "fiscal_collection_view.amt": "1982.32",
+            "fiscal_collection_view.count": "3",
+            "fiscal_collection_view.pay_date": "2026-04-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2026-05-01T00:00:00.000",
+            "fiscal_collection_view.amt": "7222",
+            "fiscal_collection_view.count": "2",
+            "fiscal_collection_view.pay_date": "2026-05-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2026-06-01T00:00:00.000",
+            "fiscal_collection_view.amt": "14909895.85",
+            "fiscal_collection_view.count": "26",
+            "fiscal_collection_view.pay_date": "2026-06-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2026-07-01T00:00:00.000",
+            "fiscal_collection_view.amt": "752.52",
+            "fiscal_collection_view.count": "10",
+            "fiscal_collection_view.pay_date": "2026-07-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2026-08-01T00:00:00.000",
+            "fiscal_collection_view.amt": "700.66",
+            "fiscal_collection_view.count": "7",
+            "fiscal_collection_view.pay_date": "2026-08-01T00:00:00.000"
+          }
+        ]
+      }
+    },
+    {
+      "name": "14-本单位分入专户国库(JWT agency)",
+      "query": {
+        "measures": [
+          "fiscal_allocation_view.trans_amt",
+          "fiscal_allocation_view.im_amt"
+        ],
+        "dimensions": [
+          "fiscal_allocation_view.bgt_style"
+        ]
+      },
+      "resultSet": {
+        "data": [
+          {
+            "fiscal_allocation_view.bgt_style": "2",
+            "fiscal_allocation_view.trans_amt": "45079",
+            "fiscal_allocation_view.im_amt": "39377"
+          },
+          {
+            "fiscal_allocation_view.bgt_style": "1",
+            "fiscal_allocation_view.trans_amt": "26828.62",
+            "fiscal_allocation_view.im_amt": "16016039490.68"
+          },
+          {
+            "fiscal_allocation_view.bgt_style": "4",
+            "fiscal_allocation_view.trans_amt": "600",
+            "fiscal_allocation_view.im_amt": "600"
+          }
+        ]
+      }
+    },
+    {
+      "name": "15-其他区划分入本单位(JWT OR专项)",
+      "query": {
+        "measures": [
+          "fiscal_allocation_view.im_amt"
+        ],
+        "dimensions": [
+          "fiscal_allocation_view.rec_rgn_code",
+          "fiscal_allocation_view.rec_rgn_name"
+        ],
+        "order": {
+          "fiscal_allocation_view.rec_rgn_code": "asc"
+        },
+        "limit": 20
+      },
+      "resultSet": {
+        "data": [
+          {
+            "fiscal_allocation_view.rec_rgn_code": "000000",
+            "fiscal_allocation_view.rec_rgn_name": "中央",
+            "fiscal_allocation_view.im_amt": "4516.12"
+          },
+          {
+            "fiscal_allocation_view.rec_rgn_code": "530000",
+            "fiscal_allocation_view.rec_rgn_name": "云南省本级",
+            "fiscal_allocation_view.im_amt": "16016072677.53"
+          },
+          {
+            "fiscal_allocation_view.rec_rgn_code": "530100",
+            "fiscal_allocation_view.rec_rgn_name": "昆明市本级",
+            "fiscal_allocation_view.im_amt": "1778.7"
+          },
+          {
+            "fiscal_allocation_view.rec_rgn_code": "530102",
+            "fiscal_allocation_view.rec_rgn_name": "五华区",
+            "fiscal_allocation_view.im_amt": "495.33"
+          },
+          {
+            "fiscal_allocation_view.rec_rgn_code": "532929",
+            "fiscal_allocation_view.rec_rgn_name": "云龙县",
+            "fiscal_allocation_view.im_amt": "0"
+          }
+        ]
+      }
+    },
+    {
+      "name": "16-本单位划入其他单位(JWT agency)",
+      "query": {
+        "measures": [
+          "fiscal_allocation_view.trans_amt"
+        ],
+        "dimensions": [
+          "fiscal_allocation_view.rec_agency_code",
+          "fiscal_allocation_view.rec_rgn_code"
+        ],
+        "filters": [
+          {
+            "member": "fiscal_allocation_view.rec_agency_code",
+            "operator": "notEquals",
+            "values": [
+              "124045"
+            ]
+          }
+        ],
+        "order": {
+          "fiscal_allocation_view.rec_agency_code": "asc"
+        },
+        "limit": 20
+      },
+      "resultSet": {
+        "data": [
+          {
+            "fiscal_allocation_view.rec_agency_code": "",
+            "fiscal_allocation_view.rec_rgn_code": "000000",
+            "fiscal_allocation_view.trans_amt": null
+          },
+          {
+            "fiscal_allocation_view.rec_agency_code": "",
+            "fiscal_allocation_view.rec_rgn_code": "530000",
+            "fiscal_allocation_view.trans_amt": "2541"
+          },
+          {
+            "fiscal_allocation_view.rec_agency_code": "19477327339d473784d310202b94d06a",
+            "fiscal_allocation_view.rec_rgn_code": "532929",
+            "fiscal_allocation_view.trans_amt": null
+          },
+          {
+            "fiscal_allocation_view.rec_agency_code": "1cc48566b4014c47b37e8e95b91a1a27",
+            "fiscal_allocation_view.rec_rgn_code": "530000",
+            "fiscal_allocation_view.trans_amt": null
+          },
+          {
+            "fiscal_allocation_view.rec_agency_code": "36299bf16778469f9c5eafdbf16cc588",
+            "fiscal_allocation_view.rec_rgn_code": "530000",
+            "fiscal_allocation_view.trans_amt": "63371"
+          },
+          {
+            "fiscal_allocation_view.rec_agency_code": "46106965801c4908b0b206230d1f8430",
+            "fiscal_allocation_view.rec_rgn_code": "530000",
+            "fiscal_allocation_view.trans_amt": null
+          },
+          {
+            "fiscal_allocation_view.rec_agency_code": "4c61fabc4fb64b2ea9384b8da016505e",
+            "fiscal_allocation_view.rec_rgn_code": "530000",
+            "fiscal_allocation_view.trans_amt": null
+          },
+          {
+            "fiscal_allocation_view.rec_agency_code": "57661ea5d7cc40ad8af57fe3909a3323",
+            "fiscal_allocation_view.rec_rgn_code": "530000",
+            "fiscal_allocation_view.trans_amt": null
+          },
+          {
+            "fiscal_allocation_view.rec_agency_code": "57bafad068724dd7a9c16eaa921a2c93",
+            "fiscal_allocation_view.rec_rgn_code": "530000",
+            "fiscal_allocation_view.trans_amt": null
+          },
+          {
+            "fiscal_allocation_view.rec_agency_code": "5c18ec29b79c401585692d81369ebfaa",
+            "fiscal_allocation_view.rec_rgn_code": "530000",
+            "fiscal_allocation_view.trans_amt": null
+          },
+          {
+            "fiscal_allocation_view.rec_agency_code": "5c3391a145e546c9b5f61a512b590516",
+            "fiscal_allocation_view.rec_rgn_code": "530000",
+            "fiscal_allocation_view.trans_amt": "100"
+          },
+          {
+            "fiscal_allocation_view.rec_agency_code": "5d0fe2d621544a20a79b45a837b34962",
+            "fiscal_allocation_view.rec_rgn_code": "530000",
+            "fiscal_allocation_view.trans_amt": null
+          },
+          {
+            "fiscal_allocation_view.rec_agency_code": "62aa363159804af19811045eeef897f0",
+            "fiscal_allocation_view.rec_rgn_code": "530100",
+            "fiscal_allocation_view.trans_amt": "2541"
+          },
+          {
+            "fiscal_allocation_view.rec_agency_code": "642b4dd12583467495a797ac8d30f3de",
+            "fiscal_allocation_view.rec_rgn_code": "530000",
+            "fiscal_allocation_view.trans_amt": null
+          },
+          {
+            "fiscal_allocation_view.rec_agency_code": "67455953d68d41e38cad8625309e3d85",
+            "fiscal_allocation_view.rec_rgn_code": "530000",
+            "fiscal_allocation_view.trans_amt": null
+          },
+          {
+            "fiscal_allocation_view.rec_agency_code": "6e4ba0232f624f58a2ac5ce9c0b8b3a4",
+            "fiscal_allocation_view.rec_rgn_code": "530000",
+            "fiscal_allocation_view.trans_amt": null
+          },
+          {
+            "fiscal_allocation_view.rec_agency_code": "6f4e027c74c54cf18b15d50af295c854",
+            "fiscal_allocation_view.rec_rgn_code": "530000",
+            "fiscal_allocation_view.trans_amt": null
+          },
+          {
+            "fiscal_allocation_view.rec_agency_code": "808548570b444a3ca6d9c1b4ed5428b7",
+            "fiscal_allocation_view.rec_rgn_code": "530000",
+            "fiscal_allocation_view.trans_amt": "664.62"
+          },
+          {
+            "fiscal_allocation_view.rec_agency_code": "808548570b444a3ca6d9c1b4ed5428b7",
+            "fiscal_allocation_view.rec_rgn_code": "530102",
+            "fiscal_allocation_view.trans_amt": null
+          },
+          {
+            "fiscal_allocation_view.rec_agency_code": "9b39415edb664ecca1fda8bd3f42550d",
+            "fiscal_allocation_view.rec_rgn_code": "530000",
+            "fiscal_allocation_view.trans_amt": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "17-归一化抽验-一码三名(125026/124994/425103)",
+      "query": {
+        "measures": [
+          "fiscal_collection_view.amt"
+        ],
+        "dimensions": [
+          "fiscal_collection_view.chg_agency_code",
+          "fiscal_collection_view.chg_agency_name"
+        ],
+        "filters": [
+          {
+            "member": "fiscal_collection_view.chg_agency_code",
+            "operator": "equals",
+            "values": [
+              "125026",
+              "124994",
+              "425103"
+            ]
+          }
+        ],
+        "order": {
+          "fiscal_collection_view.chg_agency_code": "asc"
+        }
+      },
+      "resultSet": {
+        "data": [
+          {
+            "fiscal_collection_view.chg_agency_code": "124994",
+            "fiscal_collection_view.chg_agency_name": "云南发展改革委员会 / 开票点001 / 开票点002",
+            "fiscal_collection_view.amt": "105848505.17"
+          },
+          {
+            "fiscal_collection_view.chg_agency_code": "125026",
+            "fiscal_collection_view.chg_agency_name": "云南医保测试单位改名 / 开票点一 / 李思维",
+            "fiscal_collection_view.amt": "33128.87"
+          },
+          {
+            "fiscal_collection_view.chg_agency_code": "425103",
+            "fiscal_collection_view.chg_agency_name": "云南通用测试单位0801 / 通用测试单位0801",
+            "fiscal_collection_view.amt": "310792.26"
+          }
+        ]
+      }
+    },
+    {
+      "name": "18-已入国库笔数金额(ftm)",
+      "query": {
+        "measures": [
+          "fiscal_treasury_view.count",
+          "fiscal_treasury_view.amt"
+        ],
+        "filters": [
+          {
+            "member": "fiscal_treasury_view.enter_status",
+            "operator": "equals",
+            "values": [
+              "1"
+            ]
+          }
+        ]
+      },
+      "resultSet": {
+        "data": [
+          {
+            "fiscal_treasury_view.count": "26",
+            "fiscal_treasury_view.amt": "46304.09"
+          }
+        ]
+      }
+    },
+    {
+      "name": "19-缴库单数与按科目汇总(ftm)",
+      "query": {
+        "measures": [
+          "fiscal_treasury_view.bill_count",
+          "fiscal_treasury_view.amt"
+        ],
+        "dimensions": [
+          "fiscal_treasury_view.sub_code",
+          "fiscal_treasury_view.sub_name"
+        ],
+        "order": {
+          "fiscal_treasury_view.sub_code": "asc"
+        }
+      },
+      "resultSet": {
+        "data": [
+          {
+            "fiscal_treasury_view.sub_code": "103010201",
+            "fiscal_treasury_view.sub_name": "中央农网还贷资金收入 / 中央农网还贷资金收入25",
+            "fiscal_treasury_view.bill_count": "37",
+            "fiscal_treasury_view.amt": "46168"
+          },
+          {
+            "fiscal_treasury_view.sub_code": "1030106",
+            "fiscal_treasury_view.sub_name": "铁路建设基金收入",
+            "fiscal_treasury_view.bill_count": "2",
+            "fiscal_treasury_view.amt": "10198"
+          },
+          {
+            "fiscal_treasury_view.sub_code": "1030110",
+            "fiscal_treasury_view.sub_name": "民航发展基金收入",
+            "fiscal_treasury_view.bill_count": "8",
+            "fiscal_treasury_view.amt": "29170448.78"
+          },
+          {
+            "fiscal_treasury_view.sub_code": "1030115",
+            "fiscal_treasury_view.sub_name": "港口建设费收入",
+            "fiscal_treasury_view.bill_count": "10",
+            "fiscal_treasury_view.amt": "52242.54"
+          },
+          {
+            "fiscal_treasury_view.sub_code": "1030121",
+            "fiscal_treasury_view.sub_name": "旅游发展基金收入",
+            "fiscal_treasury_view.bill_count": "6",
+            "fiscal_treasury_view.amt": "156523.82"
+          },
+          {
+            "fiscal_treasury_view.sub_code": "1030129",
+            "fiscal_treasury_view.sub_name": "国家电影事业发展专项资金收入",
+            "fiscal_treasury_view.bill_count": "5",
+            "fiscal_treasury_view.amt": "12658"
+          },
+          {
+            "fiscal_treasury_view.sub_code": "1030146",
+            "fiscal_treasury_view.sub_name": "国有土地收益基金收入",
+            "fiscal_treasury_view.bill_count": "2",
+            "fiscal_treasury_view.amt": "266"
+          },
+          {
+            "fiscal_treasury_view.sub_code": "103014899",
+            "fiscal_treasury_view.sub_name": "其他土地出让收入",
+            "fiscal_treasury_view.bill_count": "1",
+            "fiscal_treasury_view.amt": "33"
+          },
+          {
+            "fiscal_treasury_view.sub_code": "1030149",
+            "fiscal_treasury_view.sub_name": "大中型水库移民后期扶持基金收入",
+            "fiscal_treasury_view.bill_count": "1",
+            "fiscal_treasury_view.amt": "60"
+          },
+          {
+            "fiscal_treasury_view.sub_code": "1030219",
+            "fiscal_treasury_view.sub_name": "教育资金收入",
+            "fiscal_treasury_view.bill_count": "1",
+            "fiscal_treasury_view.amt": "200"
+          },
+          {
+            "fiscal_treasury_view.sub_code": "103040702",
+            "fiscal_treasury_view.sub_name": "考试考务费",
+            "fiscal_treasury_view.bill_count": "1",
+            "fiscal_treasury_view.amt": "600"
+          },
+          {
+            "fiscal_treasury_view.sub_code": "103042706",
+            "fiscal_treasury_view.sub_name": "教师资格考试费",
+            "fiscal_treasury_view.bill_count": "2",
+            "fiscal_treasury_view.amt": "6531"
+          }
+        ]
+      }
+    },
+    {
+      "name": "20-缴库月趋势(ftm)",
+      "query": {
+        "measures": [
+          "fiscal_treasury_view.amt"
+        ],
+        "timeDimensions": [
+          {
+            "dimension": "fiscal_treasury_view.build_date",
+            "granularity": "month"
+          }
+        ],
+        "order": {
+          "fiscal_treasury_view.build_date": "asc"
+        }
+      },
+      "resultSet": {
+        "data": [
+          {
+            "fiscal_treasury_view.build_date.month": "2022-02-01T00:00:00.000",
+            "fiscal_treasury_view.amt": "7520",
+            "fiscal_treasury_view.build_date": "2022-02-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.build_date.month": "2022-03-01T00:00:00.000",
+            "fiscal_treasury_view.amt": "6540",
+            "fiscal_treasury_view.build_date": "2022-03-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.build_date.month": "2022-04-01T00:00:00.000",
+            "fiscal_treasury_view.amt": "34",
+            "fiscal_treasury_view.build_date": "2022-04-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.build_date.month": "2022-10-01T00:00:00.000",
+            "fiscal_treasury_view.amt": "31959.04",
+            "fiscal_treasury_view.build_date": "2022-10-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.build_date.month": "2023-05-01T00:00:00.000",
+            "fiscal_treasury_view.amt": "830",
+            "fiscal_treasury_view.build_date": "2023-05-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.build_date.month": "2023-07-01T00:00:00.000",
+            "fiscal_treasury_view.amt": "5933",
+            "fiscal_treasury_view.build_date": "2023-07-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.build_date.month": "2023-08-01T00:00:00.000",
+            "fiscal_treasury_view.amt": "100",
+            "fiscal_treasury_view.build_date": "2023-08-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.build_date.month": "2023-11-01T00:00:00.000",
+            "fiscal_treasury_view.amt": "27315.26",
+            "fiscal_treasury_view.build_date": "2023-11-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.build_date.month": "2024-02-01T00:00:00.000",
+            "fiscal_treasury_view.amt": "701.98",
+            "fiscal_treasury_view.build_date": "2024-02-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.build_date.month": "2024-03-01T00:00:00.000",
+            "fiscal_treasury_view.amt": "760.66",
+            "fiscal_treasury_view.build_date": "2024-03-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.build_date.month": "2024-04-01T00:00:00.000",
+            "fiscal_treasury_view.amt": "1800.66",
+            "fiscal_treasury_view.build_date": "2024-04-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.build_date.month": "2024-05-01T00:00:00.000",
+            "fiscal_treasury_view.amt": "100",
+            "fiscal_treasury_view.build_date": "2024-05-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.build_date.month": "2024-07-01T00:00:00.000",
+            "fiscal_treasury_view.amt": "100",
+            "fiscal_treasury_view.build_date": "2024-07-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.build_date.month": "2026-01-01T00:00:00.000",
+            "fiscal_treasury_view.amt": "29372234.54",
+            "fiscal_treasury_view.build_date": "2026-01-01T00:00:00.000"
+          }
+        ]
+      }
+    },
+    {
+      "name": "21-缴库权限-区划双区划OR(JWT region)",
+      "query": {
+        "measures": [
+          "fiscal_treasury_view.count",
+          "fiscal_treasury_view.amt"
+        ],
+        "dimensions": [
+          "fiscal_treasury_view.chg_rgn_code",
+          "fiscal_treasury_view.rec_rgn_code"
+        ],
+        "order": {
+          "fiscal_treasury_view.chg_rgn_code": "asc"
+        }
+      },
+      "resultSet": {
+        "data": [
+          {
+            "fiscal_treasury_view.chg_rgn_code": "530000",
+            "fiscal_treasury_view.rec_rgn_code": "530000",
+            "fiscal_treasury_view.count": "71",
+            "fiscal_treasury_view.amt": "29453692.14"
+          },
+          {
+            "fiscal_treasury_view.chg_rgn_code": "530100",
+            "fiscal_treasury_view.rec_rgn_code": "530100",
+            "fiscal_treasury_view.count": "5",
+            "fiscal_treasury_view.amt": "2237"
+          }
+        ]
+      }
+    },
+    {
+      "name": "22-缴库权限-单位用户空结果(JWT agency)",
+      "query": {
+        "measures": [
+          "fiscal_treasury_view.count"
+        ]
+      },
+      "resultSet": {
+        "data": [
+          {
+            "fiscal_treasury_view.count": "76"
+          }
+        ]
+      }
+    }
+  ]
+}

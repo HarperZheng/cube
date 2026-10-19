@@ -1,0 +1,385 @@
+[
+  {
+    "name": "1-财政收入明细(按缴款月)",
+    "query": {
+      "measures": [
+        "fiscal_collection_view.amt"
+      ],
+      "timeDimensions": [
+        {
+          "dimension": "fiscal_collection_view.pay_date",
+          "granularity": "month"
+        }
+      ],
+      "order": {
+        "fiscal_collection_view.pay_date": "asc"
+      }
+    }
+  },
+  {
+    "name": "2-各单位收入(验证不裂组)",
+    "query": {
+      "measures": [
+        "fiscal_collection_view.amt"
+      ],
+      "dimensions": [
+        "fiscal_collection_view.chg_agency_code",
+        "fiscal_collection_view.chg_agency_name"
+      ],
+      "order": {
+        "fiscal_collection_view.chg_agency_code": "asc"
+      },
+      "limit": 20
+    }
+  },
+  {
+    "name": "3-按单位划入划出",
+    "query": {
+      "measures": [
+        "fiscal_allocation_view.trans_amt"
+      ],
+      "dimensions": [
+        "fiscal_allocation_view.chg_agency_code",
+        "fiscal_allocation_view.rec_agency_code"
+      ],
+      "order": {
+        "fiscal_allocation_view.chg_agency_code": "asc"
+      },
+      "limit": 20
+    }
+  },
+  {
+    "name": "4-各代理银行收入",
+    "query": {
+      "measures": [
+        "fiscal_collection_view.amt"
+      ],
+      "dimensions": [
+        "fiscal_collection_view.rec_bank_code",
+        "fiscal_collection_view.rec_bank_name"
+      ],
+      "order": {
+        "fiscal_collection_view.rec_bank_code": "asc"
+      },
+      "limit": 20
+    }
+  },
+  {
+    "name": "5-各科目收入(收入归属侧)",
+    "query": {
+      "measures": [
+        "fiscal_collection_view.amt"
+      ],
+      "dimensions": [
+        "fiscal_collection_view.rec_sub_code",
+        "fiscal_collection_view.rec_sub_name"
+      ],
+      "order": {
+        "fiscal_collection_view.rec_sub_code": "asc"
+      },
+      "limit": 20
+    }
+  },
+  {
+    "name": "6-各项目收入(专户国库+跨年对比)",
+    "query": {
+      "measures": [
+        "fiscal_collection_view.amt"
+      ],
+      "dimensions": [
+        "fiscal_collection_view.item_code",
+        "fiscal_collection_view.bgt_style"
+      ],
+      "timeDimensions": [
+        {
+          "dimension": "fiscal_collection_view.pay_date",
+          "granularity": "year",
+          "dateRange": [
+            "2025-01-01",
+            "2026-12-31"
+          ]
+        }
+      ],
+      "order": {
+        "fiscal_collection_view.item_code": "asc"
+      },
+      "limit": 20
+    }
+  },
+  {
+    "name": "7-各资金性质收入",
+    "query": {
+      "measures": [
+        "fiscal_collection_view.amt"
+      ],
+      "dimensions": [
+        "fiscal_collection_view.rec_funds_nature_code",
+        "fiscal_collection_view.rec_funds_nature_name"
+      ],
+      "order": {
+        "fiscal_collection_view.rec_funds_nature_code": "asc"
+      },
+      "limit": 20
+    }
+  },
+  {
+    "name": "8-各收入类别收入",
+    "query": {
+      "measures": [
+        "fiscal_collection_view.amt"
+      ],
+      "dimensions": [
+        "fiscal_collection_view.income_sort_code",
+        "fiscal_collection_view.income_sort_name"
+      ],
+      "order": {
+        "fiscal_collection_view.income_sort_code": "asc"
+      },
+      "limit": 20
+    }
+  },
+  {
+    "name": "10-其他区划分入本区划",
+    "query": {
+      "measures": [
+        "fiscal_allocation_view.im_amt"
+      ],
+      "dimensions": [
+        "fiscal_allocation_view.rec_rgn_code",
+        "fiscal_allocation_view.rec_rgn_name"
+      ],
+      "order": {
+        "fiscal_allocation_view.rec_rgn_code": "asc"
+      },
+      "limit": 20
+    }
+  },
+  {
+    "name": "11-本区划分到其他区划",
+    "query": {
+      "measures": [
+        "fiscal_allocation_view.trans_amt"
+      ],
+      "dimensions": [
+        "fiscal_allocation_view.chg_rgn_code"
+      ],
+      "order": {
+        "fiscal_allocation_view.chg_rgn_code": "asc"
+      },
+      "limit": 20
+    }
+  },
+  {
+    "name": "12-欠缴催缴(正常+已过期)",
+    "query": {
+      "measures": [
+        "fiscal_collection_view.count"
+      ],
+      "filters": [
+        {
+          "member": "fiscal_collection_view.state",
+          "operator": "equals",
+          "values": [
+            "1"
+          ]
+        }
+      ],
+      "timeDimensions": [
+        {
+          "dimension": "fiscal_collection_view.eff_date",
+          "dateRange": [
+            "1900-01-01",
+            "2026-10-09"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "13-本单位收入明细(JWT agency)",
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZ2VuY3lfY29kZSI6IjEyNDA0NSJ9.i_oib5K9K6Fqo-jFEowfM2iizOtI3ZJ9bSlLQE97M8s",
+    "note": "JWT agency_code=124045——行级过滤 chg_agency_code=124045（policy ②）；payer_name 已脱敏",
+    "query": {
+      "measures": [
+        "fiscal_collection_view.amt",
+        "fiscal_collection_view.count"
+      ],
+      "timeDimensions": [
+        {
+          "dimension": "fiscal_collection_view.pay_date",
+          "granularity": "month"
+        }
+      ],
+      "order": {
+        "fiscal_collection_view.pay_date": "asc"
+      }
+    }
+  },
+  {
+    "name": "14-本单位分入专户国库(JWT agency)",
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZ2VuY3lfY29kZSI6IjEyNDA0NSJ9.i_oib5K9K6Fqo-jFEowfM2iizOtI3ZJ9bSlLQE97M8s",
+    "note": "JWT agency_code=124045——allocation policy ② chg_agency_code=124045，按 bgt_style 分组",
+    "query": {
+      "measures": [
+        "fiscal_allocation_view.trans_amt",
+        "fiscal_allocation_view.im_amt"
+      ],
+      "dimensions": [
+        "fiscal_allocation_view.bgt_style"
+      ]
+    }
+  },
+  {
+    "name": "15-其他区划分入本单位(JWT OR专项)",
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyZWdpb25fY29kZSI6IjUzMDAwMCJ9.o_d2oWpDPUIFdWLSVhTXX8F4hvYTXatGqFwDyg2jysY",
+    "note": "JWT region_code=530000——allocation policy ① 嵌套 or:（chg_rgn=530000 OR rec_rgn=530000），2026-10-10 实测支持",
+    "query": {
+      "measures": [
+        "fiscal_allocation_view.im_amt"
+      ],
+      "dimensions": [
+        "fiscal_allocation_view.rec_rgn_code",
+        "fiscal_allocation_view.rec_rgn_name"
+      ],
+      "order": {
+        "fiscal_allocation_view.rec_rgn_code": "asc"
+      },
+      "limit": 20
+    }
+  },
+  {
+    "name": "16-本单位划入其他单位(JWT agency)",
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZ2VuY3lfY29kZSI6IjEyNDA0NSJ9.i_oib5K9K6Fqo-jFEowfM2iizOtI3ZJ9bSlLQE97M8s",
+    "note": "JWT agency_code=124045——policy ② 行过滤 chg_agency=124045 + 查询过滤 rec_agency_code≠124045（划入方为其他单位）",
+    "query": {
+      "measures": [
+        "fiscal_allocation_view.trans_amt"
+      ],
+      "dimensions": [
+        "fiscal_allocation_view.rec_agency_code",
+        "fiscal_allocation_view.rec_rgn_code"
+      ],
+      "filters": [
+        {
+          "member": "fiscal_allocation_view.rec_agency_code",
+          "operator": "notEquals",
+          "values": [
+            "124045"
+          ]
+        }
+      ],
+      "order": {
+        "fiscal_allocation_view.rec_agency_code": "asc"
+      },
+      "limit": 20
+    }
+  },
+  {
+    "name": "17-归一化抽验-一码三名(125026/124994/425103)",
+    "query": {
+      "measures": [
+        "fiscal_collection_view.amt"
+      ],
+      "dimensions": [
+        "fiscal_collection_view.chg_agency_code",
+        "fiscal_collection_view.chg_agency_name"
+      ],
+      "filters": [
+        {
+          "member": "fiscal_collection_view.chg_agency_code",
+          "operator": "equals",
+          "values": [
+            "125026",
+            "124994",
+            "425103"
+          ]
+        }
+      ],
+      "order": {
+        "fiscal_collection_view.chg_agency_code": "asc"
+      }
+    }
+  },
+  {
+    "name": "18-已入国库笔数金额(ftm)",
+    "note": "锚点 count=26（不是 152——按 fid 去重防线）；amt=去重后 26 行 famt sum；判定口径 enter_status='1'",
+    "query": {
+      "measures": [
+        "fiscal_treasury_view.count",
+        "fiscal_treasury_view.amt"
+      ],
+      "filters": [
+        {
+          "member": "fiscal_treasury_view.enter_status",
+          "operator": "equals",
+          "values": [
+            "1"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "19-缴库单数与按科目汇总(ftm)",
+    "note": "锚点 bill_count=70；sub_code 分组 12 组不裂组（一码多名归一化防线：12 码非 13 名）",
+    "query": {
+      "measures": [
+        "fiscal_treasury_view.bill_count",
+        "fiscal_treasury_view.amt"
+      ],
+      "dimensions": [
+        "fiscal_treasury_view.sub_code",
+        "fiscal_treasury_view.sub_name"
+      ],
+      "order": {
+        "fiscal_treasury_view.sub_code": "asc"
+      }
+    }
+  },
+  {
+    "name": "20-缴库月趋势(ftm)",
+    "note": "build_date（建单日）为主时间轴收月组——与入国库 enter_date 口径区分",
+    "query": {
+      "measures": [
+        "fiscal_treasury_view.amt"
+      ],
+      "timeDimensions": [
+        {
+          "dimension": "fiscal_treasury_view.build_date",
+          "granularity": "month"
+        }
+      ],
+      "order": {
+        "fiscal_treasury_view.build_date": "asc"
+      }
+    }
+  },
+  {
+    "name": "21-缴库权限-区划双区划OR(JWT region)",
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyZWdpb25fY29kZSI6IjUzMDAwMCJ9.o_d2oWpDPUIFdWLSVhTXX8F4hvYTXatGqFwDyg2jysY",
+    "note": "JWT region_code=530000——treasury policy ① 双区划 or:（chg=530000 OR rec=530000）；按双侧区划组合分组，对照裸查（用例 19 合计）核 OR 命中",
+    "query": {
+      "measures": [
+        "fiscal_treasury_view.count",
+        "fiscal_treasury_view.amt"
+      ],
+      "dimensions": [
+        "fiscal_treasury_view.chg_rgn_code",
+        "fiscal_treasury_view.rec_rgn_code"
+      ],
+      "order": {
+        "fiscal_treasury_view.chg_rgn_code": "asc"
+      }
+    }
+  },
+  {
+    "name": "22-缴库权限-单位用户空结果(JWT agency)",
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZ2VuY3lfY29kZSI6IjEyNDA0NSJ9.i_oib5K9K6Fqo-jFEowfM2iizOtI3ZJ9bSlLQE97M8s",
+    "note": "JWT agency_code=124045——treasury policy ② chg_agency=124045，fchgagencode 全空→空结果属预期（开放项 #9）",
+    "query": {
+      "measures": [
+        "fiscal_treasury_view.count"
+      ]
+    }
+  }
+]

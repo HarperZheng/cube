@@ -18,6 +18,7 @@ views:
         双侧区划：资金来源侧 chg_rgn_code、收入归属侧 rec_rgn_code，均无名称列只出编码。
         分成比例 share_rate 是位串编码（多段定长比例序列），仅供原样展示，人工解读口径二期再定。
         缴库数据暂无执收单位/缴款码维度（源列全空），按单位或缴款书查缴库暂不可行，单位用户查询为空属预期。
+        同比/环比差值与增长率成员（amt/count 两度量的 _yoy_diff/_yoy_rate/_mom_diff/_mom_rate/_qoq_diff/_qoq_rate 全系）：与上年同期/上月/上季的差值或增长率，引擎已算，直接绑定，答案层勿重复计算；同比用 _yoy 系（平移量固定 1 年，粒度随问句——按年/季/月分组分别为年/季/月度同比），月环比用 _mom 系（month 分组），季环比用 _qoq 系（quarter 分组），问"环比"不带粒度默认月环比；_ly/_lm/_lq 伴生列为内部实现，勿直接查询；增长率=差值÷上年同期×100，上年同期为 0 或无数据时为 null，报"无法计算/该期无数据"勿按 0；时间轴随问句语义——缴库口径按 build_date，已入国库口径按 enter_date 并带 enter_status='1'；同环比查询单条只用一条时间轴；reconcile_date 无同环比语义。
     cubes:
       - join_path: fiscal_treasury
         includes:
@@ -25,6 +26,18 @@ views:
           - bill_count
           - amt
           - total_amt
+          - amt_yoy_diff
+          - amt_yoy_rate
+          - count_yoy_diff
+          - count_yoy_rate
+          - amt_mom_diff
+          - amt_mom_rate
+          - count_mom_diff
+          - count_mom_rate
+          - amt_qoq_diff
+          - amt_qoq_rate
+          - count_qoq_diff
+          - count_qoq_rate
           - trans_no
           - sub_code
           - sub_name

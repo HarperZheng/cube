@@ -15,12 +15,24 @@ views:
         划拨/入库到账日期用 enter_date（报文侧）；与缴款书侧 received_date（collection 视图）口径不同勿混用。
         资金归口用 bgt_style（1国库 2专户）+ rec_acct_type 互校。时间过滤用 pay_date（fdate）。
         划出方区划名称（chg_rgn_name）与划入方单位名称暂无数据列，只出编码。
+        同比差值/增长率成员（count_yoy_diff/count_yoy_rate/im_amt_yoy_diff/im_amt_yoy_rate/trans_amt_yoy_diff/trans_amt_yoy_rate）：
+        与上年同期（同比）的差值或增长率，引擎已算，直接绑定，答案层勿重复计算；同比用 _yoy 系（平移量固定 1 年，粒度随问句——
+        按年/季/月分组分别为年/季/月度同比）；增长率=差值÷上年同期×100，上年同期为 0 或无数据时为 null，报"无法计算/该期无数据"勿按 0；
+        _ly 伴生列为内部实现，勿直接查询；
+        同环比仅 pay_date 一条轴，trans_date/enter_date（_last 最近一轮划转）不参与同环比；
+        同环比查询单条只用一条时间轴。
     cubes:
       - join_path: fiscal_allocation
         includes:
           - count
+          - count_yoy_diff
+          - count_yoy_rate
           - im_amt
+          - im_amt_yoy_diff
+          - im_amt_yoy_rate
           - trans_amt
+          - trans_amt_yoy_diff
+          - trans_amt_yoy_rate
           - pay_code
           - pay_date
           - clear_date

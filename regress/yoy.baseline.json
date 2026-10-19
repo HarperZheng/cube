@@ -1,0 +1,1201 @@
+{
+  "savedAt": "2026-10-17T11:32:55+0800",
+  "results": [
+    {
+      "name": "B1-2 treasury build_date 年同比数值闭环",
+      "query": {
+        "measures": [
+          "fiscal_treasury_view.amt",
+          "fiscal_treasury_view.amt_yoy_diff",
+          "fiscal_treasury_view.amt_yoy_rate",
+          "fiscal_treasury_view.count",
+          "fiscal_treasury_view.count_yoy_diff",
+          "fiscal_treasury_view.count_yoy_rate"
+        ],
+        "timeDimensions": [
+          {
+            "dimension": "fiscal_treasury_view.build_date",
+            "granularity": "year",
+            "dateRange": [
+              "2022-01-01",
+              "2024-12-31"
+            ]
+          }
+        ],
+        "order": {
+          "fiscal_treasury_view.build_date": "asc"
+        }
+      },
+      "resultSet": {
+        "data": [
+          {
+            "fiscal_treasury_view.build_date.year": "2022-01-01T00:00:00.000",
+            "fiscal_treasury_view.amt": "46053.04",
+            "fiscal_treasury_view.amt_yoy_diff": null,
+            "fiscal_treasury_view.amt_yoy_rate": null,
+            "fiscal_treasury_view.count": "34",
+            "fiscal_treasury_view.count_yoy_diff": null,
+            "fiscal_treasury_view.count_yoy_rate": null,
+            "fiscal_treasury_view.build_date": "2022-01-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.build_date.year": "2023-01-01T00:00:00.000",
+            "fiscal_treasury_view.amt": "34178.26",
+            "fiscal_treasury_view.amt_yoy_diff": "-11874.78",
+            "fiscal_treasury_view.amt_yoy_rate": "-25.785007895244267",
+            "fiscal_treasury_view.count": "10",
+            "fiscal_treasury_view.count_yoy_diff": "-24",
+            "fiscal_treasury_view.count_yoy_rate": "-70.58823529411765",
+            "fiscal_treasury_view.build_date": "2023-01-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.build_date.year": "2024-01-01T00:00:00.000",
+            "fiscal_treasury_view.amt": "3463.3",
+            "fiscal_treasury_view.amt_yoy_diff": "-30714.96",
+            "fiscal_treasury_view.amt_yoy_rate": "-89.86695051181657",
+            "fiscal_treasury_view.count": "15",
+            "fiscal_treasury_view.count_yoy_diff": "5",
+            "fiscal_treasury_view.count_yoy_rate": "50",
+            "fiscal_treasury_view.build_date": "2024-01-01T00:00:00.000"
+          }
+        ]
+      }
+    },
+    {
+      "name": "B1-3 treasury build_date 季度同比",
+      "query": {
+        "measures": [
+          "fiscal_treasury_view.amt",
+          "fiscal_treasury_view.amt_yoy_diff"
+        ],
+        "timeDimensions": [
+          {
+            "dimension": "fiscal_treasury_view.build_date",
+            "granularity": "quarter",
+            "dateRange": [
+              "2022-01-01",
+              "2023-12-31"
+            ]
+          }
+        ],
+        "order": {
+          "fiscal_treasury_view.build_date": "asc"
+        }
+      },
+      "resultSet": {
+        "data": [
+          {
+            "fiscal_treasury_view.build_date.quarter": "2022-01-01T00:00:00.000",
+            "fiscal_treasury_view.amt": "14060",
+            "fiscal_treasury_view.amt_yoy_diff": null,
+            "fiscal_treasury_view.build_date": "2022-01-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.build_date.quarter": "2022-04-01T00:00:00.000",
+            "fiscal_treasury_view.amt": "34",
+            "fiscal_treasury_view.amt_yoy_diff": null,
+            "fiscal_treasury_view.build_date": "2022-04-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.build_date.quarter": "2022-10-01T00:00:00.000",
+            "fiscal_treasury_view.amt": "31959.04",
+            "fiscal_treasury_view.amt_yoy_diff": null,
+            "fiscal_treasury_view.build_date": "2022-10-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.build_date.quarter": "2023-01-01T00:00:00.000",
+            "fiscal_treasury_view.amt": null,
+            "fiscal_treasury_view.amt_yoy_diff": null,
+            "fiscal_treasury_view.build_date": "2023-01-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.build_date.quarter": "2023-04-01T00:00:00.000",
+            "fiscal_treasury_view.amt": "830",
+            "fiscal_treasury_view.amt_yoy_diff": "796",
+            "fiscal_treasury_view.build_date": "2023-04-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.build_date.quarter": "2023-07-01T00:00:00.000",
+            "fiscal_treasury_view.amt": "6033",
+            "fiscal_treasury_view.amt_yoy_diff": null,
+            "fiscal_treasury_view.build_date": "2023-07-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.build_date.quarter": "2023-10-01T00:00:00.000",
+            "fiscal_treasury_view.amt": "27315.26",
+            "fiscal_treasury_view.amt_yoy_diff": "-4643.78",
+            "fiscal_treasury_view.build_date": "2023-10-01T00:00:00.000"
+          }
+        ]
+      }
+    },
+    {
+      "name": "B1-4a treasury enter_date 轴行为（已入国库口径）",
+      "query": {
+        "measures": [
+          "fiscal_treasury_view.amt",
+          "fiscal_treasury_view.amt_yoy_diff"
+        ],
+        "timeDimensions": [
+          {
+            "dimension": "fiscal_treasury_view.enter_date",
+            "granularity": "month",
+            "dateRange": [
+              "2022-01-01",
+              "2027-01-31"
+            ]
+          }
+        ],
+        "filters": [
+          {
+            "member": "fiscal_treasury_view.enter_status",
+            "operator": "equals",
+            "values": [
+              "1"
+            ]
+          }
+        ],
+        "order": {
+          "fiscal_treasury_view.enter_date": "asc"
+        }
+      },
+      "resultSet": {
+        "data": [
+          {
+            "fiscal_treasury_view.enter_date.month": "2022-02-01T00:00:00.000",
+            "fiscal_treasury_view.amt": "7520",
+            "fiscal_treasury_view.amt_yoy_diff": null,
+            "fiscal_treasury_view.enter_date": "2022-02-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.enter_date.month": "2022-03-01T00:00:00.000",
+            "fiscal_treasury_view.amt": "5444",
+            "fiscal_treasury_view.amt_yoy_diff": null,
+            "fiscal_treasury_view.enter_date": "2022-03-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.enter_date.month": "2022-07-01T00:00:00.000",
+            "fiscal_treasury_view.amt": "34",
+            "fiscal_treasury_view.amt_yoy_diff": null,
+            "fiscal_treasury_view.enter_date": "2022-07-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.enter_date.month": "2023-02-01T00:00:00.000",
+            "fiscal_treasury_view.amt": null,
+            "fiscal_treasury_view.amt_yoy_diff": null,
+            "fiscal_treasury_view.enter_date": "2023-02-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.enter_date.month": "2023-03-01T00:00:00.000",
+            "fiscal_treasury_view.amt": null,
+            "fiscal_treasury_view.amt_yoy_diff": null,
+            "fiscal_treasury_view.enter_date": "2023-03-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.enter_date.month": "2023-07-01T00:00:00.000",
+            "fiscal_treasury_view.amt": null,
+            "fiscal_treasury_view.amt_yoy_diff": null,
+            "fiscal_treasury_view.enter_date": "2023-07-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.enter_date.month": "2026-01-01T00:00:00.000",
+            "fiscal_treasury_view.amt": "33306.09",
+            "fiscal_treasury_view.amt_yoy_diff": null,
+            "fiscal_treasury_view.enter_date": "2026-01-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.enter_date.month": "2027-01-01T00:00:00.000",
+            "fiscal_treasury_view.amt": null,
+            "fiscal_treasury_view.amt_yoy_diff": null,
+            "fiscal_treasury_view.enter_date": "2027-01-01T00:00:00.000"
+          }
+        ]
+      }
+    },
+    {
+      "name": "B2-2 collection pay_date 年同比（amt+count 族）",
+      "query": {
+        "measures": [
+          "fiscal_collection_view.amt",
+          "fiscal_collection_view.amt_yoy_diff",
+          "fiscal_collection_view.count",
+          "fiscal_collection_view.count_yoy_diff"
+        ],
+        "timeDimensions": [
+          {
+            "dimension": "fiscal_collection_view.pay_date",
+            "granularity": "year",
+            "dateRange": [
+              "2022-01-01",
+              "2024-12-31"
+            ]
+          }
+        ],
+        "order": {
+          "fiscal_collection_view.pay_date": "asc"
+        }
+      },
+      "resultSet": {
+        "data": [
+          {
+            "fiscal_collection_view.pay_date.year": "2022-01-01T00:00:00.000",
+            "fiscal_collection_view.amt": "18208936572.27",
+            "fiscal_collection_view.amt_yoy_diff": "18208935739.27",
+            "fiscal_collection_view.count": "385",
+            "fiscal_collection_view.count_yoy_diff": "379",
+            "fiscal_collection_view.pay_date": "2022-01-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.year": "2023-01-01T00:00:00.000",
+            "fiscal_collection_view.amt": "1465810.31",
+            "fiscal_collection_view.amt_yoy_diff": "-18207470761.96",
+            "fiscal_collection_view.count": "170",
+            "fiscal_collection_view.count_yoy_diff": "-215",
+            "fiscal_collection_view.pay_date": "2023-01-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.year": "2024-01-01T00:00:00.000",
+            "fiscal_collection_view.amt": "76124436.822",
+            "fiscal_collection_view.amt_yoy_diff": "74658626.512",
+            "fiscal_collection_view.count": "448",
+            "fiscal_collection_view.count_yoy_diff": "278",
+            "fiscal_collection_view.pay_date": "2024-01-01T00:00:00.000"
+          }
+        ]
+      }
+    },
+    {
+      "name": "B2-3 collection pay_date 月环比",
+      "query": {
+        "measures": [
+          "fiscal_collection_view.amt",
+          "fiscal_collection_view.amt_mom_diff"
+        ],
+        "timeDimensions": [
+          {
+            "dimension": "fiscal_collection_view.pay_date",
+            "granularity": "month",
+            "dateRange": [
+              "2021-12-01",
+              "2022-12-31"
+            ]
+          }
+        ],
+        "order": {
+          "fiscal_collection_view.pay_date": "asc"
+        }
+      },
+      "resultSet": {
+        "data": [
+          {
+            "fiscal_collection_view.pay_date.month": "2021-12-01T00:00:00.000",
+            "fiscal_collection_view.amt": "833",
+            "fiscal_collection_view.amt_mom_diff": null,
+            "fiscal_collection_view.pay_date": "2021-12-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2022-01-01T00:00:00.000",
+            "fiscal_collection_view.amt": "13301",
+            "fiscal_collection_view.amt_mom_diff": "12468",
+            "fiscal_collection_view.pay_date": "2022-01-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2022-02-01T00:00:00.000",
+            "fiscal_collection_view.amt": "40779",
+            "fiscal_collection_view.amt_mom_diff": "27478",
+            "fiscal_collection_view.pay_date": "2022-02-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2022-03-01T00:00:00.000",
+            "fiscal_collection_view.amt": "19815",
+            "fiscal_collection_view.amt_mom_diff": "-20964",
+            "fiscal_collection_view.pay_date": "2022-03-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2022-04-01T00:00:00.000",
+            "fiscal_collection_view.amt": "15985631415",
+            "fiscal_collection_view.amt_mom_diff": "15985611600",
+            "fiscal_collection_view.pay_date": "2022-04-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2022-05-01T00:00:00.000",
+            "fiscal_collection_view.amt": "494",
+            "fiscal_collection_view.amt_mom_diff": "-15985630921",
+            "fiscal_collection_view.pay_date": "2022-05-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2022-06-01T00:00:00.000",
+            "fiscal_collection_view.amt": "4112.9",
+            "fiscal_collection_view.amt_mom_diff": "3618.9",
+            "fiscal_collection_view.pay_date": "2022-06-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2022-07-01T00:00:00.000",
+            "fiscal_collection_view.amt": "23",
+            "fiscal_collection_view.amt_mom_diff": "-4089.9",
+            "fiscal_collection_view.pay_date": "2022-07-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2022-08-01T00:00:00.000",
+            "fiscal_collection_view.amt": "17617.79",
+            "fiscal_collection_view.amt_mom_diff": "17594.79",
+            "fiscal_collection_view.pay_date": "2022-08-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2022-09-01T00:00:00.000",
+            "fiscal_collection_view.amt": "5453.68",
+            "fiscal_collection_view.amt_mom_diff": "-12164.11",
+            "fiscal_collection_view.pay_date": "2022-09-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2022-10-01T00:00:00.000",
+            "fiscal_collection_view.amt": "38188.35",
+            "fiscal_collection_view.amt_mom_diff": "32734.67",
+            "fiscal_collection_view.pay_date": "2022-10-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2022-11-01T00:00:00.000",
+            "fiscal_collection_view.amt": "236799.19",
+            "fiscal_collection_view.amt_mom_diff": "198610.84",
+            "fiscal_collection_view.pay_date": "2022-11-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.month": "2022-12-01T00:00:00.000",
+            "fiscal_collection_view.amt": "2222928573.36",
+            "fiscal_collection_view.amt_mom_diff": "2222691774.17",
+            "fiscal_collection_view.pay_date": "2022-12-01T00:00:00.000"
+          }
+        ]
+      }
+    },
+    {
+      "name": "B2-4 collection pay_date 季环比",
+      "query": {
+        "measures": [
+          "fiscal_collection_view.amt",
+          "fiscal_collection_view.amt_qoq_diff"
+        ],
+        "timeDimensions": [
+          {
+            "dimension": "fiscal_collection_view.pay_date",
+            "granularity": "quarter",
+            "dateRange": [
+              "2021-10-01",
+              "2022-12-31"
+            ]
+          }
+        ],
+        "order": {
+          "fiscal_collection_view.pay_date": "asc"
+        }
+      },
+      "resultSet": {
+        "data": [
+          {
+            "fiscal_collection_view.pay_date.quarter": "2021-10-01T00:00:00.000",
+            "fiscal_collection_view.amt": "833",
+            "fiscal_collection_view.amt_qoq_diff": null,
+            "fiscal_collection_view.pay_date": "2021-10-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.quarter": "2022-01-01T00:00:00.000",
+            "fiscal_collection_view.amt": "73895",
+            "fiscal_collection_view.amt_qoq_diff": "73062",
+            "fiscal_collection_view.pay_date": "2022-01-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.quarter": "2022-04-01T00:00:00.000",
+            "fiscal_collection_view.amt": "15985636021.9",
+            "fiscal_collection_view.amt_qoq_diff": "15985562126.9",
+            "fiscal_collection_view.pay_date": "2022-04-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.quarter": "2022-07-01T00:00:00.000",
+            "fiscal_collection_view.amt": "23094.47",
+            "fiscal_collection_view.amt_qoq_diff": "-15985612927.43",
+            "fiscal_collection_view.pay_date": "2022-07-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.pay_date.quarter": "2022-10-01T00:00:00.000",
+            "fiscal_collection_view.amt": "2223203560.9",
+            "fiscal_collection_view.amt_qoq_diff": "2223180466.43",
+            "fiscal_collection_view.pay_date": "2022-10-01T00:00:00.000"
+          }
+        ]
+      }
+    },
+    {
+      "name": "B2-5 collection received_date entered_amt 同比（带 filter 族）",
+      "query": {
+        "measures": [
+          "fiscal_collection_view.entered_amt",
+          "fiscal_collection_view.entered_amt_yoy_diff",
+          "fiscal_collection_view.entered_amt_yoy_rate"
+        ],
+        "timeDimensions": [
+          {
+            "dimension": "fiscal_collection_view.received_date",
+            "granularity": "year",
+            "dateRange": [
+              "2022-01-01",
+              "2024-12-31"
+            ]
+          }
+        ],
+        "order": {
+          "fiscal_collection_view.received_date": "asc"
+        }
+      },
+      "resultSet": {
+        "data": [
+          {
+            "fiscal_collection_view.received_date.year": "2022-01-01T00:00:00.000",
+            "fiscal_collection_view.entered_amt": "170043.59",
+            "fiscal_collection_view.entered_amt_yoy_diff": null,
+            "fiscal_collection_view.entered_amt_yoy_rate": null,
+            "fiscal_collection_view.received_date": "2022-01-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.received_date.year": "2023-01-01T00:00:00.000",
+            "fiscal_collection_view.entered_amt": "40093.72",
+            "fiscal_collection_view.entered_amt_yoy_diff": "-129949.87",
+            "fiscal_collection_view.entered_amt_yoy_rate": "-76.42150462713708",
+            "fiscal_collection_view.received_date": "2023-01-01T00:00:00.000"
+          },
+          {
+            "fiscal_collection_view.received_date.year": "2024-01-01T00:00:00.000",
+            "fiscal_collection_view.entered_amt": "29115818.96",
+            "fiscal_collection_view.entered_amt_yoy_diff": "29075725.24",
+            "fiscal_collection_view.entered_amt_yoy_rate": "72519.40014545919",
+            "fiscal_collection_view.received_date": "2024-01-01T00:00:00.000"
+          }
+        ]
+      }
+    },
+    {
+      "name": "B3-2 allocation pay_date 年同比（count+im+trans 三族）",
+      "query": {
+        "measures": [
+          "fiscal_allocation_view.count",
+          "fiscal_allocation_view.count_yoy_diff",
+          "fiscal_allocation_view.count_yoy_rate",
+          "fiscal_allocation_view.im_amt",
+          "fiscal_allocation_view.im_amt_yoy_diff",
+          "fiscal_allocation_view.im_amt_yoy_rate",
+          "fiscal_allocation_view.trans_amt",
+          "fiscal_allocation_view.trans_amt_yoy_diff",
+          "fiscal_allocation_view.trans_amt_yoy_rate"
+        ],
+        "timeDimensions": [
+          {
+            "dimension": "fiscal_allocation_view.pay_date",
+            "granularity": "year",
+            "dateRange": [
+              "2022-01-01",
+              "2027-12-31"
+            ]
+          }
+        ],
+        "order": {
+          "fiscal_allocation_view.pay_date": "asc"
+        }
+      },
+      "resultSet": {
+        "data": [
+          {
+            "fiscal_allocation_view.pay_date.year": "2022-01-01T00:00:00.000",
+            "fiscal_allocation_view.count": "320",
+            "fiscal_allocation_view.count_yoy_diff": null,
+            "fiscal_allocation_view.count_yoy_rate": null,
+            "fiscal_allocation_view.im_amt": "15986579101.87",
+            "fiscal_allocation_view.im_amt_yoy_diff": null,
+            "fiscal_allocation_view.im_amt_yoy_rate": null,
+            "fiscal_allocation_view.trans_amt": "68453",
+            "fiscal_allocation_view.trans_amt_yoy_diff": null,
+            "fiscal_allocation_view.trans_amt_yoy_rate": null,
+            "fiscal_allocation_view.pay_date": "2022-01-01T00:00:00.000"
+          },
+          {
+            "fiscal_allocation_view.pay_date.year": "2023-01-01T00:00:00.000",
+            "fiscal_allocation_view.count": "59",
+            "fiscal_allocation_view.count_yoy_diff": "-261",
+            "fiscal_allocation_view.count_yoy_rate": "-81.5625",
+            "fiscal_allocation_view.im_amt": "62882.72",
+            "fiscal_allocation_view.im_amt_yoy_diff": "-15986516219.15",
+            "fiscal_allocation_view.im_amt_yoy_rate": "-99.99960665305817",
+            "fiscal_allocation_view.trans_amt": null,
+            "fiscal_allocation_view.trans_amt_yoy_diff": null,
+            "fiscal_allocation_view.trans_amt_yoy_rate": null,
+            "fiscal_allocation_view.pay_date": "2023-01-01T00:00:00.000"
+          },
+          {
+            "fiscal_allocation_view.pay_date.year": "2024-01-01T00:00:00.000",
+            "fiscal_allocation_view.count": "209",
+            "fiscal_allocation_view.count_yoy_diff": "150",
+            "fiscal_allocation_view.count_yoy_rate": "254.23728813559322",
+            "fiscal_allocation_view.im_amt": "29408026.94",
+            "fiscal_allocation_view.im_amt_yoy_diff": "29345144.22",
+            "fiscal_allocation_view.im_amt_yoy_rate": "46666.467703687114",
+            "fiscal_allocation_view.trans_amt": "3610.62",
+            "fiscal_allocation_view.trans_amt_yoy_diff": null,
+            "fiscal_allocation_view.trans_amt_yoy_rate": null,
+            "fiscal_allocation_view.pay_date": "2024-01-01T00:00:00.000"
+          },
+          {
+            "fiscal_allocation_view.pay_date.year": "2025-01-01T00:00:00.000",
+            "fiscal_allocation_view.count": "76",
+            "fiscal_allocation_view.count_yoy_diff": "-133",
+            "fiscal_allocation_view.count_yoy_rate": "-63.63636363636363",
+            "fiscal_allocation_view.im_amt": "16207.29",
+            "fiscal_allocation_view.im_amt_yoy_diff": "-29391819.65",
+            "fiscal_allocation_view.im_amt_yoy_rate": "-99.94488821017109",
+            "fiscal_allocation_view.trans_amt": "20",
+            "fiscal_allocation_view.trans_amt_yoy_diff": "-3590.62",
+            "fiscal_allocation_view.trans_amt_yoy_rate": "-99.44607851283159",
+            "fiscal_allocation_view.pay_date": "2025-01-01T00:00:00.000"
+          },
+          {
+            "fiscal_allocation_view.pay_date.year": "2026-01-01T00:00:00.000",
+            "fiscal_allocation_view.count": "64",
+            "fiscal_allocation_view.count_yoy_diff": "-12",
+            "fiscal_allocation_view.count_yoy_rate": "-15.789473684210526",
+            "fiscal_allocation_view.im_amt": "13248.86",
+            "fiscal_allocation_view.im_amt_yoy_diff": "-2958.43",
+            "fiscal_allocation_view.im_amt_yoy_rate": "-18.25369941550993",
+            "fiscal_allocation_view.trans_amt": "424",
+            "fiscal_allocation_view.trans_amt_yoy_diff": "404",
+            "fiscal_allocation_view.trans_amt_yoy_rate": "2020",
+            "fiscal_allocation_view.pay_date": "2026-01-01T00:00:00.000"
+          },
+          {
+            "fiscal_allocation_view.pay_date.year": "2027-01-01T00:00:00.000",
+            "fiscal_allocation_view.count": null,
+            "fiscal_allocation_view.count_yoy_diff": null,
+            "fiscal_allocation_view.count_yoy_rate": null,
+            "fiscal_allocation_view.im_amt": null,
+            "fiscal_allocation_view.im_amt_yoy_diff": null,
+            "fiscal_allocation_view.im_amt_yoy_rate": null,
+            "fiscal_allocation_view.trans_amt": null,
+            "fiscal_allocation_view.trans_amt_yoy_diff": null,
+            "fiscal_allocation_view.trans_amt_yoy_rate": null,
+            "fiscal_allocation_view.pay_date": "2027-01-01T00:00:00.000"
+          }
+        ]
+      }
+    },
+    {
+      "name": "B3-3 allocation pay_date 季度同比（count+im+trans 三族）",
+      "query": {
+        "measures": [
+          "fiscal_allocation_view.count",
+          "fiscal_allocation_view.count_yoy_diff",
+          "fiscal_allocation_view.im_amt",
+          "fiscal_allocation_view.im_amt_yoy_diff",
+          "fiscal_allocation_view.trans_amt",
+          "fiscal_allocation_view.trans_amt_yoy_diff"
+        ],
+        "timeDimensions": [
+          {
+            "dimension": "fiscal_allocation_view.pay_date",
+            "granularity": "quarter",
+            "dateRange": [
+              "2022-01-01",
+              "2027-12-31"
+            ]
+          }
+        ],
+        "order": {
+          "fiscal_allocation_view.pay_date": "asc"
+        }
+      },
+      "resultSet": {
+        "data": [
+          {
+            "fiscal_allocation_view.pay_date.quarter": "2022-01-01T00:00:00.000",
+            "fiscal_allocation_view.count": "104",
+            "fiscal_allocation_view.count_yoy_diff": null,
+            "fiscal_allocation_view.im_amt": "52696",
+            "fiscal_allocation_view.im_amt_yoy_diff": null,
+            "fiscal_allocation_view.trans_amt": "43601",
+            "fiscal_allocation_view.trans_amt_yoy_diff": null,
+            "fiscal_allocation_view.pay_date": "2022-01-01T00:00:00.000"
+          },
+          {
+            "fiscal_allocation_view.pay_date.quarter": "2022-04-01T00:00:00.000",
+            "fiscal_allocation_view.count": "21",
+            "fiscal_allocation_view.count_yoy_diff": null,
+            "fiscal_allocation_view.im_amt": "15985628800.45",
+            "fiscal_allocation_view.im_amt_yoy_diff": null,
+            "fiscal_allocation_view.trans_amt": "690",
+            "fiscal_allocation_view.trans_amt_yoy_diff": null,
+            "fiscal_allocation_view.pay_date": "2022-04-01T00:00:00.000"
+          },
+          {
+            "fiscal_allocation_view.pay_date.quarter": "2022-07-01T00:00:00.000",
+            "fiscal_allocation_view.count": "69",
+            "fiscal_allocation_view.count_yoy_diff": null,
+            "fiscal_allocation_view.im_amt": "23071.47",
+            "fiscal_allocation_view.im_amt_yoy_diff": null,
+            "fiscal_allocation_view.trans_amt": "8894",
+            "fiscal_allocation_view.trans_amt_yoy_diff": null,
+            "fiscal_allocation_view.pay_date": "2022-07-01T00:00:00.000"
+          },
+          {
+            "fiscal_allocation_view.pay_date.quarter": "2022-10-01T00:00:00.000",
+            "fiscal_allocation_view.count": "126",
+            "fiscal_allocation_view.count_yoy_diff": null,
+            "fiscal_allocation_view.im_amt": "874533.95",
+            "fiscal_allocation_view.im_amt_yoy_diff": null,
+            "fiscal_allocation_view.trans_amt": "15268",
+            "fiscal_allocation_view.trans_amt_yoy_diff": null,
+            "fiscal_allocation_view.pay_date": "2022-10-01T00:00:00.000"
+          },
+          {
+            "fiscal_allocation_view.pay_date.quarter": "2023-01-01T00:00:00.000",
+            "fiscal_allocation_view.count": "10",
+            "fiscal_allocation_view.count_yoy_diff": "-94",
+            "fiscal_allocation_view.im_amt": "26734",
+            "fiscal_allocation_view.im_amt_yoy_diff": "-25962",
+            "fiscal_allocation_view.trans_amt": null,
+            "fiscal_allocation_view.trans_amt_yoy_diff": null,
+            "fiscal_allocation_view.pay_date": "2023-01-01T00:00:00.000"
+          },
+          {
+            "fiscal_allocation_view.pay_date.quarter": "2023-04-01T00:00:00.000",
+            "fiscal_allocation_view.count": "34",
+            "fiscal_allocation_view.count_yoy_diff": "13",
+            "fiscal_allocation_view.im_amt": "6666",
+            "fiscal_allocation_view.im_amt_yoy_diff": "-15985622134.45",
+            "fiscal_allocation_view.trans_amt": null,
+            "fiscal_allocation_view.trans_amt_yoy_diff": null,
+            "fiscal_allocation_view.pay_date": "2023-04-01T00:00:00.000"
+          },
+          {
+            "fiscal_allocation_view.pay_date.quarter": "2023-07-01T00:00:00.000",
+            "fiscal_allocation_view.count": "5",
+            "fiscal_allocation_view.count_yoy_diff": "-64",
+            "fiscal_allocation_view.im_amt": "544",
+            "fiscal_allocation_view.im_amt_yoy_diff": "-22527.47",
+            "fiscal_allocation_view.trans_amt": null,
+            "fiscal_allocation_view.trans_amt_yoy_diff": null,
+            "fiscal_allocation_view.pay_date": "2023-07-01T00:00:00.000"
+          },
+          {
+            "fiscal_allocation_view.pay_date.quarter": "2023-10-01T00:00:00.000",
+            "fiscal_allocation_view.count": "10",
+            "fiscal_allocation_view.count_yoy_diff": "-116",
+            "fiscal_allocation_view.im_amt": "28938.72",
+            "fiscal_allocation_view.im_amt_yoy_diff": "-845595.23",
+            "fiscal_allocation_view.trans_amt": null,
+            "fiscal_allocation_view.trans_amt_yoy_diff": null,
+            "fiscal_allocation_view.pay_date": "2023-10-01T00:00:00.000"
+          },
+          {
+            "fiscal_allocation_view.pay_date.quarter": "2024-01-01T00:00:00.000",
+            "fiscal_allocation_view.count": "31",
+            "fiscal_allocation_view.count_yoy_diff": "21",
+            "fiscal_allocation_view.im_amt": "164821.96",
+            "fiscal_allocation_view.im_amt_yoy_diff": "138087.96",
+            "fiscal_allocation_view.trans_amt": "1664.62",
+            "fiscal_allocation_view.trans_amt_yoy_diff": null,
+            "fiscal_allocation_view.pay_date": "2024-01-01T00:00:00.000"
+          },
+          {
+            "fiscal_allocation_view.pay_date.quarter": "2024-04-01T00:00:00.000",
+            "fiscal_allocation_view.count": "40",
+            "fiscal_allocation_view.count_yoy_diff": "6",
+            "fiscal_allocation_view.im_amt": "28916832.1",
+            "fiscal_allocation_view.im_amt_yoy_diff": "28910166.1",
+            "fiscal_allocation_view.trans_amt": "906",
+            "fiscal_allocation_view.trans_amt_yoy_diff": null,
+            "fiscal_allocation_view.pay_date": "2024-04-01T00:00:00.000"
+          },
+          {
+            "fiscal_allocation_view.pay_date.quarter": "2024-07-01T00:00:00.000",
+            "fiscal_allocation_view.count": "90",
+            "fiscal_allocation_view.count_yoy_diff": "85",
+            "fiscal_allocation_view.im_amt": "309767.92",
+            "fiscal_allocation_view.im_amt_yoy_diff": "309223.92",
+            "fiscal_allocation_view.trans_amt": "940",
+            "fiscal_allocation_view.trans_amt_yoy_diff": null,
+            "fiscal_allocation_view.pay_date": "2024-07-01T00:00:00.000"
+          },
+          {
+            "fiscal_allocation_view.pay_date.quarter": "2024-10-01T00:00:00.000",
+            "fiscal_allocation_view.count": "48",
+            "fiscal_allocation_view.count_yoy_diff": "38",
+            "fiscal_allocation_view.im_amt": "16604.96",
+            "fiscal_allocation_view.im_amt_yoy_diff": "-12333.76",
+            "fiscal_allocation_view.trans_amt": "100",
+            "fiscal_allocation_view.trans_amt_yoy_diff": null,
+            "fiscal_allocation_view.pay_date": "2024-10-01T00:00:00.000"
+          },
+          {
+            "fiscal_allocation_view.pay_date.quarter": "2025-01-01T00:00:00.000",
+            "fiscal_allocation_view.count": "37",
+            "fiscal_allocation_view.count_yoy_diff": "6",
+            "fiscal_allocation_view.im_amt": "11348.05",
+            "fiscal_allocation_view.im_amt_yoy_diff": "-153473.91",
+            "fiscal_allocation_view.trans_amt": "20",
+            "fiscal_allocation_view.trans_amt_yoy_diff": "-1644.62",
+            "fiscal_allocation_view.pay_date": "2025-01-01T00:00:00.000"
+          },
+          {
+            "fiscal_allocation_view.pay_date.quarter": "2025-04-01T00:00:00.000",
+            "fiscal_allocation_view.count": "37",
+            "fiscal_allocation_view.count_yoy_diff": "-3",
+            "fiscal_allocation_view.im_amt": "4659.24",
+            "fiscal_allocation_view.im_amt_yoy_diff": "-28912172.86",
+            "fiscal_allocation_view.trans_amt": null,
+            "fiscal_allocation_view.trans_amt_yoy_diff": null,
+            "fiscal_allocation_view.pay_date": "2025-04-01T00:00:00.000"
+          },
+          {
+            "fiscal_allocation_view.pay_date.quarter": "2025-07-01T00:00:00.000",
+            "fiscal_allocation_view.count": null,
+            "fiscal_allocation_view.count_yoy_diff": null,
+            "fiscal_allocation_view.im_amt": null,
+            "fiscal_allocation_view.im_amt_yoy_diff": null,
+            "fiscal_allocation_view.trans_amt": null,
+            "fiscal_allocation_view.trans_amt_yoy_diff": null,
+            "fiscal_allocation_view.pay_date": "2025-07-01T00:00:00.000"
+          },
+          {
+            "fiscal_allocation_view.pay_date.quarter": "2025-10-01T00:00:00.000",
+            "fiscal_allocation_view.count": "2",
+            "fiscal_allocation_view.count_yoy_diff": "-46",
+            "fiscal_allocation_view.im_amt": "200",
+            "fiscal_allocation_view.im_amt_yoy_diff": "-16404.96",
+            "fiscal_allocation_view.trans_amt": null,
+            "fiscal_allocation_view.trans_amt_yoy_diff": null,
+            "fiscal_allocation_view.pay_date": "2025-10-01T00:00:00.000"
+          },
+          {
+            "fiscal_allocation_view.pay_date.quarter": "2026-01-01T00:00:00.000",
+            "fiscal_allocation_view.count": "33",
+            "fiscal_allocation_view.count_yoy_diff": "-4",
+            "fiscal_allocation_view.im_amt": "2628",
+            "fiscal_allocation_view.im_amt_yoy_diff": "-8720.05",
+            "fiscal_allocation_view.trans_amt": "424",
+            "fiscal_allocation_view.trans_amt_yoy_diff": "404",
+            "fiscal_allocation_view.pay_date": "2026-01-01T00:00:00.000"
+          },
+          {
+            "fiscal_allocation_view.pay_date.quarter": "2026-04-01T00:00:00.000",
+            "fiscal_allocation_view.count": "20",
+            "fiscal_allocation_view.count_yoy_diff": "-17",
+            "fiscal_allocation_view.im_amt": "10219.6",
+            "fiscal_allocation_view.im_amt_yoy_diff": "5560.36",
+            "fiscal_allocation_view.trans_amt": null,
+            "fiscal_allocation_view.trans_amt_yoy_diff": null,
+            "fiscal_allocation_view.pay_date": "2026-04-01T00:00:00.000"
+          },
+          {
+            "fiscal_allocation_view.pay_date.quarter": "2026-07-01T00:00:00.000",
+            "fiscal_allocation_view.count": "11",
+            "fiscal_allocation_view.count_yoy_diff": null,
+            "fiscal_allocation_view.im_amt": "401.26",
+            "fiscal_allocation_view.im_amt_yoy_diff": null,
+            "fiscal_allocation_view.trans_amt": null,
+            "fiscal_allocation_view.trans_amt_yoy_diff": null,
+            "fiscal_allocation_view.pay_date": "2026-07-01T00:00:00.000"
+          },
+          {
+            "fiscal_allocation_view.pay_date.quarter": "2026-10-01T00:00:00.000",
+            "fiscal_allocation_view.count": null,
+            "fiscal_allocation_view.count_yoy_diff": null,
+            "fiscal_allocation_view.im_amt": null,
+            "fiscal_allocation_view.im_amt_yoy_diff": null,
+            "fiscal_allocation_view.trans_amt": null,
+            "fiscal_allocation_view.trans_amt_yoy_diff": null,
+            "fiscal_allocation_view.pay_date": "2026-10-01T00:00:00.000"
+          },
+          {
+            "fiscal_allocation_view.pay_date.quarter": "2027-01-01T00:00:00.000",
+            "fiscal_allocation_view.count": null,
+            "fiscal_allocation_view.count_yoy_diff": null,
+            "fiscal_allocation_view.im_amt": null,
+            "fiscal_allocation_view.im_amt_yoy_diff": null,
+            "fiscal_allocation_view.trans_amt": null,
+            "fiscal_allocation_view.trans_amt_yoy_diff": null,
+            "fiscal_allocation_view.pay_date": "2027-01-01T00:00:00.000"
+          },
+          {
+            "fiscal_allocation_view.pay_date.quarter": "2027-04-01T00:00:00.000",
+            "fiscal_allocation_view.count": null,
+            "fiscal_allocation_view.count_yoy_diff": null,
+            "fiscal_allocation_view.im_amt": null,
+            "fiscal_allocation_view.im_amt_yoy_diff": null,
+            "fiscal_allocation_view.trans_amt": null,
+            "fiscal_allocation_view.trans_amt_yoy_diff": null,
+            "fiscal_allocation_view.pay_date": "2027-04-01T00:00:00.000"
+          },
+          {
+            "fiscal_allocation_view.pay_date.quarter": "2027-07-01T00:00:00.000",
+            "fiscal_allocation_view.count": null,
+            "fiscal_allocation_view.count_yoy_diff": null,
+            "fiscal_allocation_view.im_amt": null,
+            "fiscal_allocation_view.im_amt_yoy_diff": null,
+            "fiscal_allocation_view.trans_amt": null,
+            "fiscal_allocation_view.trans_amt_yoy_diff": null,
+            "fiscal_allocation_view.pay_date": "2027-07-01T00:00:00.000"
+          }
+        ]
+      }
+    },
+    {
+      "name": "B4-1 treasury build_date 月环比（amt+count 族，双轴成员 build_date 侧）",
+      "query": {
+        "measures": [
+          "fiscal_treasury_view.amt",
+          "fiscal_treasury_view.amt_mom_diff",
+          "fiscal_treasury_view.amt_mom_rate",
+          "fiscal_treasury_view.count",
+          "fiscal_treasury_view.count_mom_diff",
+          "fiscal_treasury_view.count_mom_rate"
+        ],
+        "timeDimensions": [
+          {
+            "dimension": "fiscal_treasury_view.build_date",
+            "granularity": "month",
+            "dateRange": [
+              "2022-01-01",
+              "2024-12-31"
+            ]
+          }
+        ],
+        "order": {
+          "fiscal_treasury_view.build_date": "asc"
+        }
+      },
+      "resultSet": {
+        "data": [
+          {
+            "fiscal_treasury_view.build_date.month": "2022-02-01T00:00:00.000",
+            "fiscal_treasury_view.amt": "7520",
+            "fiscal_treasury_view.amt_mom_diff": null,
+            "fiscal_treasury_view.amt_mom_rate": null,
+            "fiscal_treasury_view.count": "3",
+            "fiscal_treasury_view.count_mom_diff": null,
+            "fiscal_treasury_view.count_mom_rate": null,
+            "fiscal_treasury_view.build_date": "2022-02-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.build_date.month": "2022-03-01T00:00:00.000",
+            "fiscal_treasury_view.amt": "6540",
+            "fiscal_treasury_view.amt_mom_diff": "-980",
+            "fiscal_treasury_view.amt_mom_rate": "-13.03191489361702",
+            "fiscal_treasury_view.count": "23",
+            "fiscal_treasury_view.count_mom_diff": "20",
+            "fiscal_treasury_view.count_mom_rate": "666.6666666666666",
+            "fiscal_treasury_view.build_date": "2022-03-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.build_date.month": "2022-04-01T00:00:00.000",
+            "fiscal_treasury_view.amt": "34",
+            "fiscal_treasury_view.amt_mom_diff": "-6506",
+            "fiscal_treasury_view.amt_mom_rate": "-99.48012232415903",
+            "fiscal_treasury_view.count": "1",
+            "fiscal_treasury_view.count_mom_diff": "-22",
+            "fiscal_treasury_view.count_mom_rate": "-95.65217391304348",
+            "fiscal_treasury_view.build_date": "2022-04-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.build_date.month": "2022-05-01T00:00:00.000",
+            "fiscal_treasury_view.amt": null,
+            "fiscal_treasury_view.amt_mom_diff": null,
+            "fiscal_treasury_view.amt_mom_rate": null,
+            "fiscal_treasury_view.count": null,
+            "fiscal_treasury_view.count_mom_diff": null,
+            "fiscal_treasury_view.count_mom_rate": null,
+            "fiscal_treasury_view.build_date": "2022-05-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.build_date.month": "2022-10-01T00:00:00.000",
+            "fiscal_treasury_view.amt": "31959.04",
+            "fiscal_treasury_view.amt_mom_diff": null,
+            "fiscal_treasury_view.amt_mom_rate": null,
+            "fiscal_treasury_view.count": "7",
+            "fiscal_treasury_view.count_mom_diff": null,
+            "fiscal_treasury_view.count_mom_rate": null,
+            "fiscal_treasury_view.build_date": "2022-10-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.build_date.month": "2022-11-01T00:00:00.000",
+            "fiscal_treasury_view.amt": null,
+            "fiscal_treasury_view.amt_mom_diff": null,
+            "fiscal_treasury_view.amt_mom_rate": null,
+            "fiscal_treasury_view.count": null,
+            "fiscal_treasury_view.count_mom_diff": null,
+            "fiscal_treasury_view.count_mom_rate": null,
+            "fiscal_treasury_view.build_date": "2022-11-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.build_date.month": "2023-05-01T00:00:00.000",
+            "fiscal_treasury_view.amt": "830",
+            "fiscal_treasury_view.amt_mom_diff": null,
+            "fiscal_treasury_view.amt_mom_rate": null,
+            "fiscal_treasury_view.count": "2",
+            "fiscal_treasury_view.count_mom_diff": null,
+            "fiscal_treasury_view.count_mom_rate": null,
+            "fiscal_treasury_view.build_date": "2023-05-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.build_date.month": "2023-06-01T00:00:00.000",
+            "fiscal_treasury_view.amt": null,
+            "fiscal_treasury_view.amt_mom_diff": null,
+            "fiscal_treasury_view.amt_mom_rate": null,
+            "fiscal_treasury_view.count": null,
+            "fiscal_treasury_view.count_mom_diff": null,
+            "fiscal_treasury_view.count_mom_rate": null,
+            "fiscal_treasury_view.build_date": "2023-06-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.build_date.month": "2023-07-01T00:00:00.000",
+            "fiscal_treasury_view.amt": "5933",
+            "fiscal_treasury_view.amt_mom_diff": null,
+            "fiscal_treasury_view.amt_mom_rate": null,
+            "fiscal_treasury_view.count": "1",
+            "fiscal_treasury_view.count_mom_diff": null,
+            "fiscal_treasury_view.count_mom_rate": null,
+            "fiscal_treasury_view.build_date": "2023-07-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.build_date.month": "2023-08-01T00:00:00.000",
+            "fiscal_treasury_view.amt": "100",
+            "fiscal_treasury_view.amt_mom_diff": "-5833",
+            "fiscal_treasury_view.amt_mom_rate": "-98.31451205123884",
+            "fiscal_treasury_view.count": "1",
+            "fiscal_treasury_view.count_mom_diff": "0",
+            "fiscal_treasury_view.count_mom_rate": "0",
+            "fiscal_treasury_view.build_date": "2023-08-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.build_date.month": "2023-09-01T00:00:00.000",
+            "fiscal_treasury_view.amt": null,
+            "fiscal_treasury_view.amt_mom_diff": null,
+            "fiscal_treasury_view.amt_mom_rate": null,
+            "fiscal_treasury_view.count": null,
+            "fiscal_treasury_view.count_mom_diff": null,
+            "fiscal_treasury_view.count_mom_rate": null,
+            "fiscal_treasury_view.build_date": "2023-09-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.build_date.month": "2023-11-01T00:00:00.000",
+            "fiscal_treasury_view.amt": "27315.26",
+            "fiscal_treasury_view.amt_mom_diff": null,
+            "fiscal_treasury_view.amt_mom_rate": null,
+            "fiscal_treasury_view.count": "6",
+            "fiscal_treasury_view.count_mom_diff": null,
+            "fiscal_treasury_view.count_mom_rate": null,
+            "fiscal_treasury_view.build_date": "2023-11-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.build_date.month": "2023-12-01T00:00:00.000",
+            "fiscal_treasury_view.amt": null,
+            "fiscal_treasury_view.amt_mom_diff": null,
+            "fiscal_treasury_view.amt_mom_rate": null,
+            "fiscal_treasury_view.count": null,
+            "fiscal_treasury_view.count_mom_diff": null,
+            "fiscal_treasury_view.count_mom_rate": null,
+            "fiscal_treasury_view.build_date": "2023-12-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.build_date.month": "2024-02-01T00:00:00.000",
+            "fiscal_treasury_view.amt": "701.98",
+            "fiscal_treasury_view.amt_mom_diff": null,
+            "fiscal_treasury_view.amt_mom_rate": null,
+            "fiscal_treasury_view.count": "3",
+            "fiscal_treasury_view.count_mom_diff": null,
+            "fiscal_treasury_view.count_mom_rate": null,
+            "fiscal_treasury_view.build_date": "2024-02-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.build_date.month": "2024-03-01T00:00:00.000",
+            "fiscal_treasury_view.amt": "760.66",
+            "fiscal_treasury_view.amt_mom_diff": "58.68",
+            "fiscal_treasury_view.amt_mom_rate": "8.359212513177013",
+            "fiscal_treasury_view.count": "5",
+            "fiscal_treasury_view.count_mom_diff": "2",
+            "fiscal_treasury_view.count_mom_rate": "66.66666666666667",
+            "fiscal_treasury_view.build_date": "2024-03-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.build_date.month": "2024-04-01T00:00:00.000",
+            "fiscal_treasury_view.amt": "1800.66",
+            "fiscal_treasury_view.amt_mom_diff": "1040",
+            "fiscal_treasury_view.amt_mom_rate": "136.72337180869246",
+            "fiscal_treasury_view.count": "5",
+            "fiscal_treasury_view.count_mom_diff": "0",
+            "fiscal_treasury_view.count_mom_rate": "0",
+            "fiscal_treasury_view.build_date": "2024-04-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.build_date.month": "2024-05-01T00:00:00.000",
+            "fiscal_treasury_view.amt": "100",
+            "fiscal_treasury_view.amt_mom_diff": "-1700.66",
+            "fiscal_treasury_view.amt_mom_rate": "-94.44648073484167",
+            "fiscal_treasury_view.count": "1",
+            "fiscal_treasury_view.count_mom_diff": "-4",
+            "fiscal_treasury_view.count_mom_rate": "-80",
+            "fiscal_treasury_view.build_date": "2024-05-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.build_date.month": "2024-06-01T00:00:00.000",
+            "fiscal_treasury_view.amt": null,
+            "fiscal_treasury_view.amt_mom_diff": null,
+            "fiscal_treasury_view.amt_mom_rate": null,
+            "fiscal_treasury_view.count": null,
+            "fiscal_treasury_view.count_mom_diff": null,
+            "fiscal_treasury_view.count_mom_rate": null,
+            "fiscal_treasury_view.build_date": "2024-06-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.build_date.month": "2024-07-01T00:00:00.000",
+            "fiscal_treasury_view.amt": "100",
+            "fiscal_treasury_view.amt_mom_diff": null,
+            "fiscal_treasury_view.amt_mom_rate": null,
+            "fiscal_treasury_view.count": "1",
+            "fiscal_treasury_view.count_mom_diff": null,
+            "fiscal_treasury_view.count_mom_rate": null,
+            "fiscal_treasury_view.build_date": "2024-07-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.build_date.month": "2024-08-01T00:00:00.000",
+            "fiscal_treasury_view.amt": null,
+            "fiscal_treasury_view.amt_mom_diff": null,
+            "fiscal_treasury_view.amt_mom_rate": null,
+            "fiscal_treasury_view.count": null,
+            "fiscal_treasury_view.count_mom_diff": null,
+            "fiscal_treasury_view.count_mom_rate": null,
+            "fiscal_treasury_view.build_date": "2024-08-01T00:00:00.000"
+          }
+        ]
+      }
+    },
+    {
+      "name": "B4-2 treasury build_date 季环比（amt+count 族，双轴成员 build_date 侧）",
+      "query": {
+        "measures": [
+          "fiscal_treasury_view.amt",
+          "fiscal_treasury_view.amt_qoq_diff",
+          "fiscal_treasury_view.count",
+          "fiscal_treasury_view.count_qoq_diff"
+        ],
+        "timeDimensions": [
+          {
+            "dimension": "fiscal_treasury_view.build_date",
+            "granularity": "quarter",
+            "dateRange": [
+              "2022-01-01",
+              "2024-12-31"
+            ]
+          }
+        ],
+        "order": {
+          "fiscal_treasury_view.build_date": "asc"
+        }
+      },
+      "resultSet": {
+        "data": [
+          {
+            "fiscal_treasury_view.build_date.quarter": "2022-01-01T00:00:00.000",
+            "fiscal_treasury_view.amt": "14060",
+            "fiscal_treasury_view.amt_qoq_diff": null,
+            "fiscal_treasury_view.count": "26",
+            "fiscal_treasury_view.count_qoq_diff": null,
+            "fiscal_treasury_view.build_date": "2022-01-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.build_date.quarter": "2022-04-01T00:00:00.000",
+            "fiscal_treasury_view.amt": "34",
+            "fiscal_treasury_view.amt_qoq_diff": "-14026",
+            "fiscal_treasury_view.count": "1",
+            "fiscal_treasury_view.count_qoq_diff": "-25",
+            "fiscal_treasury_view.build_date": "2022-04-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.build_date.quarter": "2022-07-01T00:00:00.000",
+            "fiscal_treasury_view.amt": null,
+            "fiscal_treasury_view.amt_qoq_diff": null,
+            "fiscal_treasury_view.count": null,
+            "fiscal_treasury_view.count_qoq_diff": null,
+            "fiscal_treasury_view.build_date": "2022-07-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.build_date.quarter": "2022-10-01T00:00:00.000",
+            "fiscal_treasury_view.amt": "31959.04",
+            "fiscal_treasury_view.amt_qoq_diff": null,
+            "fiscal_treasury_view.count": "7",
+            "fiscal_treasury_view.count_qoq_diff": null,
+            "fiscal_treasury_view.build_date": "2022-10-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.build_date.quarter": "2023-01-01T00:00:00.000",
+            "fiscal_treasury_view.amt": null,
+            "fiscal_treasury_view.amt_qoq_diff": null,
+            "fiscal_treasury_view.count": null,
+            "fiscal_treasury_view.count_qoq_diff": null,
+            "fiscal_treasury_view.build_date": "2023-01-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.build_date.quarter": "2023-04-01T00:00:00.000",
+            "fiscal_treasury_view.amt": "830",
+            "fiscal_treasury_view.amt_qoq_diff": null,
+            "fiscal_treasury_view.count": "2",
+            "fiscal_treasury_view.count_qoq_diff": null,
+            "fiscal_treasury_view.build_date": "2023-04-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.build_date.quarter": "2023-07-01T00:00:00.000",
+            "fiscal_treasury_view.amt": "6033",
+            "fiscal_treasury_view.amt_qoq_diff": "5203",
+            "fiscal_treasury_view.count": "2",
+            "fiscal_treasury_view.count_qoq_diff": "0",
+            "fiscal_treasury_view.build_date": "2023-07-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.build_date.quarter": "2023-10-01T00:00:00.000",
+            "fiscal_treasury_view.amt": "27315.26",
+            "fiscal_treasury_view.amt_qoq_diff": "21282.26",
+            "fiscal_treasury_view.count": "6",
+            "fiscal_treasury_view.count_qoq_diff": "4",
+            "fiscal_treasury_view.build_date": "2023-10-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.build_date.quarter": "2024-01-01T00:00:00.000",
+            "fiscal_treasury_view.amt": "1462.64",
+            "fiscal_treasury_view.amt_qoq_diff": "-25852.62",
+            "fiscal_treasury_view.count": "8",
+            "fiscal_treasury_view.count_qoq_diff": "2",
+            "fiscal_treasury_view.build_date": "2024-01-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.build_date.quarter": "2024-04-01T00:00:00.000",
+            "fiscal_treasury_view.amt": "1900.66",
+            "fiscal_treasury_view.amt_qoq_diff": "438.02",
+            "fiscal_treasury_view.count": "6",
+            "fiscal_treasury_view.count_qoq_diff": "-2",
+            "fiscal_treasury_view.build_date": "2024-04-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.build_date.quarter": "2024-07-01T00:00:00.000",
+            "fiscal_treasury_view.amt": "100",
+            "fiscal_treasury_view.amt_qoq_diff": "-1800.66",
+            "fiscal_treasury_view.count": "1",
+            "fiscal_treasury_view.count_qoq_diff": "-5",
+            "fiscal_treasury_view.build_date": "2024-07-01T00:00:00.000"
+          },
+          {
+            "fiscal_treasury_view.build_date.quarter": "2024-10-01T00:00:00.000",
+            "fiscal_treasury_view.amt": null,
+            "fiscal_treasury_view.amt_qoq_diff": null,
+            "fiscal_treasury_view.count": null,
+            "fiscal_treasury_view.count_qoq_diff": null,
+            "fiscal_treasury_view.build_date": "2024-10-01T00:00:00.000"
+          }
+        ]
+      }
+    }
+  ]
+}

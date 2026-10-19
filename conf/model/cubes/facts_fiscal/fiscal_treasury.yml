@@ -60,6 +60,161 @@ cubes:
         sql: "{CUBE}.`ftotalamt`"
         type: max
 
+      # ── 同比三件套（28 号方案批 1）：与上年同期比；时间轴随查询（build_date=缴库口径，enter_date=已入国库口径）──
+      # multiStage 现算不进预聚合（同 bill_count 惯例）；amt_ly/count_ly 为内部伴生（差值/增长率的编译依赖，
+      # timeShift 是成员级属性、sql 无内联平移语法，勿单删），不进 view includes
+      - name: amt_ly
+        multiStage: true
+        sql: '{amt}'
+        type: sum
+        timeShift:
+          - interval: 1 year
+            type: prior
+            time_dimension: build_date
+          - interval: 1 year
+            type: prior
+            time_dimension: enter_date
+      - name: amt_yoy_diff
+        title: 缴库金额同比差值(元)
+        description: 缴库金额同比差（与上年同期）——引擎已算，粒度随问句（年/季/月分组分别为年/季/月度同比）
+        multiStage: true
+        sql: '{amt} - {amt_ly}'
+        type: number
+      - name: amt_yoy_rate
+        title: 缴库金额同比增长率(%)
+        description: 缴库金额同比增长率=(本期−上年同期)÷上年同期×100——引擎已算；上年同期为 0 或无数据时为 null，报"无法计算/该期无数据"勿按 0
+        multiStage: true
+        sql: '100.0 * ({amt} - {amt_ly}) / NULLIF({amt_ly}, 0)'
+        type: number
+      - name: count_ly
+        multiStage: true
+        sql: '{count}'
+        type: number
+        description: 内部伴生——count 平移 1 年（build_date/enter_date 双轴同 amt_ly），勿进 view includes
+        timeShift:
+          - interval: 1 year
+            type: prior
+            time_dimension: build_date
+          - interval: 1 year
+            type: prior
+            time_dimension: enter_date
+      - name: count_yoy_diff
+        title: 缴库明细笔数同比差值
+        description: 缴库明细笔数同比差（与上年同期）——引擎已算，粒度随问句（年/季/月分组分别为年/季/月度同比）
+        multiStage: true
+        sql: '{count} - {count_ly}'
+        type: number
+      - name: count_yoy_rate
+        title: 缴库明细笔数同比增长率(%)
+        description: 缴库明细笔数同比增长率=(本期−上年同期)÷上年同期×100——引擎已算；上年同期为 0 或无数据时为 null，报"无法计算/该期无数据"勿按 0
+        multiStage: true
+        sql: '100.0 * ({count} - {count_ly}) / NULLIF({count_ly}, 0)'
+        type: number
+
+      # ── 环比族（28 号方案批 4）：月环比钉上月（粒度 month）、季环比钉上季（粒度 quarter）──
+      # 双轴同同比族（build_date=缴库口径，enter_date=已入国库口径）；interval 季必须 3 months 勿写 quarter（注意点 10）；
+      # multiStage 现算不进预聚合；_lm/_lq 伴生为编译依赖（勿单删），不进 view includes
+      - name: amt_lm
+        title: 缴库金额(元)·上月
+        description: 内部伴生——amt 平移 1 月（build_date/enter_date 双轴），amt_mom_diff/amt_mom_rate 的编译依赖，勿进 view includes
+        sql: '{amt}'
+        type: sum
+        multiStage: true
+        timeShift:
+          - interval: 1 month
+            type: prior
+            time_dimension: build_date
+          - interval: 1 month
+            type: prior
+            time_dimension: enter_date
+      - name: amt_mom_diff
+        title: 缴库金额月环比差值(元)
+        description: 缴库金额月环比差（与上月）——引擎已算，粒度必须 month
+        multiStage: true
+        sql: '{amt} - {amt_lm}'
+        type: number
+      - name: amt_mom_rate
+        title: 缴库金额月环比增长率(%)
+        description: 缴库金额月环比增长率=(本期−上月)÷上月×100——引擎已算；上月为 0 或无数据时为 null，报"无法计算/该期无数据"勿按 0
+        multiStage: true
+        sql: '100.0 * ({amt} - {amt_lm}) / NULLIF({amt_lm}, 0)'
+        type: number
+      - name: amt_lq
+        title: 缴库金额(元)·上季
+        description: 内部伴生——amt 平移 1 季（build_date/enter_date 双轴），amt_qoq_diff/amt_qoq_rate 的编译依赖，勿进 view includes
+        sql: '{amt}'
+        type: sum
+        multiStage: true
+        timeShift:
+          - interval: 3 months
+            type: prior
+            time_dimension: build_date
+          - interval: 3 months
+            type: prior
+            time_dimension: enter_date
+      - name: amt_qoq_diff
+        title: 缴库金额季环比差值(元)
+        description: 缴库金额季环比差（与上季）——引擎已算，粒度必须 quarter
+        multiStage: true
+        sql: '{amt} - {amt_lq}'
+        type: number
+      - name: amt_qoq_rate
+        title: 缴库金额季环比增长率(%)
+        description: 缴库金额季环比增长率=(本期−上季)÷上季×100——引擎已算；上季为 0 或无数据时为 null，报"无法计算/该期无数据"勿按 0
+        multiStage: true
+        sql: '100.0 * ({amt} - {amt_lq}) / NULLIF({amt_lq}, 0)'
+        type: number
+      - name: count_lm
+        title: 缴库明细笔数·上月
+        description: 内部伴生——count 平移 1 月（build_date/enter_date 双轴），count_mom_diff/count_mom_rate 的编译依赖，勿进 view includes
+        sql: '{count}'
+        type: number
+        multiStage: true
+        timeShift:
+          - interval: 1 month
+            type: prior
+            time_dimension: build_date
+          - interval: 1 month
+            type: prior
+            time_dimension: enter_date
+      - name: count_mom_diff
+        title: 缴库明细笔数月环比差值
+        description: 缴库明细笔数月环比差（与上月）——引擎已算，粒度必须 month
+        multiStage: true
+        sql: '{count} - {count_lm}'
+        type: number
+      - name: count_mom_rate
+        title: 缴库明细笔数月环比增长率(%)
+        description: 缴库明细笔数月环比增长率=(本期−上月)÷上月×100——引擎已算；上月为 0 或无数据时为 null，报"无法计算/该期无数据"勿按 0
+        multiStage: true
+        sql: '100.0 * ({count} - {count_lm}) / NULLIF({count_lm}, 0)'
+        type: number
+      - name: count_lq
+        title: 缴库明细笔数·上季
+        description: 内部伴生——count 平移 1 季（build_date/enter_date 双轴），count_qoq_diff/count_qoq_rate 的编译依赖，勿进 view includes
+        sql: '{count}'
+        type: number
+        multiStage: true
+        timeShift:
+          - interval: 3 months
+            type: prior
+            time_dimension: build_date
+          - interval: 3 months
+            type: prior
+            time_dimension: enter_date
+      - name: count_qoq_diff
+        title: 缴库明细笔数季环比差值
+        description: 缴库明细笔数季环比差（与上季）——引擎已算，粒度必须 quarter
+        multiStage: true
+        sql: '{count} - {count_lq}'
+        type: number
+      - name: count_qoq_rate
+        title: 缴库明细笔数季环比增长率(%)
+        description: 缴库明细笔数季环比增长率=(本期−上季)÷上季×100——引擎已算；上季为 0 或无数据时为 null，报"无法计算/该期无数据"勿按 0
+        multiStage: true
+        sql: '100.0 * ({count} - {count_lq}) / NULLIF({count_lq}, 0)'
+        type: number
+
     dimensions:
       # ── 码名对（初步设计 §4.2）：本表仅科目有名称列；12 码/13 名一码多名实测 ──
       - name: sub_code

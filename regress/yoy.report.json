@@ -1,0 +1,113 @@
+{
+  "savedAt": "2026-10-17T11:32:55+0800",
+  "passed": 17,
+  "total": 17,
+  "results": [
+    {
+      "name": "B1-1 meta 透出（treasury）",
+      "type": "meta",
+      "ok": true,
+      "details": []
+    },
+    {
+      "name": "B1-2 treasury build_date 年同比数值闭环",
+      "type": "query",
+      "ok": true,
+      "details": []
+    },
+    {
+      "name": "B1-3 treasury build_date 季度同比",
+      "type": "query",
+      "ok": true,
+      "details": []
+    },
+    {
+      "name": "B1-4a treasury enter_date 轴行为（已入国库口径）",
+      "type": "query",
+      "ok": true,
+      "details": []
+    },
+    {
+      "name": "B1-4b treasury enter_date 轴 SQL 形态",
+      "type": "sql",
+      "ok": true,
+      "details": [
+        "另请人工核对 enter_status filter 同时出现在本期与平移子查询"
+      ]
+    },
+    {
+      "name": "B2-1 meta 透出（collection）",
+      "type": "meta",
+      "ok": true,
+      "details": []
+    },
+    {
+      "name": "B2-2 collection pay_date 年同比（amt+count 族）",
+      "type": "query",
+      "ok": true,
+      "details": []
+    },
+    {
+      "name": "B2-3 collection pay_date 月环比",
+      "type": "query",
+      "ok": true,
+      "details": []
+    },
+    {
+      "name": "B2-4 collection pay_date 季环比",
+      "type": "query",
+      "ok": true,
+      "details": []
+    },
+    {
+      "name": "B2-5 collection received_date entered_amt 同比（带 filter 族）",
+      "type": "query",
+      "ok": true,
+      "details": []
+    },
+    {
+      "name": "B3-1 meta 透出（allocation）",
+      "type": "meta",
+      "ok": true,
+      "details": []
+    },
+    {
+      "name": "B3-2 allocation pay_date 年同比（count+im+trans 三族）",
+      "type": "query",
+      "ok": true,
+      "details": []
+    },
+    {
+      "name": "B3-3 allocation pay_date 季度同比（count+im+trans 三族）",
+      "type": "query",
+      "ok": true,
+      "details": []
+    },
+    {
+      "name": "B3-4 allocation pay_date 轴 SQL 形态（四层嵌套下的方言补丁）",
+      "type": "sql",
+      "ok": true,
+      "details": [
+        "另请人工核对 enter_status filter 同时出现在本期与平移子查询"
+      ]
+    },
+    {
+      "name": "B4-1 treasury build_date 月环比（amt+count 族，双轴成员 build_date 侧）",
+      "type": "query",
+      "ok": true,
+      "details": []
+    },
+    {
+      "name": "B4-2 treasury build_date 季环比（amt+count 族，双轴成员 build_date 侧）",
+      "type": "query",
+      "ok": true,
+      "details": []
+    },
+    {
+      "name": "B1-5+2-6 基础回归（批 1、批 2 各跑一次）",
+      "type": "regress",
+      "ok": true,
+      "details": []
+    }
+  ]
+}

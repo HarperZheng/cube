@@ -1,0 +1,468 @@
+[
+  {
+    "name": "B1-1 meta 透出（treasury）",
+    "type": "meta",
+    "layer": "meta 接缝",
+    "endpoint": "GET /agent/meta/fiscal_treasury_view",
+    "expect": {
+      "containsMeasures": [
+        "amt_yoy_diff", "amt_yoy_rate", "count_yoy_diff", "count_yoy_rate",
+        "amt_mom_diff", "amt_mom_rate", "count_mom_diff", "count_mom_rate",
+        "amt_qoq_diff", "amt_qoq_rate", "count_qoq_diff", "count_qoq_rate"
+      ],
+      "notContainsMeasures": ["amt_ly", "count_ly", "amt_lm", "amt_lq", "count_lm", "count_lq"]
+    }
+  },
+  {
+    "name": "B1-2 treasury build_date 年同比数值闭环",
+    "type": "query",
+    "layer": "数值闭环",
+    "query": {
+      "measures": [
+        "fiscal_treasury_view.amt",
+        "fiscal_treasury_view.amt_yoy_diff",
+        "fiscal_treasury_view.amt_yoy_rate",
+        "fiscal_treasury_view.count",
+        "fiscal_treasury_view.count_yoy_diff",
+        "fiscal_treasury_view.count_yoy_rate"
+      ],
+      "timeDimensions": [
+        {
+          "dimension": "fiscal_treasury_view.build_date",
+          "granularity": "year",
+          "dateRange": ["2022-01-01", "2024-12-31"]
+        }
+      ],
+      "order": { "fiscal_treasury_view.build_date": "asc" }
+    },
+    "renewQuery": true,
+    "expect": {
+      "rowKey": "year",
+      "rows": {
+        "2022": { "amt": "46053.04", "count": "34", "amt_yoy_diff": null, "amt_yoy_rate": null, "count_yoy_diff": null, "count_yoy_rate": null },
+        "2023": { "amt": "34178.26", "count": "10", "amt_yoy_diff": "-11874.78", "amt_yoy_rate": "-25.785", "count_yoy_diff": "-24", "count_yoy_rate": "-70.588" },
+        "2024": { "amt": "3463.30", "count": "15", "amt_yoy_diff": "-30714.96", "amt_yoy_rate": "-89.867", "count_yoy_diff": "5", "count_yoy_rate": "50" }
+      },
+      "note": "diff=本期−上年同期精确相等；rate=diff÷上年×100 按三位小数近似比对（count_yoy_rate 批 4 补：−24/34=−70.588、5/10=50）；2022 无上年行为 null 非 0。2026 行(29372234.54/17)为时点值会漂，不设锚，仅查 diff=null。"
+    }
+  },
+  {
+    "name": "B1-3 treasury build_date 季度同比",
+    "type": "query",
+    "layer": "数值闭环",
+    "query": {
+      "measures": ["fiscal_treasury_view.amt", "fiscal_treasury_view.amt_yoy_diff"],
+      "timeDimensions": [
+        {
+          "dimension": "fiscal_treasury_view.build_date",
+          "granularity": "quarter",
+          "dateRange": ["2022-01-01", "2023-12-31"]
+        }
+      ],
+      "order": { "fiscal_treasury_view.build_date": "asc" }
+    },
+    "renewQuery": true,
+    "expect": {
+      "rowKey": "quarter",
+      "rows": {
+        "2022Q2": { "amt": "34" },
+        "2022Q4": { "amt": "31959.04" },
+        "2023Q2": { "amt": "830", "amt_yoy_diff": "796" },
+        "2023Q4": { "amt": "27315.26", "amt_yoy_diff": "-4643.78" },
+        "2023Q1": { "amt_yoy_diff": null },
+        "2023Q3": { "amt_yoy_diff": null }
+      },
+      "note": "每行 diff=该季−去年同季逐行闭合；2023Q1/Q3 去年同季无数据 diff=null。"
+    }
+  },
+  {
+    "name": "B1-4a treasury enter_date 轴行为（已入国库口径）",
+    "type": "query",
+    "layer": "轴随语义·行为",
+    "query": {
+      "measures": ["fiscal_treasury_view.amt", "fiscal_treasury_view.amt_yoy_diff"],
+      "timeDimensions": [
+        {
+          "dimension": "fiscal_treasury_view.enter_date",
+          "granularity": "month",
+          "dateRange": ["2022-01-01", "2027-01-31"]
+        }
+      ],
+      "filters": [
+        { "member": "fiscal_treasury_view.enter_status", "operator": "equals", "values": ["1"] }
+      ],
+      "order": { "fiscal_treasury_view.enter_date": "asc" }
+    },
+    "renewQuery": true,
+    "expect": {
+      "rowKey": "month",
+      "rows": {
+        "2022-02": { "amt": "7520", "amt_yoy_diff": null },
+        "2022-03": { "amt": "5444", "amt_yoy_diff": null },
+        "2022-07": { "amt": "34", "amt_yoy_diff": null }
+      },
+      "shiftKeyRows": ["2023-02", "2023-03", "2023-07", "2027-01"],
+      "note": "enter_status='1' 相邻年无同期对，数值闭环此路不通，轴生效靠 SQL(B1-4b)+键集行为：有值行仅 2022-02/03/07(2026-01=33306.09 时点值不作硬锚)；结果集含 amt=null 的平移键行(shiftKeyRows，引擎键集=本期∪平移期)；全行 diff=null。"
+    }
+  },
+  {
+    "name": "B1-4b treasury enter_date 轴 SQL 形态",
+    "type": "sql",
+    "layer": "轴随语义·SQL",
+    "query": {
+      "measures": ["fiscal_treasury_view.amt", "fiscal_treasury_view.amt_yoy_diff"],
+      "timeDimensions": [
+        {
+          "dimension": "fiscal_treasury_view.enter_date",
+          "granularity": "month",
+          "dateRange": ["2022-01-01", "2027-01-31"]
+        }
+      ],
+      "filters": [
+        { "member": "fiscal_treasury_view.enter_status", "operator": "equals", "values": ["1"] }
+      ]
+    },
+    "expect": {
+      "caseInsensitive": true,
+      "contains": ["fenterdate`) + INTERVAL 1 YEAR"],
+      "notContains": ["isNotDistinctFrom", "addDate"],
+      "note": "方言补丁两层形态：平移用 (col + INTERVAL 1 YEAR) 非 addDate；对齐用等值 join 非 isNotDistinctFrom。列名带 CUBE 前缀反引号（`fiscal_treasury`.`fenterdate`），contains 取尾部片段。另人工核对 enter_status='1' 同时出现在本期与平移子查询（filter 随平移走，同期口径一致）。"
+    }
+  },
+  {
+    "name": "B2-1 meta 透出（collection）",
+    "type": "meta",
+    "layer": "meta 接缝",
+    "endpoint": "GET /agent/meta/fiscal_collection_view",
+    "expect": {
+      "containsMeasures": [
+        "count_yoy_diff", "count_yoy_rate", "count_mom_diff", "count_mom_rate", "count_qoq_diff", "count_qoq_rate",
+        "amt_yoy_diff", "amt_yoy_rate", "amt_mom_diff", "amt_mom_rate", "amt_qoq_diff", "amt_qoq_rate",
+        "entered_amt_yoy_diff", "entered_amt_yoy_rate", "entered_amt_mom_diff", "entered_amt_mom_rate", "entered_amt_qoq_diff", "entered_amt_qoq_rate"
+      ],
+      "notContainsMeasures": [
+        "amt_ly", "amt_lm", "amt_lq",
+        "count_ly", "count_lm", "count_lq",
+        "entered_amt_ly", "entered_amt_lm", "entered_amt_lq",
+        "amt_same_period_ly"
+      ]
+    }
+  },
+  {
+    "name": "B2-2 collection pay_date 年同比（amt+count 族）",
+    "type": "query",
+    "layer": "数值闭环",
+    "query": {
+      "measures": [
+        "fiscal_collection_view.amt",
+        "fiscal_collection_view.amt_yoy_diff",
+        "fiscal_collection_view.count",
+        "fiscal_collection_view.count_yoy_diff"
+      ],
+      "timeDimensions": [
+        {
+          "dimension": "fiscal_collection_view.pay_date",
+          "granularity": "year",
+          "dateRange": ["2022-01-01", "2024-12-31"]
+        }
+      ],
+      "order": { "fiscal_collection_view.pay_date": "asc" }
+    },
+    "renewQuery": true,
+    "expect": {
+      "rowKey": "year",
+      "rows": {
+        "2022": { "amt": "18208936572.27", "count": "385", "amt_yoy_diff": "18208935739.27", "count_yoy_diff": "379" },
+        "2023": { "amt": "1465810.31", "count": "170", "amt_yoy_diff": "-18207470761.96", "count_yoy_diff": "-215" },
+        "2024": { "amt": "76124436.822", "count": "448", "amt_yoy_diff": "74658626.512", "count_yoy_diff": "278" }
+      },
+      "note": "根锚点：2023 全年 amt=1465810.31 与批 0 方言补丁期验证的同期值精确相等。2021 年有 6 笔合计 833 元，2022 行有同期——2022 diff=2022amt−833 精确闭合（初版误写 null 系用例笔误，2026-10-16 实测修正）；2023 diff 巨负系 2022 年含 159 亿大额单所致；diff 逐行手工闭合已验。"
+    }
+  },
+  {
+    "name": "B2-3 collection pay_date 月环比",
+    "type": "query",
+    "layer": "数值闭环",
+    "query": {
+      "measures": ["fiscal_collection_view.amt", "fiscal_collection_view.amt_mom_diff"],
+      "timeDimensions": [
+        {
+          "dimension": "fiscal_collection_view.pay_date",
+          "granularity": "month",
+          "dateRange": ["2021-12-01", "2022-12-31"]
+        }
+      ],
+      "order": { "fiscal_collection_view.pay_date": "asc" }
+    },
+    "renewQuery": true,
+    "expect": {
+      "rowKey": "month",
+      "rows": {
+        "2021-12": { "amt": "833", "amt_mom_diff": null },
+        "2022-01": { "amt": "13301", "amt_mom_diff": "12468" },
+        "2022-02": { "amt": "40779", "amt_mom_diff": "27478" },
+        "2022-03": { "amt": "19815", "amt_mom_diff": "-20964" }
+      },
+      "note": "每行 diff=本月−上月逐行闭合。2022-03=-20964 为硬锚；2022-01=12468 为推导锚（上月 2021-12 在窗口内应取到 833，若为 null 说明平移期未入键集需排查）。"
+    }
+  },
+  {
+    "name": "B2-4 collection pay_date 季环比",
+    "type": "query",
+    "layer": "数值闭环",
+    "query": {
+      "measures": ["fiscal_collection_view.amt", "fiscal_collection_view.amt_qoq_diff"],
+      "timeDimensions": [
+        {
+          "dimension": "fiscal_collection_view.pay_date",
+          "granularity": "quarter",
+          "dateRange": ["2021-10-01", "2022-12-31"]
+        }
+      ],
+      "order": { "fiscal_collection_view.pay_date": "asc" }
+    },
+    "renewQuery": true,
+    "expect": {
+      "rowKey": "quarter",
+      "rows": {
+        "2021Q4": { "amt": "833", "amt_qoq_diff": null },
+        "2022Q1": { "amt": "73895", "amt_qoq_diff": "73062" }
+      },
+      "note": "2022Q1=13301+40779+19815=73895，2021Q4=833（仅 12 月一笔），diff=73062 硬锚手工闭合；2021Q4 上季无数据 diff=null。"
+    }
+  },
+  {
+    "name": "B2-5 collection received_date entered_amt 同比（带 filter 族）",
+    "type": "query",
+    "layer": "数值闭环",
+    "query": {
+      "measures": [
+        "fiscal_collection_view.entered_amt",
+        "fiscal_collection_view.entered_amt_yoy_diff",
+        "fiscal_collection_view.entered_amt_yoy_rate"
+      ],
+      "timeDimensions": [
+        {
+          "dimension": "fiscal_collection_view.received_date",
+          "granularity": "year",
+          "dateRange": ["2022-01-01", "2024-12-31"]
+        }
+      ],
+      "order": { "fiscal_collection_view.received_date": "asc" }
+    },
+    "renewQuery": true,
+    "expect": {
+      "rowKey": "year",
+      "rows": {
+        "2022": { "entered_amt": "170043.59", "entered_amt_yoy_diff": null, "entered_amt_yoy_rate": null },
+        "2023": { "entered_amt": "40093.72", "entered_amt_yoy_diff": "-129949.87", "entered_amt_yoy_rate": "-76.42" },
+        "2024": { "entered_amt": "29115818.96", "entered_amt_yoy_diff": "29075725.24", "entered_amt_yoy_rate": "72519.4" }
+      },
+      "note": "专验成员自带 filter(freceiveddate != '')随平移走、同期口径一致。diff 精确闭合；rate 三位小数近似（2024=+72519.4% 巨值为 40093.72 小分母所致，正常）。"
+    }
+  },
+  {
+    "name": "B3-1 meta 透出（allocation）",
+    "type": "meta",
+    "layer": "meta 接缝",
+    "endpoint": "GET /agent/meta/fiscal_allocation_view",
+    "expect": {
+      "containsMeasures": ["count_yoy_diff", "im_amt_yoy_diff", "trans_amt_yoy_diff"],
+      "notContainsMeasures": ["count_ly", "im_amt_ly", "trans_amt_ly"]
+    }
+  },
+  {
+    "name": "B3-2 allocation pay_date 年同比（count+im+trans 三族）",
+    "type": "query",
+    "layer": "数值闭环",
+    "query": {
+      "measures": [
+        "fiscal_allocation_view.count",
+        "fiscal_allocation_view.count_yoy_diff",
+        "fiscal_allocation_view.count_yoy_rate",
+        "fiscal_allocation_view.im_amt",
+        "fiscal_allocation_view.im_amt_yoy_diff",
+        "fiscal_allocation_view.im_amt_yoy_rate",
+        "fiscal_allocation_view.trans_amt",
+        "fiscal_allocation_view.trans_amt_yoy_diff",
+        "fiscal_allocation_view.trans_amt_yoy_rate"
+      ],
+      "timeDimensions": [
+        {
+          "dimension": "fiscal_allocation_view.pay_date",
+          "granularity": "year",
+          "dateRange": ["2022-01-01", "2027-12-31"]
+        }
+      ],
+      "order": { "fiscal_allocation_view.pay_date": "asc" }
+    },
+    "renewQuery": true,
+    "expect": {
+      "rowKey": "year",
+      "rows": {
+        "2022": { "count": "320", "im_amt": "15986579101.87", "trans_amt": "68453", "count_yoy_diff": null, "im_amt_yoy_diff": null, "trans_amt_yoy_diff": null, "count_yoy_rate": null, "im_amt_yoy_rate": null, "trans_amt_yoy_rate": null },
+        "2023": { "count": "59", "count_yoy_diff": "-261", "im_amt": "62882.72", "im_amt_yoy_diff": "-15986516219.15", "trans_amt": null, "trans_amt_yoy_diff": null, "count_yoy_rate": "-81.5625", "im_amt_yoy_rate": "-99.9996", "trans_amt_yoy_rate": null },
+        "2024": { "count": "209", "count_yoy_diff": "150", "im_amt": "29408026.94", "im_amt_yoy_diff": "29345144.22", "trans_amt": "3610.62", "trans_amt_yoy_diff": null, "count_yoy_rate": "254.2373", "im_amt_yoy_rate": "46666.4677", "trans_amt_yoy_rate": null },
+        "2025": { "count": "76", "count_yoy_diff": "-133", "im_amt": "16207.29", "im_amt_yoy_diff": "-29391819.65", "trans_amt": "20", "trans_amt_yoy_diff": "-3590.62", "count_yoy_rate": "-63.6364", "im_amt_yoy_rate": "-99.9449", "trans_amt_yoy_rate": "-99.4461" }
+      },
+      "shiftKeyRows": ["2027"],
+      "note": "diff 逐行手工闭合（59−320=−261、209−59=150、76−209=−133；im/trans 同法）；rate=diff÷上年×100 手工复算（批 4 补：−261/320=−81.5625、404/20=2020% 等；im 2024 巨值 46666.47% 系 62882.72 小分母所致正常）。2023 im diff 巨负系 2022 含 159.87 亿大额单（与批 2 collection 同源现象）；2023 trans 全年无数据行 diff/rate=null 非 0；2022 行 2021 无同期全 null。区间外扩到 2027 使 2027 平移键行入集（键集=本期∪平移期，且平移键行只落在查询区间内——注意点 12）；2026 为时点值会漂不设锚。容器重启后首查可能命中瞬态空结果，重发即恢复（注意点 11 重启变体，2026-10-17 实测）。"
+    }
+  },
+  {
+    "name": "B3-3 allocation pay_date 季度同比（count+im+trans 三族）",
+    "type": "query",
+    "layer": "数值闭环",
+    "query": {
+      "measures": [
+        "fiscal_allocation_view.count",
+        "fiscal_allocation_view.count_yoy_diff",
+        "fiscal_allocation_view.im_amt",
+        "fiscal_allocation_view.im_amt_yoy_diff",
+        "fiscal_allocation_view.trans_amt",
+        "fiscal_allocation_view.trans_amt_yoy_diff"
+      ],
+      "timeDimensions": [
+        {
+          "dimension": "fiscal_allocation_view.pay_date",
+          "granularity": "quarter",
+          "dateRange": ["2022-01-01", "2027-12-31"]
+        }
+      ],
+      "order": { "fiscal_allocation_view.pay_date": "asc" }
+    },
+    "renewQuery": true,
+    "expect": {
+      "rowKey": "quarter",
+      "rows": {
+        "2022Q1": { "count": "104", "im_amt": "52696", "trans_amt": "43601", "count_yoy_diff": null, "im_amt_yoy_diff": null, "trans_amt_yoy_diff": null },
+        "2022Q2": { "count": "21", "im_amt": "15985628800.45", "trans_amt": "690", "count_yoy_diff": null, "im_amt_yoy_diff": null, "trans_amt_yoy_diff": null },
+        "2022Q3": { "count": "69", "im_amt": "23071.47", "trans_amt": "8894", "count_yoy_diff": null, "im_amt_yoy_diff": null, "trans_amt_yoy_diff": null },
+        "2022Q4": { "count": "126", "im_amt": "874533.95", "trans_amt": "15268", "count_yoy_diff": null, "im_amt_yoy_diff": null, "trans_amt_yoy_diff": null },
+        "2023Q1": { "count": "10", "count_yoy_diff": "-94", "im_amt": "26734", "im_amt_yoy_diff": "-25962", "trans_amt": null, "trans_amt_yoy_diff": null },
+        "2023Q2": { "count": "34", "count_yoy_diff": "13", "im_amt": "6666", "im_amt_yoy_diff": "-15985622134.45", "trans_amt": null, "trans_amt_yoy_diff": null },
+        "2023Q3": { "count": "5", "count_yoy_diff": "-64", "im_amt": "544", "im_amt_yoy_diff": "-22527.47", "trans_amt": null, "trans_amt_yoy_diff": null },
+        "2023Q4": { "count": "10", "count_yoy_diff": "-116", "im_amt": "28938.72", "im_amt_yoy_diff": "-845595.23", "trans_amt": null, "trans_amt_yoy_diff": null },
+        "2024Q1": { "count": "31", "count_yoy_diff": "21", "im_amt": "164821.96", "im_amt_yoy_diff": "138087.96", "trans_amt": "1664.62", "trans_amt_yoy_diff": null },
+        "2024Q2": { "count": "40", "count_yoy_diff": "6", "im_amt": "28916832.1", "im_amt_yoy_diff": "28910166.1", "trans_amt": "906", "trans_amt_yoy_diff": null },
+        "2024Q3": { "count": "90", "count_yoy_diff": "85", "im_amt": "309767.92", "im_amt_yoy_diff": "309223.92", "trans_amt": "940", "trans_amt_yoy_diff": null },
+        "2024Q4": { "count": "48", "count_yoy_diff": "38", "im_amt": "16604.96", "im_amt_yoy_diff": "-12333.76", "trans_amt": "100", "trans_amt_yoy_diff": null },
+        "2025Q1": { "count": "37", "count_yoy_diff": "6", "im_amt": "11348.05", "im_amt_yoy_diff": "-153473.91", "trans_amt": "20", "trans_amt_yoy_diff": "-1644.62" },
+        "2025Q2": { "count": "37", "count_yoy_diff": "-3", "im_amt": "4659.24", "im_amt_yoy_diff": "-28912172.86", "trans_amt": null, "trans_amt_yoy_diff": null },
+        "2025Q4": { "count": "2", "count_yoy_diff": "-46", "im_amt": "200", "im_amt_yoy_diff": "-16404.96", "trans_amt": null, "trans_amt_yoy_diff": null }
+      },
+      "shiftKeyRows": ["2025Q3", "2026Q4", "2027Q1"],
+      "note": "每行 diff=该季−去年同季逐行闭合（10−104=−94、16604.96−28938.72=−12333.76 等）；2022 各季 2021 无同期 diff=null；2023 trans 无数据。区间外扩到 2027 使平移键行入集（只落在查询区间内，注意点 12）：2025Q3（2024Q3+1 年）、2026Q4（2025Q4+1 年）、2027Q1（2026Q1+1 年），首度量应 null。"
+    }
+  },
+  {
+    "name": "B3-4 allocation pay_date 轴 SQL 形态（四层嵌套下的方言补丁）",
+    "type": "sql",
+    "layer": "轴随语义·SQL",
+    "query": {
+      "measures": ["fiscal_allocation_view.count", "fiscal_allocation_view.count_yoy_diff"],
+      "timeDimensions": [
+        {
+          "dimension": "fiscal_allocation_view.pay_date",
+          "granularity": "year",
+          "dateRange": ["2022-01-01", "2024-12-31"]
+        }
+      ]
+    },
+    "expect": {
+      "caseInsensitive": true,
+      "contains": ["fdate`) + INTERVAL 1 YEAR"],
+      "notContains": ["isNotDistinctFrom", "addDate"],
+      "note": "allocation 归一化四层嵌套（CK 23.3 限制）下 multiStage 平移仍走 CK 23.3 兼容形态：(col + INTERVAL 1 YEAR) 非 addDate，对齐用等值 join 非 isNotDistinctFrom（2026-10-17 已人工核对：平移侧 cte 与本期 cte 同构、仅 WHERE 换平移表达式）。"
+    }
+  },
+  {
+    "name": "B4-1 treasury build_date 月环比（amt+count 族，双轴成员 build_date 侧）",
+    "type": "query",
+    "layer": "数值闭环",
+    "query": {
+      "measures": [
+        "fiscal_treasury_view.amt",
+        "fiscal_treasury_view.amt_mom_diff",
+        "fiscal_treasury_view.amt_mom_rate",
+        "fiscal_treasury_view.count",
+        "fiscal_treasury_view.count_mom_diff",
+        "fiscal_treasury_view.count_mom_rate"
+      ],
+      "timeDimensions": [
+        {
+          "dimension": "fiscal_treasury_view.build_date",
+          "granularity": "month",
+          "dateRange": ["2022-01-01", "2024-12-31"]
+        }
+      ],
+      "order": { "fiscal_treasury_view.build_date": "asc" }
+    },
+    "renewQuery": true,
+    "expect": {
+      "rowKey": "month",
+      "rows": {
+        "2022-02": { "amt": "7520", "count": "3", "amt_mom_diff": null, "amt_mom_rate": null, "count_mom_diff": null, "count_mom_rate": null },
+        "2022-03": { "amt": "6540", "amt_mom_diff": "-980", "amt_mom_rate": "-13.032", "count": "23", "count_mom_diff": "20", "count_mom_rate": "666.667" },
+        "2022-04": { "amt": "34", "amt_mom_diff": "-6506", "amt_mom_rate": "-99.480", "count": "1", "count_mom_diff": "-22", "count_mom_rate": "-95.652" },
+        "2022-10": { "amt": "31959.04", "count": "7", "amt_mom_diff": null, "amt_mom_rate": null, "count_mom_diff": null, "count_mom_rate": null },
+        "2023-05": { "amt": "830", "count": "2", "amt_mom_diff": null, "amt_mom_rate": null, "count_mom_diff": null, "count_mom_rate": null },
+        "2023-07": { "amt": "5933", "count": "1", "amt_mom_diff": null, "amt_mom_rate": null, "count_mom_diff": null, "count_mom_rate": null },
+        "2023-08": { "amt": "100", "amt_mom_diff": "-5833", "amt_mom_rate": "-98.315", "count": "1", "count_mom_diff": "0", "count_mom_rate": "0" },
+        "2023-11": { "amt": "27315.26", "count": "6", "amt_mom_diff": null, "amt_mom_rate": null, "count_mom_diff": null, "count_mom_rate": null },
+        "2024-02": { "amt": "701.98", "count": "3", "amt_mom_diff": null, "amt_mom_rate": null, "count_mom_diff": null, "count_mom_rate": null },
+        "2024-03": { "amt": "760.66", "amt_mom_diff": "58.68", "amt_mom_rate": "8.359", "count": "5", "count_mom_diff": "2", "count_mom_rate": "66.667" },
+        "2024-04": { "amt": "1800.66", "amt_mom_diff": "1040", "amt_mom_rate": "136.723", "count": "5", "count_mom_diff": "0", "count_mom_rate": "0" },
+        "2024-05": { "amt": "100", "amt_mom_diff": "-1700.66", "amt_mom_rate": "-94.446", "count": "1", "count_mom_diff": "-4", "count_mom_rate": "-80" },
+        "2024-07": { "amt": "100", "count": "1", "amt_mom_diff": null, "amt_mom_rate": null, "count_mom_diff": null, "count_mom_rate": null }
+      },
+      "shiftKeyRows": ["2023-06", "2023-09", "2024-06", "2024-08"],
+      "note": "缴库数据月间稀疏（14 个月有数），每行 diff=本月−上月逐行闭合（6540−7520=−980、1040/760.66=136.72% 等）；上月无数据行 diff/rate=null 非 0（如 2022-10、2023-05）；2023-08 count 1−1=0 是真零环比（有上期值）勿混 null。平移键行=有数月+1 月（2023-06/09、2024-06/08），首度量应 null。2026-01（时点值）不设锚不在区间。"
+    }
+  },
+  {
+    "name": "B4-2 treasury build_date 季环比（amt+count 族，双轴成员 build_date 侧）",
+    "type": "query",
+    "layer": "数值闭环",
+    "query": {
+      "measures": [
+        "fiscal_treasury_view.amt",
+        "fiscal_treasury_view.amt_qoq_diff",
+        "fiscal_treasury_view.count",
+        "fiscal_treasury_view.count_qoq_diff"
+      ],
+      "timeDimensions": [
+        {
+          "dimension": "fiscal_treasury_view.build_date",
+          "granularity": "quarter",
+          "dateRange": ["2022-01-01", "2024-12-31"]
+        }
+      ],
+      "order": { "fiscal_treasury_view.build_date": "asc" }
+    },
+    "renewQuery": true,
+    "expect": {
+      "rowKey": "quarter",
+      "rows": {
+        "2022Q1": { "amt": "14060", "count": "26", "amt_qoq_diff": null, "count_qoq_diff": null },
+        "2022Q2": { "amt": "34", "amt_qoq_diff": "-14026", "count": "1", "count_qoq_diff": "-25" },
+        "2022Q4": { "amt": "31959.04", "count": "7", "amt_qoq_diff": null, "count_qoq_diff": null },
+        "2023Q2": { "amt": "830", "count": "2", "amt_qoq_diff": null, "count_qoq_diff": null },
+        "2023Q3": { "amt": "6033", "amt_qoq_diff": "5203", "count": "2", "count_qoq_diff": "0" },
+        "2023Q4": { "amt": "27315.26", "amt_qoq_diff": "21282.26", "count": "6", "count_qoq_diff": "4" },
+        "2024Q1": { "amt": "1462.64", "amt_qoq_diff": "-25852.62", "count": "8", "count_qoq_diff": "2" },
+        "2024Q2": { "amt": "1900.66", "amt_qoq_diff": "438.02", "count": "6", "count_qoq_diff": "-2" },
+        "2024Q3": { "amt": "100", "amt_qoq_diff": "-1800.66", "count": "1", "count_qoq_diff": "-5" }
+      },
+      "shiftKeyRows": ["2022Q3", "2023Q1", "2024Q4"],
+      "note": "每行 diff=该季−上季逐行闭合（34−14060=−14026、27315.26−6033=21282.26 等）；与月度互校：2022Q1=7520+6540=14060、2023Q3=5933+100=6033、2024Q1=701.98+760.66=1462.64。上季无数据行 diff=null（2022Q4、2023Q2）；平移键行=有数季+1 季（2022Q3、2023Q1、2024Q4），首度量应 null。"
+    }
+  },
+  {
+    "name": "B1-5+2-6 基础回归（批 1、批 2 各跑一次）",
+    "type": "regress",
+    "layer": "回归保障",
+    "baseline": "fiscal.baseline.json",
+    "expect": "重放 baseline 全部查询，resultSet 与基线逐行一致——新增同环比成员为纯增量，老查询结果未变。"
+  }
+]

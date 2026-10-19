@@ -50,6 +50,78 @@ cubes:
         sql: "{CUBE}.`ftransamt`"
         type: sum
 
+      # ── 同比族（28 号方案批 3）：与上年同期比；仅 pay_date 一条轴 ──
+      # trans_date/enter_date 是 _last 划转轴（最近一轮），平移无意义，不参与同环比；
+      # multiStage 现算不进预聚合；写法同批 1/2 camelCase；
+      # _ly 伴生为差值成员的编译依赖（timeShift 是成员级属性、sql 无内联平移语法，勿单删），不进 view includes
+      - name: count_ly
+        title: 清分记录数·去年同期
+        description: 内部伴生——count 平移 1 年（钉 pay_date），count_yoy_diff 的编译依赖，勿进 view includes
+        sql: '{count}'
+        type: number
+        multiStage: true
+        timeShift:
+          - interval: 1 year
+            type: prior
+            time_dimension: pay_date
+      - name: count_yoy_diff
+        title: 清分记录数同比差值
+        description: 清分记录数同比差（与上年同期）——引擎已算，粒度随问句（年/季/月分组分别为年/季/月度同比）
+        multiStage: true
+        sql: '{count} - {count_ly}'
+        type: number
+      - name: im_amt_ly
+        title: 分入金额(元)·去年同期
+        description: 内部伴生——im_amt 平移 1 年（钉 pay_date），im_amt_yoy_diff 的编译依赖，勿进 view includes
+        sql: '{im_amt}'
+        type: sum
+        multiStage: true
+        timeShift:
+          - interval: 1 year
+            type: prior
+            time_dimension: pay_date
+      - name: im_amt_yoy_diff
+        title: 分入金额同比差值(元)
+        description: 分入金额同比差（与上年同期）——引擎已算，粒度随问句（年/季/月分组分别为年/季/月度同比）
+        multiStage: true
+        sql: '{im_amt} - {im_amt_ly}'
+        type: number
+      - name: trans_amt_ly
+        title: 划拨金额(元)·去年同期
+        description: 内部伴生——trans_amt 平移 1 年（钉 pay_date），trans_amt_yoy_diff 的编译依赖，勿进 view includes
+        sql: '{trans_amt}'
+        type: sum
+        multiStage: true
+        timeShift:
+          - interval: 1 year
+            type: prior
+            time_dimension: pay_date
+      - name: trans_amt_yoy_diff
+        title: 划拨金额同比差值(元)
+        description: 划拨金额同比差（与上年同期）——引擎已算，粒度随问句（年/季/月分组分别为年/季/月度同比）
+        multiStage: true
+        sql: '{trans_amt} - {trans_amt_ly}'
+        type: number
+      # ── 增长率（28 号方案批 4）：复用批 3 的 _ly 伴生，无新增平移成员 ──
+      - name: count_yoy_rate
+        title: 清分记录数同比增长率(%)
+        description: 清分记录数同比增长率=(本期−上年同期)÷上年同期×100——引擎已算；上年同期为 0 或无数据时为 null，报"无法计算/该期无数据"勿按 0
+        multiStage: true
+        sql: '100.0 * ({count} - {count_ly}) / NULLIF({count_ly}, 0)'
+        type: number
+      - name: im_amt_yoy_rate
+        title: 分入金额同比增长率(%)
+        description: 分入金额同比增长率=(本期−上年同期)÷上年同期×100——引擎已算；上年同期为 0 或无数据时为 null，报"无法计算/该期无数据"勿按 0
+        multiStage: true
+        sql: '100.0 * ({im_amt} - {im_amt_ly}) / NULLIF({im_amt_ly}, 0)'
+        type: number
+      - name: trans_amt_yoy_rate
+        title: 划拨金额同比增长率(%)
+        description: 划拨金额同比增长率=(本期−上年同期)÷上年同期×100——引擎已算；上年同期为 0 或无数据时为 null，报"无法计算/该期无数据"勿按 0
+        multiStage: true
+        sql: '100.0 * ({trans_amt} - {trans_amt_ly}) / NULLIF({trans_amt_ly}, 0)'
+        type: number
+
     dimensions:
       # ── 码名对（fdt 有名称列的 4 个归一化；执收区划无名称列）──
       - name: chg_agency_code

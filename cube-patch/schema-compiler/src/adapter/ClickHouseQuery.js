@@ -1,0 +1,299 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ClickHouseQuery = void 0;
+const shared_1 = require("@cubejs-backend/shared");
+const BaseQuery_1 = require("./BaseQuery");
+const BaseFilter_1 = require("./BaseFilter");
+const UserError_1 = require("../compiler/UserError");
+const GRANULARITY_TO_INTERVAL = {
+    day: 'Day',
+    hour: 'Hour',
+    minute: 'Minute',
+    second: 'Second',
+    month: 'Month',
+    quarter: 'Quarter',
+    year: 'Year',
+};
+class ClickHouseFilter extends BaseFilter_1.BaseFilter {
+    likeIgnoreCase(column, not, param, type) {
+        const p = (!type || type === 'contains' || type === 'ends') ? '%' : '';
+        const s = (!type || type === 'contains' || type === 'starts') ? '%' : '';
+        return `${column} ${not ? 'NOT' : ''} ILIKE CONCAT('${p}', ${this.allocateParam(param)}, '${s}')`;
+    }
+    castParameter() {
+        if (this.measure || this.definition().type === 'number') {
+            // TODO here can be measure type of string actually
+            return 'toFloat64(?)';
+        }
+        return '?';
+    }
+}
+class ClickHouseQuery extends BaseQuery_1.BaseQuery {
+    newFilter(filter) {
+        return new ClickHouseFilter(this, filter);
+    }
+    escapeColumnName(name) {
+        return `\`${name}\``;
+    }
+    convertTz(field) {
+        //
+        // field yields a Date or a DateTime so add in the extra toDateTime64 to support the Date case
+        //
+        // https://clickhouse.yandex/docs/en/data_types/datetime/
+        // https://clickhouse.yandex/docs/en/query_language/functions/date_time_functions/
+        //
+        //
+        return `toTimeZone(toDateTime64(${field}, 0), '${this.timezone}')`;
+    }
+    timeGroupedColumn(granularity, dimension) {
+        if (granularity === 'week') {
+            return `toDateTime64(toMonday(${dimension}, '${this.timezone}'), 0, '${this.timezone}')`;
+        }
+        else {
+            const interval = GRANULARITY_TO_INTERVAL[granularity];
+            const toDateTime64 = `toDateTime64(${dimension}, 0, '${this.timezone}')`;
+            const toStartOfInterval = `toStartOf${interval}(${dimension}, '${this.timezone}')`;
+            const internalConversion = granularity === 'second' ? toDateTime64 : toStartOfInterval;
+            return `toDateTime64(${internalConversion}, 0, '${this.timezone}')`;
+        }
+    }
+    /**
+     * Returns SQL for source expression floored to timestamps aligned with
+     * intervals relative to the origin timestamp point.
+     */
+    dateBin(interval, source, origin) {
+        // Pass timezone to dateTimeCast to ensure origin is in the same timezone as a source, because ClickHouse aligns
+        // both timestamps internally to the same timezone before computing the difference, causing an unintended offset.
+        const originAligned = this.dateTimeCast(`'${origin}'`, this.timezone);
+        const intervalFormatted = this.formatInterval(interval);
+        const timeUnit = this.diffTimeUnitForInterval(interval);
+        const beginOfTime = 'fromUnixTimestamp(0)';
+        return `date_add(${timeUnit},
+        FLOOR(
+          date_diff(${timeUnit}, ${originAligned}, ${source}) /
+          date_diff(${timeUnit}, ${beginOfTime}, ${beginOfTime} + ${intervalFormatted})
+        ) * date_diff(${timeUnit}, ${beginOfTime}, ${beginOfTime} + ${intervalFormatted}),
+        ${originAligned}
+    )`;
+    }
+    subtractInterval(date, interval) {
+        return this.applyInterval('-', date, interval);
+    }
+    addInterval(date, interval) {
+        return this.applyInterval('+', date, interval);
+    }
+    /**
+     * PATCH(2026-10-12): operator form instead of subDate/addDate functions.
+     * `subDate`/`addDate` only exist since ClickHouse 23.9; this deployment runs
+     * CK 23.3, which natively supports the `date +/- INTERVAL n unit` operator
+     * form. Same shape as HiveQuery/PrestodbQuery adapters.
+     * A compound interval is applied one unit at a time, coarsest first.
+     */
+    applyInterval(operator, date, interval) {
+        return (0, shared_1.splitSqlInterval)(interval).reduce((acc, part) => `(${acc} ${operator} ${this.formatInterval(part)})`, date);
+    }
+    /**
+     * The input interval with (possible) plural units, like "2 years", "3 months", "4 weeks", "5 days"...
+     * will be converted to ClickHouse form of sum of single intervals.
+     * @see https://clickhouse.com/docs/en/sql-reference/data-types/special-data-types/interval
+     */
+    formatInterval(interval) {
+        const intervalParsed = (0, shared_1.parseSqlInterval)(interval);
+        return Object.entries(intervalParsed)
+            .map(([key, value]) => `INTERVAL ${value} ${key.toUpperCase()}`)
+            .join(' + ');
+    }
+    timeStampCast(value) {
+        return this.dateTimeCast(value);
+    }
+    dateTimeCast(value, timezone) {
+        // This is critical for custom granularity, because timezone should be aligned between origin and source column, otherwise
+        // clickhouse will align the source column to the origin timezone, which will cause an unintended offset.
+        if (timezone) {
+            // Use precision 3 for milliseconds to match the format 'YYYY-MM-DDTHH:mm:ss.SSS'
+            return `toDateTime64(${value}, 3, '${timezone}')`;
+        }
+        // value yields a string formatted in ISO8601, so this function returns a expression to parse a string to a DateTime
+        // ClickHouse provides toDateTime which expects dates in UTC in format YYYY-MM-DD HH:MM:SS
+        // However parseDateTimeBestEffort works with ISO8601
+        return `parseDateTimeBestEffort(${value})`;
+    }
+    dimensionsJoinCondition(leftAlias, rightAlias) {
+        const dimensionAliases = this.dimensionAliasNames();
+        if (!dimensionAliases.length) {
+            return '1 = 1';
+        }
+        return dimensionAliases
+            .map(alias => `(assumeNotNull(${leftAlias}.${alias}) = assumeNotNull(${rightAlias}.${alias}))`)
+            .join(' AND ');
+    }
+    orderHashToString(hash) {
+        //
+        // ClickHouse doesn't support order by index column, so map these to the alias names
+        //
+        if (!hash || !hash.id) {
+            return null;
+        }
+        const fieldAlias = this.getFieldAlias(hash.id);
+        if (fieldAlias === null) {
+            return null;
+        }
+        const direction = hash.desc ? 'DESC' : 'ASC';
+        return `${fieldAlias} ${direction}`;
+    }
+    groupByClause() {
+        if (this.ungrouped) {
+            return '';
+        }
+        //
+        // ClickHouse doesn't support group by index column, so map these to the alias names
+        //
+        const names = this.dimensionAliasNames();
+        return names.length ? ` GROUP BY ${names.join(', ')}` : '';
+    }
+    primaryKeyCount(cubeName, distinct) {
+        const primaryKeys = this.cubeEvaluator.primaryKeys[cubeName];
+        const primaryKeySql = primaryKeys.length > 1 ?
+            this.concatStringsSql(primaryKeys.map((pk) => this.castToString(this.primaryKeySql(pk, cubeName)))) :
+            this.primaryKeySql(primaryKeys[0], cubeName);
+        if (distinct) {
+            return `uniqExact(${primaryKeySql})`;
+        }
+        else {
+            return `count(${primaryKeySql})`;
+        }
+    }
+    castToString(sql) {
+        return `CAST(${sql} as Nullable(String))`;
+    }
+    seriesSql(timeDimension) {
+        /*
+        postgres uses :
+    
+        SELECT parseDateTimeBestEffort(date_from), parseDateTimeBestEffort(date_to) FROM
+        (
+            VALUES
+              ('2017-01-01T00:00:00.000', '2017-01-01T23:59:59.999'),
+              ('2017-01-02T00:00:00.000', '2017-01-02T23:59:59.999'),
+              ('2017-01-03T00:00:00.000', '2017-01-03T23:59:59.999'),
+              ('2017-01-04T00:00:00.000', '2017-01-04T23:59:59.999'),
+              ('2017-01-05T00:00:00.000', '2017-01-05T23:59:59.999'),
+              ('2017-01-06T00:00:00.000', '2017-01-06T23:59:59.999'),
+              ('2017-01-07T00:00:00.000', '2017-01-07T23:59:59.999'),
+              ('2017-01-08T00:00:00.000', '2017-01-08T23:59:59.999'),
+              ('2017-01-09T00:00:00.000', '2017-01-09T23:59:59.999'),
+              ('2017-01-10T00:00:00.000', '2017-01-10T23:59:59.999')
+            ) AS dates (date_from, date_to)
+          ) AS `visitors.created_at_series`
+    
+        */
+        /*
+    
+       ClickHouse uses :
+    
+         select
+          parseDateTimeBestEffort(arrayJoin(['2017-01-01T00:00:00.000','2017-01-02T00:00:00.000'])) as date_from,
+          parseDateTimeBestEffort(arrayJoin(['2017-01-01T23:59:59.999','2017-01-02T23:59:59.999'])) as date_to
+          ...
+       )
+       */
+        const datesFrom = [];
+        const datesTo = [];
+        timeDimension.timeSeries().forEach(([from, to]) => {
+            datesFrom.push(from);
+            datesTo.push(to);
+        });
+        return `SELECT parseDateTimeBestEffort(arrayJoin(['${datesFrom.join('\',\'')}'])) as date_from, parseDateTimeBestEffort(arrayJoin(['${datesTo.join('\',\'')}'])) as date_to`;
+    }
+    concatStringsSql(strings) {
+        // eslint-disable-next-line prefer-template
+        return 'toString(' + strings.join(') || toString(') + ')';
+    }
+    unixTimestampSql() {
+        return `toUnixTimestamp(${this.nowTimestampSql()})`;
+    }
+    preAggregationLoadSql(cube, preAggregation, tableName) {
+        const sqlAndParams = this.preAggregationSql(cube, preAggregation);
+        if (!preAggregation.indexes) {
+            throw new UserError_1.UserError('ClickHouse doesn\'t support pre-aggregations without indexes');
+        }
+        const firstIndexName = Object.keys(preAggregation.indexes)[0];
+        const indexColumns = this.evaluateIndexColumns(cube, preAggregation.indexes[firstIndexName]);
+        return [`CREATE TABLE ${tableName} ENGINE = MergeTree() ORDER BY (${indexColumns.join(', ')}) ${this.asSyntaxTable} ${sqlAndParams[0]}`, sqlAndParams[1]];
+    }
+    countDistinctApprox(sql) {
+        return `uniq(${sql})`;
+    }
+    createIndexSql(indexName, tableName, escapedColumns) {
+        return `ALTER TABLE ${tableName} ADD INDEX ${indexName} (${escapedColumns.join(', ')}) TYPE minmax GRANULARITY 1`;
+    }
+    dimensionColumns(cubeAlias) {
+        // For the top-level SELECT statement, explicitly set the column alias.
+        // Clickhouse sometimes includes the "q_0" prefix in the column name, and this
+        // leads to errors during the result mapping.
+        if (cubeAlias === 'q_0') {
+            return this.dimensionAliasNames().map(alias => `${cubeAlias}.${alias} ${alias}`);
+        }
+        else {
+            return super.dimensionColumns(cubeAlias);
+        }
+    }
+    sqlTemplates() {
+        const templates = super.sqlTemplates();
+        templates.functions.DATETRUNC = 'DATE_TRUNC({{ args_concat }})';
+        templates.functions.UTCTIMESTAMP = 'now(\'UTC\')';
+        templates.functions.STRING_AGG = 'arrayStringConcat(group{% if distinct %}Uniq{% endif %}Array({{ args[0] }}), {{ args[1] }})';
+        // DATEADD is being rewritten to DATE_ADD. The operator form is used instead of
+        // addDate(), which only exists since ClickHouse 23.9
+        templates.functions.DATE_ADD = '({{ args[0] }} + INTERVAL {{ interval }} {{ date_part }})';
+        // TODO: Introduce additional filter in jinja? or parseDateTimeBestEffort?
+        // https://github.com/ClickHouse/ClickHouse/issues/19351
+        templates.expressions.timestamp_literal = 'parseDateTimeBestEffort(\'{{ value }}\')';
+        delete templates.functions.PERCENTILECONT;
+        delete templates.expressions.like_escape;
+        templates.quotes.identifiers = '`';
+        templates.quotes.escape = '\\`';
+        // ClickHouse spells its string type `String`, and case-sensitively so
+        templates.types.string = 'String';
+        // A ClickHouse type holds no NULL of its own, so a cast that has to produce one
+        // names the nullable form of the type instead
+        templates.types.nullable = 'Nullable({{ data_type }})';
+        templates.types.boolean = 'BOOL';
+        templates.types.timestamp = 'DATETIME';
+        delete templates.types.time;
+        // ClickHouse intervals have a distinct type for each granularity
+        delete templates.types.interval;
+        delete templates.types.binary;
+        // PATCH(2026-10-12) layer 2: equality instead of isNotDistinctFrom() — the
+        // function does not exist on ClickHouse 23.3 (added ~23.8), the IS NOT DISTINCT
+        // FROM syntax is also absent, and the 23.3 join analyzer rejects any
+        // non-equality ON condition (OR-composite fails with INVALID_JOIN_ON_EXPRESSION,
+        // both verified directly against CK 23.3.15). Tesseract's measure-alignment
+        // self-join renders NULL-safe equality through this template; plain equality
+        // drops rows whose join key is NULL — acceptable for period-comparison
+        // grouping keys. (CK >= 23.8: revert to the original function template.)
+        templates.expressions.is_not_distinct_from = '({{ left }}) = ({{ right }})';
+        // ClickHouse `/` always returns Float64; intDiv is integer division truncating
+        // toward zero, matching PostgreSQL (intDiv(-7, 2) = -3 despite docs saying
+        // "rounded down")
+        templates.expressions.int_division = 'intDiv({{ left }}, {{ right }})';
+        templates.statements.time_series_select = 'SELECT parseDateTimeBestEffort(dates.f) date_from, parseDateTimeBestEffort(dates.t) date_to \n' +
+            'FROM (\n' +
+            '{% for time_item in seria  %}' +
+            '    select \'{{ time_item[0] }}\' f, \'{{ time_item[1] }}\' t \n' +
+            '{% if not loop.last %} UNION ALL\n{% endif %}' +
+            '{% endfor %}' +
+            ') AS dates';
+        // ClickHouse rejects a bare UNION unless `union_default_mode` is set, so a set
+        // operation has to say which one it is.
+        templates.statements.union = '{% for query in queries %}(\n' +
+            '{{ query | indent(2, true) }}\n' +
+            ')' +
+            '{% if not loop.last %}\nUNION {% if distinct %}DISTINCT{% else %}ALL{% endif %} {% endif %}' +
+            '{% endfor %}' +
+            '{% if limit is not none %}\nLIMIT {{ limit }}{% endif %}';
+        return templates;
+    }
+}
+exports.ClickHouseQuery = ClickHouseQuery;
+//# sourceMappingURL=ClickHouseQuery.js.map

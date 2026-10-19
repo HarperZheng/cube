@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "deny": [
+      "Write(~/.claude/**)",
+      "Edit(~/.claude/**)",
+      "Write(docs/**)",
+      "Edit(docs/**)",
+      "Write(conf/**)",
+      "Edit(conf/**)"
+    ]
+  }
+}

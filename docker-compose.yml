@@ -13,13 +13,21 @@ services:
       - TZ=Asia/Shanghai   # 容器日志中国时区（14 号日志规格 R2 拍板 9）；cubestore（Rust）是否吃 TZ 待冒烟
     volumes:
       - ./conf:/cube/conf
+      - cubestore-data:/cube/conf/.cubestore
       - ./preload.js:/preload.js
-      - ./agent:/cube/agent
+      # /agent 问数契约接口（27 号文档 §3.2）：preload hook 挂载，业务代码纯 CommonJS
+      - ./agent-api:/cube/agent-api
       - ./regress:/cube/regress
       # drill 下钻增强（docs/cube-dataqa-topic/08 第五节）：挂载覆盖 playground
       # 文件，镜像本身不动；index.html 是镜像原文件的副本+注入 script 标签
       # （升级镜像后用 playground-ext/sync-index.sh 重新生成）
       - ./playground-ext/index.html:/cube/node_modules/@cubejs-backend/server-core/playground/index.html:ro
+      # CK 方言补丁（cube-patch/ 目录，同名同路径挂载覆盖，2026-10-12 实测）：
+      # timeShift 平移原生成 addDate()/subDate()（CK 23.9 才有），本环境 CK 23.3 报
+      # Unknown function addDate——补丁改为 date ± INTERVAL 运算符形式（CK 23.3 原生
+      # 支持，Cube 自家 Hive/Presto 方言同款写法）。带维度同环比全形态复活。
+      # 升级 CK ≥ 23.9 后删除本挂载行即恢复原生行为；容器内留有 .bak 原件。
+      - ./cube-patch/schema-compiler/src/adapter/ClickHouseQuery.js:/cube/node_modules/@cubejs-backend/schema-compiler/dist/src/adapter/ClickHouseQuery.js:ro
       - ./playground-ext/ext-drill.js:/cube/node_modules/@cubejs-backend/server-core/playground/ext-drill.js:ro
       # chat 聊天窗（docs/cube-dataqa-topic/11 计划 C2）：同款挂载覆盖；
       # 后台 chat 服务已下线（v2：host 桥 chat/chat_server.py 占 4100，见 11-v2 计划 §9.1）
@@ -32,6 +40,11 @@ services:
 
 # 公司内网占用 172.18.0.0/16，Docker 网段若与其冲突，
 # 容器将无法访问内网 Oracle（172.18.163.68），故固定为不冲突网段
+# cubestore 数据目录挂 named volume（ext4）——放 bind mount（NTFS）上
+# temp-uploads→uploads 的 rename 报 os error 2，物化必失败
+volumes:
+  cubestore-data:
+
 networks:
   cube-net:
     driver: bridge

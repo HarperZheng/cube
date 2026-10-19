@@ -112,3 +112,16 @@ try {
 } catch (e) {
   console.error('[preload] embed patch skipped:', e.message);
 }
+
+// ---------------------------------------------------------------
+// /agent 问数契约接口（docs/cube-dataqa-topic/27-cube-AnalyticsChat建设方案.md）：
+// 拦 http.createServer 认领 /agent/* 命名空间（embed 同款模式），业务代码
+// 在 /cube/agent-api（docker-compose 挂载），preload 只 require；失败显性
+// （缺本日志行 + /agent/tools 404）。
+// ---------------------------------------------------------------
+try {
+  require('/cube/agent-api/index.js');
+  console.error('[preload] /agent routes mounted');
+} catch (e) {
+  console.error('[preload] agent-api skipped:', e.message);
+}

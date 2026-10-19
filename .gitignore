@@ -19,6 +19,7 @@ regress/tmp-query.json
 query.json
 *.bak.*
 cube-repo/
+agent-svc/node_modules/
 
 # 系统
 Thumbs.db

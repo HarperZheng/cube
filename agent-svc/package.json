@@ -1,0 +1,14 @@
+{
+  "name": "agent-svc",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "agent chat 测试薄壳：claude Agent SDK 驱动，窗口契约 POST /chat 三态透传（AgentScope 就绪后整删）",
+  "main": "server.mjs",
+  "scripts": {
+    "start": "node server.mjs"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.3.296"
+  }
+}

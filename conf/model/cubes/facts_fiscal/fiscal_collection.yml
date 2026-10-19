@@ -44,6 +44,11 @@ cubes:
         title: 缴款明细行数
         drill_members: [ pay_date, chg_agency_name, rec_sub_name, item_name, payer_name ]
         type: count
+      - name: paybook_count
+        title: 缴款书笔数
+        description: countDistinct(fpaycode)——一票多项目行，count 是行数勿当笔数
+        sql: "{CUBE}.`fpaycode`"
+        type: countDistinct
       - name: amt
         title: 缴款金额(元)
         description: famt 合计——缴款明细口径
@@ -480,6 +485,12 @@ cubes:
         title: 缴款书有效期
         description: feffdate——欠缴催缴判定（场景 12：fstate=待缴款 + 已过期）
         sql: "toDateOrNull({CUBE}.`feffdate`)"
+        type: time
+      - name: fill_date
+        title: 开具日期（填开）
+        description: ffilldate——票面开具/填开日期；跨日缴款时 ≠ pay_date（§2.1）。精度仅到日，
+          "超24小时"按"开具日期早于今天"近似（昨日深夜开票不足24h会被计入）
+        sql: "toDateOrNull({CUBE}.`ffilldate`)"
         type: time
 
       # ── 敏感字段（§4.3：建维度 + mask 脱敏）──

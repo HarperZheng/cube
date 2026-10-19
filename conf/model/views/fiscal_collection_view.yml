@@ -18,6 +18,9 @@ views:
         收入单位（rec_agency_code）与归口业务处室（chgfin_dept_id）暂无名称列，只出编码。
         payer_name 已脱敏。
         同比/环比差值与增长率成员（*_yoy_diff/*_yoy_rate、*_mom_diff/*_mom_rate、*_qoq_diff/*_qoq_rate）：与上年同期/上月/上季的差值或增长率，引擎已算，直接绑定，答案层勿重复计算；同比用 _yoy 系（平移量固定 1 年，粒度随问句——按年/季/月分组分别为年/季/月度同比），月环比用 _mom 系（month 分组），季环比用 _qoq 系（quarter 分组），问"环比"不带粒度默认月环比；_ly/_lm/_lq 伴生列为内部实现，勿直接查询；增长率=差值÷对照期×100，对照期为 0 或无数据时为 null，报"无法计算/该期无数据"勿按 0；同环比轴随族——amt/count 族按 pay_date，到账族（entered_amt 系）按 received_date；同环比查询单条只用一条时间轴。
+        缴款书"笔数"用 paybook_count（count 是明细行数，一票多项目行会重复计）；
+        "开具时间/填开日期"用 fill_date（票面 ffilldate，跨日缴款时 ≠ pay_date；精度仅到日，
+        "超24小时"按"开具日期早于今天"近似），勿拿 pay_date（缴款日期）或 eff_date（有效期）顶替。
     cubes:
       - join_path: fiscal_collection
         includes:
@@ -28,6 +31,7 @@ views:
           - count_mom_rate
           - count_qoq_diff
           - count_qoq_rate
+          - paybook_count
           - amt
           - amt_yoy_diff
           - amt_yoy_rate
@@ -51,6 +55,7 @@ views:
           - enter_date
           - clear_date
           - eff_date
+          - fill_date
           - bus_type
           - state
           - pay_channel

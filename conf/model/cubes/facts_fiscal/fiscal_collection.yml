@@ -1,4 +1,4 @@
-# 财政缴款全景事实（fne_paybook_full_high，1,272 行/129 列）—— 非税收入全景 P7 建模
+# 财政缴款全景事实（fne_paybook_full_high）—— 非税收入全景 P7 建模
 # docs/cube-dataqa-topic/26-非税收入全景建模初步设计.md §三 / 26-资金模块建模开发方案 §五
 # 缴收分侧：无前缀=缴款票面、rec_*=收入归属（§4.3）；码名对：code 分组 + name 展示（§4.2）
 # 口径：到账金额按 freceiveddate 衍生（fisenter='1' 实测不可用）；ftotalamt 禁 sum（fan trap）
@@ -57,8 +57,8 @@ cubes:
         type: sum
       - name: entered_amt
         title: 到账金额(元)
-        description: sum(fimamt) WHERE freceiveddate 非空——2026-10-09 口径（fisenter='1'
-          实测不可用：'1'仅1行/空×1234）；完整判定=三条件（fisenter+fenterdate+ftrnasreconciledate），v1
+        description: sum(fimamt) WHERE freceiveddate 非空——2026-10-09 口径（fisenter 判定
+          实测不可用）；完整判定=三条件（fisenter+fenterdate+ftrnasreconciledate），v1
           按单条件
         sql: "{CUBE}.`fimamt`"
         type: sum
@@ -376,8 +376,7 @@ cubes:
         type: string
       - name: chgfin_dept_id
         title: 归口业务处室ID
-        description: fchgfindeptid，1259/1272（99%）；fdeptid/fbusinessorgcode 实测全 0 不建（核实项
-          13/14）
+        description: fchgfindeptid——高填充；fdeptid/fbusinessorgcode 实测全 0 不建（核实项 13/14）
         sql: "{CUBE}.`fchgfindeptid`"
         type: string
 
@@ -427,7 +426,7 @@ cubes:
         type: string
       - name: bgt_style
         title: 资金管理方式
-        description: fbgtstyle：1国库 2专户 3代收 4其他（实测无 3）
+        description: fbgtstyle：1国库 2专户 3代收 4其他
         sql: "{CUBE}.`fbgtstyle`"
         type: string
       - name: calc_source
@@ -441,8 +440,7 @@ cubes:
         type: string
       - name: state
         title: 缴款书状态
-        description: fstate：1正常(待缴款) 2作废 3已缴款确认——欠缴判定=1正常+eff_date 过期（场景 12；实测 3=1257
-          行占绝对主体）
+        description: fstate：1正常(待缴款) 2作废 3已缴款确认——欠缴判定=1正常+eff_date 过期（场景 12）
         sql: "{CUBE}.`fstate`"
         type: string
       - name: pay_code
@@ -458,22 +456,23 @@ cubes:
       # ── 时间维度（全 String → toDateOrNull，初步设计 §八.5；time_shift 同期对比靠 pay_date）──
       - name: pay_date
         title: 缴款日期
-        description: fdate（fpaytime 派生落地列）——跨日缴款勿用 ffilldate（§2.1）
+        description: fdate——缴款口径主时间轴（缴款/收入统计默认轴，同环比族钉它）；
+          跨日缴款勿用 ffilldate（§2.1）。注："fdate 为 fpaytime 派生落地列"系误记已删
+          （fpaytime 实测纯时分秒'10:15:12'形态，无日期部分）
         sql: "toDateOrNull({CUBE}.`fdate`)"
         type: time
-      - name: pay_time
-        title: 缴款时刻
-        description: fpaytime 原始来源（含时分秒），明细展示用
-        sql: "{CUBE}.`fpaytime`"
-        type: string
       - name: received_date
         title: 资金到账日期
-        description: freceiveddate——前端"收入日期"即绑它；与 enter_date 口径不同勿混用
+        description: freceiveddate——前端"收入日期"即绑它；与 enter_date 口径不同勿混用。
+          xls#30 ffundsrecdate（归类#49 缴款到账日期）与 freceiveddate 同义近轴不双建
         sql: "toDateOrNull({CUBE}.`freceiveddate`)"
         type: time
       - name: enter_date
-        title: 划拨到账日期
-        description: fenterdate（报文侧入库/划拨到账）
+        title: 划拨到账日期（报文侧）
+        description: fenterdate——划拨到账日期（xls#135，源 FNE_TRANSFER_BANK_MSG 银行划拨报文，
+          清分资金到账日）。查询为空属预期，ETL 补数后自动生效；
+          "到账"现用 received_date（资金到账日期，xls#56）。treasury 视图同名 enter_date 是
+          入库日期、allocation 视图同名是二次划转到账日期——三视图同名三种节点勿混查
         sql: "toDateOrNull({CUBE}.`fenterdate`)"
         type: time
       - name: clear_date
@@ -492,6 +491,22 @@ cubes:
           "超24小时"按"开具日期早于今天"近似（昨日深夜开票不足24h会被计入）
         sql: "toDateOrNull({CUBE}.`ffilldate`)"
         type: time
+      - name: reconcile_date
+        title: 对账日期（缴款书）
+        description: freconciledate——缴款书对账日期（xls#57，缴款记录对账，配#34 是否对账
+          FISRECONCILE）；与 ffundsrecdate（资金对账/缴款到账日期，xls#30）是两笔对账，本表只建
+          记录对账轴。与 received_date（资金到账）两口径勿混用——实测有已对账未到账、
+          也有已到账未对账行，对账与到账无严格先后；treasury 视图同名是缴库对账口径
+        sql: "toDateOrNull({CUBE}.`freconciledate`)"
+        type: time
+
+      # ── 不建清单（2026-10-23 29 号文档核对 + CK 实测拍板）：ffundsrecdate（资金对账日期，
+      #    与 freceiveddate 同覆盖）；fcleartime（清分时间，clear_date 已有日粒度）；
+      #    ftrnasreconciledate（到账对账日期基本无值，entered_amt 三条件判定备查，不当维度）；
+      #    ftransdate/ftransdate_last/fenterdate_last（划转/二次到账基本无值，划转口径归 allocation 视图）；
+      #    fconfirmdate（曾建 confirm_date 后删，2026-10-23 拍板——与 pay_date 基本同日、
+      #    个别行反而早于缴款日，无独立轴价值）；fpaytime（曾建 pay_time 后删，同日拍板——纯时分秒
+      #    '10:15:12'形态，与 fdate 无派生关系，完整缴款时刻需 fdate+fpaytime 拼合，暂无场景不建）
 
       # ── 敏感字段（§4.3：建维度 + mask 脱敏）──
       - name: payer_name

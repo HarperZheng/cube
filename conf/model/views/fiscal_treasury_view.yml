@@ -11,7 +11,10 @@ views:
         缴库入库视图，一行一笔缴库明细（缴库单×科目，已按明细去重）；缴库单数用 bill_count，明细笔数用 count。
         三环节状态：缴库回执成功 status='9'；已入国库 enter_status='1'；对账成功 reconcile_status='1'。
         "已入国库多少笔/金额"= count/amt + enter_status='1'，时间轴必须用 enter_date（入国库日期）；
-        缴库单量/日报趋势按 build_date（缴库日期=建单日），两者口径不同勿混用。
+        缴库单量/日报趋势按 build_date（缴库单生成日期=建单日），两者口径不同勿混用。
+        enter_date（入国库）与 allocation/collection 视图的 enter_date（划拨到账）同名不同义；
+        reconcile_date（缴库对账）与 enter_date 完全同日勿当独立轴；
+        reconcile_status 是缴库对账状态，与 allocation 视图的到账对账状态同名不同节点。
         金额：明细金额用 amt；total_amt 是整单金额复印在每明细行，禁 sum。
         分组用 sub_code；sub_name 是全部别名字典序拼接（一码多名脏数据），仅展示不作准。
         缴库单科目是清分归属口径，与 collection 视图的缴款票面科目（sub_*）不可混用。

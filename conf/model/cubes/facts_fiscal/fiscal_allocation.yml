@@ -1,4 +1,4 @@
-# 清分流向事实（fne_funddivide_transfer，728 行/56 列）—— 非税收入全景 P7 建模
+# 清分流向事实（fne_funddivide_transfer）—— 非税收入全景 P7 建模
 # docs/cube-dataqa-topic/26-资金模块建模开发方案.md §六
 # FUNDDIVIDE+COLLECT+CAPITAL 三表打平；一行一笔清分，from→to 由区划/单位成对字段表达
 # 口径：收入类型 v1 只做区划比对（层级依赖初步设计核实项 7 ETL）；是否汇总=fcollectid 非空
@@ -51,7 +51,7 @@ cubes:
         type: sum
 
       # ── 同比族（28 号方案批 3）：与上年同期比；仅 pay_date 一条轴 ──
-      # trans_date/enter_date 是 _last 划转轴（最近一轮），平移无意义，不参与同环比；
+      # trans_date/enter_date 是 _last 划转轴（二次划转轮），平移无意义，不参与同环比；
       # multiStage 现算不进预聚合；写法同批 1/2 camelCase；
       # _ly 伴生为差值成员的编译依赖（timeShift 是成员级属性、sql 无内联平移语法，勿单删），不进 view includes
       - name: count_ly
@@ -216,17 +216,20 @@ cubes:
         type: string
       - name: is_transfer
         title: 是否划转
-        description: fistransfer 0否 1是（_last=最近一轮）
-        sql: "{CUBE}.`fistransfer_last`"
+        description: fistransfer——是否划转（xls#143）：0否 1是，清分→划转的进度标志；源表另有
+          fistransfer_last=是否二次划转（xls#142），如出现二次划转数据再议加建
+        sql: "{CUBE}.`fistransfer`"
         type: string
       - name: trans_stats
         title: 划转状态
-        description: ftransstats：0未发 1已发 7失败 9成功 14校验不通过——明细行状态，非批次单据状态
+        description: ftransstats：0未发 1已发 7失败 9成功 14校验不通过——明细行状态，非批次单据状态；
+          划转状态整列未同步（非空变体亦无），查询为空属预期，ETL 补数后自动生效
         sql: "{CUBE}.`ftransstats`"
         type: string
       - name: reconcile_status
         title: 到账对账状态
-        description: freconcilestatus：0未对账 1成功 2失败
+        description: freconcilestatus（xls#140 到账对账状态）：0未对账 1对账成功 2对账失败；
+          大半无值且'2'未出现，查询为空属预期，ETL 补数后自动生效
         sql: "{CUBE}.`freconcilestatus`"
         type: string
       - name: collect_flag
@@ -236,8 +239,9 @@ cubes:
         type: string
       - name: trans_no
         title: 划拨凭证号
-        description: ftransno_last——多轮划拨只留最近轮（初步设计 §八.7）
-        sql: "{CUBE}.`ftransno_last`"
+        description: ftransno——划拨凭证号（xls#103）；源表另有 ftransno_last=二次划拨凭证号
+          （xls#102），如出现二次划转数据再议加建
+        sql: "{CUBE}.`ftransno`"
         type: string
       - name: pay_code
         title: 缴款码
@@ -250,22 +254,31 @@ cubes:
         type: string
 
       # ── 时间维度 ──
+      # 不建（2026-10-23 29 号文档核对 + CK 实测拍板）：ftrnasreconciledate（到账对账日期，fdt 无
+      # freconciledate 列）——reconcile_status 的配对日期，待 ETL 补数后再议；
+      # ftransdate/fenterdate（非 _last，首次划转/到账日期）源端未同步，划转侧日期轴以 _last 变体建模
       - name: pay_date
         title: 缴款日期
         sql: "toDateOrNull({CUBE}.`fdate`)"
         type: time
       - name: clear_date
         title: 清分日期
+        description: fcleardate——xls#111 称清算日期（collection 视图同名成员 xls#66 称清分日期）；
+          按 fpaycode 对齐个别码两表微差（ETL 口径差）
         sql: "toDateOrNull({CUBE}.`fcleardate`)"
         type: time
       - name: trans_date
-        title: 划转日期
-        description: ftransdate_last（最近一轮）
+        title: 划转日期（二次划转）
+        description: ftransdate_last——二次划转日期（xls#144，源设计"_last"即二次划转轮）。
+          查询为空属预期，ETL 补数后自动生效；首次划转 ftransdate 亦基本无值
         sql: "toDateOrNull({CUBE}.`ftransdate_last`)"
         type: time
       - name: enter_date
-        title: 划拨到账日期
-        description: fenterdate_last（最近一轮）
+        title: 划拨到账日期（二次划转）
+        description: fenterdate_last——二次划转到账日期（xls#136；源设计"_last"即二次划转轮，
+          非泛指最近一轮）。查询为空属预期，ETL 补数后自动生效；
+          首次到账 fenterdate 亦基本无值，划转日期在 fdt 整体未同步。
+          treasury 视图同名是入库日期、collection 视图同名是报文侧首次到账——三视图同名三种节点
         sql: "toDateOrNull({CUBE}.`fenterdate_last`)"
         type: time
 

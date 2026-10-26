@@ -10,16 +10,20 @@ views:
         金额：分入金额用 im_amt，划拨金额用 trans_amt；分组必须用 *_code，*_name 为别名拼接展示、不作准。
         收入类型（正常/跨区划）用 income_type（区划比对 v1，上/下级分入待层级 ETL）；
         是否分成/分解来源用 calc_source（1不分成 2分成 3提留 4余额），分成比例无数据列。
-        一笔清分多轮划拨只留最近一轮（trans_no/enter_date/trans_date 均为 _last），历史轮次不可查；
+        划转信息按轮分列：首轮划拨凭证号/是否划转在 trans_no/is_transfer，二次划转轮在 _last 系
+        （ftransno_last/fistransfer_last/enter_date/trans_date）；划转到账侧源端未同步，
+        按划转到账过滤或分组为空属预期，待 ETL 补数；
         是否汇总用 collect_flag（fcollectid 非空衍生）。
-        划拨/入库到账日期用 enter_date（报文侧）；与缴款书侧 received_date（collection 视图）口径不同勿混用。
+        划拨到账日期在 enter_date（二次划转到账）；treasury 视图同名 enter_date 是入库口径、
+        collection 视图同名是报文侧首次到账——三视图同名三种节点勿混用；
+        缴款书侧资金到账在 collection 视图 received_date。
         资金归口用 bgt_style（1国库 2专户）+ rec_acct_type 互校。时间过滤用 pay_date（fdate）。
         划出方区划名称（chg_rgn_name）与划入方单位名称暂无数据列，只出编码。
         同比差值/增长率成员（count_yoy_diff/count_yoy_rate/im_amt_yoy_diff/im_amt_yoy_rate/trans_amt_yoy_diff/trans_amt_yoy_rate）：
         与上年同期（同比）的差值或增长率，引擎已算，直接绑定，答案层勿重复计算；同比用 _yoy 系（平移量固定 1 年，粒度随问句——
         按年/季/月分组分别为年/季/月度同比）；增长率=差值÷上年同期×100，上年同期为 0 或无数据时为 null，报"无法计算/该期无数据"勿按 0；
         _ly 伴生列为内部实现，勿直接查询；
-        同环比仅 pay_date 一条轴，trans_date/enter_date（_last 最近一轮划转）不参与同环比；
+        同环比仅 pay_date 一条轴，trans_date/enter_date（_last 二次划转轮）不参与同环比；
         同环比查询单条只用一条时间轴。
     cubes:
       - join_path: fiscal_allocation

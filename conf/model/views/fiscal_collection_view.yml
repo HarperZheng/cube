@@ -13,8 +13,14 @@ views:
         ftotalamt（total_amt）是整票金额复印在每明细行，禁 sum。数量 number 仅在按 units 分组时可加。
         科目分两侧：缴款侧 sub_*（缴款书票面），收入侧 rec_sub_*（清分归属），不可跨侧混用、不可相加；
         rec_* 前缀成员均为收入侧口径。资金进专户还是国库用 bgt_style（1国库 2专户 3代收 4其他）。
-        时间过滤用 pay_date（fdate 派生，缴款日期）；到账看 received_date（资金到账/前端"收入日期"），
-        划拨入库到账在 allocation 视图（enter_date），两者口径不同勿混用。
+        时间过滤用 pay_date（fdate，缴款日期）；到账看 received_date（资金到账/前端"收入日期"）；
+        enter_date（划拨到账）与 allocation 视图同名成员现均少有数据，
+        按"划拨到账"查询为空属预期，待 ETL 补数；treasury 视图同名 enter_date 是入库口径——
+        三视图同名三种节点勿混用。
+        对账进度用 reconcile_date（缴款书对账，xls#57），与到账 received_date 两个口径勿混用
+        （实测有已对账未到账、也有已到账未对账行，对账与到账无严格先后）；treasury 视图同名是缴库对账。
+        业务链路节点：开票 fill_date、缴款 pay_date、资金到账 received_date、对账 reconcile_date
+        （末两节点无严格先后）。
         收入单位（rec_agency_code）与归口业务处室（chgfin_dept_id）暂无名称列，只出编码。
         payer_name 已脱敏。
         同比/环比差值与增长率成员（*_yoy_diff/*_yoy_rate、*_mom_diff/*_mom_rate、*_qoq_diff/*_qoq_rate）：与上年同期/上月/上季的差值或增长率，引擎已算，直接绑定，答案层勿重复计算；同比用 _yoy 系（平移量固定 1 年，粒度随问句——按年/季/月分组分别为年/季/月度同比），月环比用 _mom 系（month 分组），季环比用 _qoq 系（quarter 分组），问"环比"不带粒度默认月环比；_ly/_lm/_lq 伴生列为内部实现，勿直接查询；增长率=差值÷对照期×100，对照期为 0 或无数据时为 null，报"无法计算/该期无数据"勿按 0；同环比轴随族——amt/count 族按 pay_date，到账族（entered_amt 系）按 received_date；同环比查询单条只用一条时间轴。
@@ -50,12 +56,12 @@ views:
           - number
           - pay_code
           - pay_date
-          - pay_time
           - received_date
           - enter_date
           - clear_date
           - eff_date
           - fill_date
+          - reconcile_date
           - bus_type
           - state
           - pay_channel

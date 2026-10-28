@@ -9,8 +9,10 @@ views:
     meta:
       ai_context: >-
         缴库入库视图，一行一笔缴库明细（缴库单×科目，已按明细去重）；缴库单数用 bill_count，明细笔数用 count。
-        三环节状态：缴库回执成功 status='9'；已入国库 enter_status='1'；对账成功 reconcile_status='1'。
-        "已入国库多少笔/金额"= count/amt + enter_status='1'，时间轴必须用 enter_date（入国库日期）；
+        四层状态：缴库回执成功 status='9'；已入国库 enter_status='1'（"已缴入国库"判定，全局拍板2）；
+        国库记账 income_status='1'（记账回写层，仅用于"未入库先记账"类异常校验，不作入库判定）；
+        对账成功 reconcile_status='1'。
+        "已入国库/已缴入国库"判定= enter_status='1'：金额用 amt，笔数用 count，时间轴必须用 enter_date（入国库日期）；
         缴库单量/日报趋势按 build_date（缴库单生成日期=建单日），两者口径不同勿混用。
         enter_date（入国库）与 allocation/collection 视图的 enter_date（划拨到账）同名不同义；
         reconcile_date（缴库对账）与 enter_date 完全同日勿当独立轴；
@@ -48,6 +50,7 @@ views:
           - sub_level_name
           - status
           - enter_status
+          - income_status
           - reconcile_status
           - share_rate
           - chg_rgn_code

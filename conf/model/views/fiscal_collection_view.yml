@@ -11,6 +11,18 @@ views:
         对应 *_name 是该编码全部别名的字典序拼接（' / '），测试环境一码多名脏数据，仅跟随展示、不作准、不用于分组。
         金额：明细金额用 amt；到账金额用 entered_amt（sum(fimamt) WHERE freceiveddate 非空）；
         ftotalamt（total_amt）是整票金额复印在每明细行，禁 sum。数量 number 仅在按 units 分组时可加。
+        缴款金额的合计/走势/排名口径用 paybook_amt（头表口径：缴款书总额 SUM(ftotalamt) 每书
+        计一次，round-03 q10/q15 拍板；宽表含字节级重复行，已按头行物理行数归一化，2026 年
+        实测 14,980,463.55）；amt 是明细行合计（2026 年 14,985,270.13，datus 同款行粒度），
+        与头表口径数值不等勿互混。
+        按月走势+环比类问题主路径：paybook_amt 按 pay_date month 分组，环比在答案层自算；
+        amt_mom_* 等环比度量与按月分组组合 2026-10-28 实测已恢复产出（round-03 的 0 行事故
+        未复现），如组合返回 0 行回退主路径。
+        单笔缴款金额=total_amt（缴款书总额，max 取值，round-02 q19 拍板，勿用明细行 amt）；
+        金额分档用 amount_bucket（拍板4 十倍区间 <1千/1千–1万/1万–10万/10万–100万/≥100万），
+        档内笔数用 paybook_count 勿用 count（同票多行重复计），分档口径排除作废（state!='2'）；
+        "已缴"判定：宽表主表即 FNE 缴款侧记录（生产左连判定 UNE→FNE 有记录=已缴，在宽表
+        天然成立），fstate!='2' 排作废即足；fstate='1' 仅 1 行属状态未回写单边数据，勿据此判未缴。
         科目分两侧：缴款侧 sub_*（缴款书票面），收入侧 rec_sub_*（清分归属），不可跨侧混用、不可相加；
         rec_* 前缀成员均为收入侧口径。资金进专户还是国库用 bgt_style（1国库 2专户 3代收 4其他）。
         时间过滤用 pay_date（fdate，缴款日期）；到账看 received_date（资金到账/前端"收入日期"）；
@@ -21,12 +33,32 @@ views:
         （实测有已对账未到账、也有已到账未对账行，对账与到账无严格先后）；treasury 视图同名是缴库对账。
         业务链路节点：开票 fill_date、缴款 pay_date、资金到账 received_date、对账 reconcile_date
         （末两节点无严格先后）。
+        "完成的缴款"判定用 is_received=1（round-02 q18 拍板，勿用 state='3'——代码字典 3=已缴款
+        未到账）；占比分母（完成总笔数）用不带维度的单独全量查询。
         收入单位（rec_agency_code）与归口业务处室（chgfin_dept_id）暂无名称列，只出编码。
-        payer_name 已脱敏。
+        payer_name 已解除脱敏（2026-10-26 q14 拍板，可分组/排名/展示缴款人名称；账号类字段不建维度）。
         同比/环比差值与增长率成员（*_yoy_diff/*_yoy_rate、*_mom_diff/*_mom_rate、*_qoq_diff/*_qoq_rate）：与上年同期/上月/上季的差值或增长率，引擎已算，直接绑定，答案层勿重复计算；同比用 _yoy 系（平移量固定 1 年，粒度随问句——按年/季/月分组分别为年/季/月度同比），月环比用 _mom 系（month 分组），季环比用 _qoq 系（quarter 分组），问"环比"不带粒度默认月环比；_ly/_lm/_lq 伴生列为内部实现，勿直接查询；增长率=差值÷对照期×100，对照期为 0 或无数据时为 null，报"无法计算/该期无数据"勿按 0；同环比轴随族——amt/count 族按 pay_date，到账族（entered_amt 系）按 received_date；同环比查询单条只用一条时间轴。
-        缴款书"笔数"用 paybook_count（count 是明细行数，一票多项目行会重复计）；
+        缴款书"笔数"用 paybook_count（count 是明细行数，一票多项目行会重复计；数的是缴款动作
+        非票据张数——一个 fpaycode 可跨多张明细缴款书，汇总缴款陷阱）；
         "开具时间/填开日期"用 fill_date（票面 ffilldate，跨日缴款时 ≠ pay_date；精度仅到日，
         "超24小时"按"开具日期早于今天"近似），勿拿 pay_date（缴款日期）或 eff_date（有效期）顶替。
+        "代理银行"（各代理银行代收非税收入排名，q15 拍板）：金额指标用 paybook_amt
+        （SUM(ftotalamt) 头表口径），分组用 pay_bank_code，名称跟随 pay_bank_name
+        （生产口径=代收银行 fpaybankcode）；收款银行 rec_bank_*（财政收款户开户
+        网点）与代理单位 acc_agen_* 都不是代理银行口径。拍板含已缴限定
+        fisreceived='1'（是否保留待人定）——加过滤用 is_received='1'，2026 年实测带过滤出
+        工行/建行 2 家、不带过滤 3 家（多农行 1 元），默认不加待人定。
+        "从缴款到缴入国库的全程耗时"（q21）：起点 pay_date、终点 treasury_enter_date（缴库入库
+        日期·缴款书口径，每书取最晚），分档用 duration_bucket，笔数用 paybook_count 限
+        duration_bucket!='未缴库' 或配 entered_paybook_count；勿拿 enter_date（划转到账）或
+        treasury 视图 enter_date（缴库单粒度）顶替。当前 fne_treasury_transfer_new.fpaycode
+        未装载（join 命中 0），全部落"未缴库"档属数据现实，ETL 补装载后自动生效。
+        "已下达划拨指令但资金尚未划转到账"（在途滞留，q24）：金额用 transiting_amt、笔数用
+        transiting_bill_count，滞留分档用 transit_bucket（锚 trans_date 划转回执日）；该池为
+        存量口径（池内 ftransdate 实测仅 1 行非空，"今年下达"按 trans_date 过滤会清空在途池，
+        属数据现实，勿加该过滤）；与"未划拨金额"（allocation 视图 pending_trans_amt，q16 互补池）
+        勿混。缴款书状态 fstate='1' 不是未缴缴款书的判定口径（round-03 q22 起，未缴池走
+        fiscal_paybook_unpaid_view）。
     cubes:
       - join_path: fiscal_collection
         includes:
@@ -52,18 +84,28 @@ views:
           - entered_amt_mom_rate
           - entered_amt_qoq_diff
           - entered_amt_qoq_rate
+          - paybook_amt
+          - entered_paybook_count
+          - transiting_amt
+          - transiting_bill_count
           - total_amt
           - number
           - pay_code
           - pay_date
           - received_date
           - enter_date
+          - treasury_enter_date
+          - duration_bucket
+          - trans_date
+          - transit_bucket
           - clear_date
           - eff_date
           - fill_date
           - reconcile_date
           - bus_type
           - state
+          - is_received
+          - amount_bucket
           - pay_channel
           - units
           - chg_agency_code
@@ -92,6 +134,8 @@ views:
           - acc_agen_name
           - rec_bank_code
           - rec_bank_name
+          - pay_bank_code
+          - pay_bank_name
           - rec_acct_bank
           - rec_acct_name
           - rec_acct_type

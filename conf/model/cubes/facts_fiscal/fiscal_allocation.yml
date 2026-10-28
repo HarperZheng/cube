@@ -3,7 +3,8 @@
 # FUNDDIVIDE+COLLECT+CAPITAL 三表打平；一行一笔清分，from→to 由区划/单位成对字段表达
 # 口径：收入类型 v1 只做区划比对（层级依赖初步设计核实项 7 ETL）；是否汇总=fcollectid 非空
 # ⚠️ CK 23.3.15 限制（2026-10-10 实测）：派生表同层 2 个及以上子查询 LEFT JOIN 时，
-#    外层查询无法解析星号展开列（UNKNOWN_IDENTIFIER）；归一化分 4 层嵌套、每层仅 1 个 join。
+#    外层查询无法解析星号展开列（UNKNOWN_IDENTIFIER）；归一化嵌套、每层仅 1 个 join。
+#    2026-10-26 round-02 q20 起 4 层→6 层（新增 afa_auth_region→afa_res_dictitem 归属级次真链）。
 cubes:
   - name: fiscal_allocation
     title: 清分流向
@@ -17,22 +18,30 @@ cubes:
       SELECT * FROM (
         SELECT * FROM (
           SELECT * FROM (
-            SELECT t.*, c.chg_agency_name_canon FROM fne_funddivide_transfer t
-            LEFT JOIN (SELECT fchgagencode,
-                              arrayStringConcat(arraySort(groupUniqArray(fchgagenname)), ' / ') AS chg_agency_name_canon
-                       FROM fne_funddivide_transfer GROUP BY fchgagencode) c ON t.fchgagencode = c.fchgagencode
-          ) x1
-          LEFT JOIN (SELECT frecrgncode,
-                            arrayStringConcat(arraySort(groupUniqArray(frecrgnname)), ' / ') AS rec_rgn_name_canon
-                     FROM fne_funddivide_transfer WHERE frecrgncode != '' GROUP BY frecrgncode) r ON x1.frecrgncode = r.frecrgncode
-        ) x2
-        LEFT JOIN (SELECT fitemcode,
-                          arrayStringConcat(arraySort(groupUniqArray(fitemname)), ' / ') AS item_name_canon
-                   FROM fne_funddivide_transfer WHERE fitemcode != '' GROUP BY fitemcode) i ON x2.fitemcode = i.fitemcode
-      ) x3
-      LEFT JOIN (SELECT frecsubcode,
-                        arrayStringConcat(arraySort(groupUniqArray(frecsubname)), ' / ') AS rec_sub_name_canon
-                 FROM fne_funddivide_transfer WHERE frecsubcode != '' GROUP BY frecsubcode) rs ON x3.frecsubcode = rs.frecsubcode
+            SELECT * FROM (
+              SELECT * FROM (
+                SELECT t.*, c.chg_agency_name_canon FROM fne_funddivide_transfer t
+                LEFT JOIN (SELECT fchgagencode,
+                                  arrayStringConcat(arraySort(groupUniqArray(fchgagenname)), ' / ') AS chg_agency_name_canon
+                           FROM fne_funddivide_transfer GROUP BY fchgagencode) c ON t.fchgagencode = c.fchgagencode
+              ) x1
+              LEFT JOIN (SELECT frecrgncode,
+                                arrayStringConcat(arraySort(groupUniqArray(frecrgnname)), ' / ') AS rec_rgn_name_canon
+                         FROM fne_funddivide_transfer WHERE frecrgncode != '' GROUP BY frecrgncode) r ON x1.frecrgncode = r.frecrgncode
+            ) x2
+            LEFT JOIN (SELECT fitemcode,
+                              arrayStringConcat(arraySort(groupUniqArray(fitemname)), ' / ') AS item_name_canon
+                       FROM fne_funddivide_transfer WHERE fitemcode != '' GROUP BY fitemcode) i ON x2.fitemcode = i.fitemcode
+          ) x3
+          LEFT JOIN (SELECT frecsubcode,
+                            arrayStringConcat(arraySort(groupUniqArray(frecsubname)), ' / ') AS rec_sub_name_canon
+                     FROM fne_funddivide_transfer WHERE frecsubcode != '' GROUP BY frecsubcode) rs ON x3.frecsubcode = rs.frecsubcode
+        ) x4
+        LEFT JOIN (SELECT fcode, any(fbgtlevel) AS fbgtlevel
+                   FROM afa_auth_region GROUP BY fcode) ar ON x4.frecrgncode = ar.fcode
+      ) x5
+      LEFT JOIN (SELECT id, any(fname) AS bgt_level_name
+                 FROM afa_res_dictitem WHERE fdictcode = '110' GROUP BY id) d ON x5.fbgtlevel = d.id
 
     measures:
       - name: count
@@ -49,6 +58,21 @@ cubes:
         description: ftransamt 合计——划拨口径
         sql: "{CUBE}.`ftransamt`"
         type: sum
+      - name: pending_trans_amt
+        title: 待划拨金额(元)
+        description: ftransamt 合计 WHERE fistransfer!='1'——未划拨口径（round-02 q16 拍板；
+          trans_stats 整列未同步不作过滤依据）。别名：未划拨金额。2026 年勾稽 424=已划拨 324+未划拨 100
+          （2026-10-26 前置验证实测）。过滤型度量：与已划拨方向同查询分组时其他方向组为 null 属引擎行为
+        sql: "{CUBE}.`ftransamt`"
+        type: sum
+        filters:
+          - sql: "{CUBE}.`fistransfer` != '1'"
+      - name: trans_bill_count
+        title: 划拨单数
+        description: ftransno 去重计数——一张划拨单可能覆盖多行清分（round-02 q24 在途滞留辅指标
+          COUNT(DISTINCT FTRANSNO)，与清分记录数 count 口径不同）
+        sql: "{CUBE}.`ftransno`"
+        type: countDistinct
 
       # ── 同比族（28 号方案批 3）：与上年同期比；仅 pay_date 一条轴 ──
       # trans_date/enter_date 是 _last 划转轴（二次划转轮），平移无意义，不参与同环比；
@@ -148,6 +172,18 @@ cubes:
         description: 归一化拼接，仅展示
         sql: rec_rgn_name_canon
         type: string
+      - name: bgt_level
+        title: 归属级次
+        description: 收入归属区划的预算级次（round-02 q20 拍板真 join，弃静态映射）——
+          frecrgncode → afa_auth_region.fcode（fcode 唯一 191/191，fdt 728 行 frecrgncode
+          非空全命中）→ fbgtlevel（存 UUID=afa_res_dictitem.id，非字典码）→ afa_res_dictitem
+          字典110 取 fname：1中央级/2省级/3市级/4县级/5乡级（0共享实测无行；勿用 flevel 列——
+          语义不同，530102 flevel=3 但 bgtlevel 组=县级）。四级占比=各级 im_amt÷总额，
+          分母用不带维度单独全量查询。"完成清分"过滤（fispayenter/fpayenterdate）CK 落地
+          无该列（transfer/_new 均无；fisenter、freconcilestatus 均近全空不作替代）——
+          完成清分口径暂无法过滤，待 ETL 补列后启用
+        sql: bgt_level_name
+        type: string
       - name: item_code
         title: 项目编码
         sql: "{CUBE}.`fitemcode`"
@@ -223,8 +259,22 @@ cubes:
       - name: trans_stats
         title: 划转状态
         description: ftransstats：0未发 1已发 7失败 9成功 14校验不通过——明细行状态，非批次单据状态；
-          划转状态整列未同步（非空变体亦无），查询为空属预期，ETL 补数后自动生效
+          源侧 FSTATS 的 CK 落地列（datus 字段名 trans_stats，CK 物理列=ftransstats，round-02 q24
+          字段纠偏 2026-10-26；CK 无名为 trans_stats 的列）；整列未同步实测 728/728 空，
+          查询为空属预期，ETL 补数后自动生效；q24 拍板 fstats 1/9 配套条件因此落地不可执行，
+          不入在途池过滤
         sql: "{CUBE}.`ftransstats`"
+        type: string
+      - name: is_enter
+        title: 是否到账（划拨）
+        description: 划拨资金是否到账——源侧 fiseenter 的 CK 落地列名=fisenter（2026-10-26 round-02 q24
+          字段纠偏分层定谳：源 FAMT/FSTATS/fiseenter → CK 落地 ftransamt/ftransstats/fisenter），
+          实测近全空（''690/'0'37/'1'1，共 728 行）；'1'已到账=fisenter='1' 或 fenterdate 非空
+          （拍板兜底条件，当前为同一行）/其余 '0'未到账（含未划转、已划转未回写）。
+          在途滞留池执行口径与 datus 对齐（metrics.json 登记）：fistransfer='1'+fisenter='0'，
+          fstats 1/9 因 ftransstats 整列空落地不可执行、不入过滤；fstats='9' 仅回执≠到账
+          （ConvertUnit.java:426-428 vs EnterTransfer.xml:108-134）。ETL 补数后判定自动收紧
+        sql: "if({CUBE}.`fisenter` = '1' OR {CUBE}.`fenterdate` != '', '1', '0')"
         type: string
       - name: reconcile_status
         title: 到账对账状态
@@ -256,7 +306,8 @@ cubes:
       # ── 时间维度 ──
       # 不建（2026-10-23 29 号文档核对 + CK 实测拍板）：ftrnasreconciledate（到账对账日期，fdt 无
       # freconciledate 列）——reconcile_status 的配对日期，待 ETL 补数后再议；
-      # ftransdate/fenterdate（非 _last，首次划转/到账日期）源端未同步，划转侧日期轴以 _last 变体建模
+      # fenterdate（首次划拨到账）不单独建轴，进 is_enter 兜底判定；ftransdate 已按 round-02 q24
+      # 建为 trans_order_date（下达日）
       - name: pay_date
         title: 缴款日期
         sql: "toDateOrNull({CUBE}.`fdate`)"
@@ -266,6 +317,13 @@ cubes:
         description: fcleardate——xls#111 称清算日期（collection 视图同名成员 xls#66 称清分日期）；
           按 fpaycode 对齐个别码两表微差（ETL 口径差）
         sql: "toDateOrNull({CUBE}.`fcleardate`)"
+        type: time
+      - name: trans_order_date
+        title: 划拨下达日期
+        description: ftransdate——首次划转（划拨指令下达）日期，round-02 q24 在途滞留池起点锚；
+          2026-10-26 前置验证实测仅 2/728 行有值（近全空）——滞留时长分档缺起点锚，分档维度不建，
+          ETL 补数后自动生效；二次划转轴在 trans_date
+        sql: "toDateOrNull({CUBE}.`ftransdate`)"
         type: time
       - name: trans_date
         title: 划转日期（二次划转）

@@ -21,6 +21,7 @@ cubes:
                any(fsubcode) AS fsubcode, any(fsubname) AS fsubname,
                any(fsublevel) AS fsublevel, any(fsublevelname) AS fsublevelname,
                any(fstatus) AS fstatus, any(fenterstatus) AS fenterstatus,
+               any(fincomestatus) AS fincomestatus,
                any(freconcilestatus) AS freconcilestatus, any(fsharerate) AS fsharerate,
                any(fchgrgncode) AS fchgrgncode, any(frecrgncode) AS frecrgncode,
                any(fchgagencode) AS fchgagencode,
@@ -243,6 +244,14 @@ cubes:
         title: 入库状态
         description: fenterstatus——1已入国库 0未入库（"已入国库"判定口径，源系统 ETL 校验作业硬口径）
         sql: "{CUBE}.`fenterstatus`"
+        type: string
+      - name: income_status
+        title: 国库记账状态
+        description: fincomestatus——已写国库收入（记账回写）判定：1已记账 0未记账（round-02 q27 补建，
+          实测 0→481 行 1→24 行）。与缴库回执 status/入库 enter_status 分属三层，
+          "已缴入国库"判定以 enter_status='1' 为准（全局拍板2），income_status 仅用于
+          "未入库先记账"类异常校验
+        sql: "{CUBE}.`fincomestatus`"
         type: string
       - name: reconcile_status
         title: 缴库对账状态

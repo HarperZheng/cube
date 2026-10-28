@@ -1,0 +1,122 @@
+# 未缴缴款书（une_paybook_high 反连宽表）—— 非税收入全景 round-03 q22 建模
+# 回改单 rounds/round-03/feedback.md q22：已开具但缴款人一直未缴款的缴款通知书分档
+# 口径：未缴=生产左连判定（UPayBook.xml:1428-1431，UNE 有 FNE 无记录）+有效 fstate≠'2'；
+#       未缴缴款书不入缴款宽表（主表 FNE_PAYBOOK），故主表取 une_paybook_high
+# ⚠ CK join_use_nulls 双环境：直连 CK session 默认 0（miss 右列填类型默认值 String→空串），
+#    cube 驱动 session 强制 1（miss 右列填 NULL，2026-10-28 实测 P1）——反连判定写
+#    f.fpaycode='' 在 cube 运行时全灭（0 行）、写 IS NULL 在直连全灭，均勿用；
+#    落地用 NOT IN 子查询形态（两种 settings 下同为 6,214 笔，P3/P4 实测）
+# ⚠ CK 别名遮蔽：SELECT 里 any(fstate) AS fstate 与源列同名时，同层 WHERE fstate 会被
+#    解析成 SELECT 别名 → ILLEGAL_AGGREGATION（2026-10-28 实测）——同层 WHERE 必须限定
+#    表名（une_paybook_high.fstate）或输出别名换名，两种写法均实测 6,214 笔通过
+# 实测（2026-10-27）：une 非作废 7,176 笔 ∩ 宽表 962 笔 → 未缴池 6,214 笔（state 1=4,106、3=2,108）
+cubes:
+  - name: fiscal_paybook_unpaid
+    title: 未缴缴款书
+    description: |
+      未缴缴款书池：une_paybook_high（缴款通知书，UNE 侧）按 fpaycode 聚合到缴款书级后
+      反连缴款宽表取"无缴款记录"，池内已排除作废（fstate='2'）。未缴时长分档、催缴清单。
+      消费方统一从 fiscal_paybook_unpaid_view 查。
+    public: true
+
+    sql: |
+      SELECT * FROM (
+        SELECT fpaycode, any(fdate) AS fdate, any(fstate) AS fstate
+        FROM une_paybook_high
+        WHERE une_paybook_high.fstate != '2'
+        GROUP BY fpaycode
+      ) u
+      WHERE u.fpaycode NOT IN (SELECT DISTINCT fpaycode FROM fne_paybook_full_high)
+
+    measures:
+      - name: unpaid_paybook_count
+        title: 未缴笔数
+        description: countDistinct fpaycode——未缴缴款书笔数（拍板5 笔数键统一 fpaycode）；
+          实测池 6,214 笔（2026-10-27），分档合计应等于它
+        sql: "{CUBE}.`fpaycode`"
+        type: countDistinct
+
+    dimensions:
+      - name: pay_code
+        title: 缴款码
+        description: fpaycode——缴款通知书业务键，未缴池主键（聚合粒度=一书一行）
+        sql: "{CUBE}.`fpaycode`"
+        type: string
+      - name: issue_date
+        title: 开具日期
+        description: une_paybook_high.fdate——缴款通知书开具日（UPayBook.xml:1406，q22 未缴
+          时长起算锚）。⚠ 与缴款宽表 fdate（缴款日期）同列名不同义勿混；round-02 行 ffilldate
+          是 FNE 侧列名已作废（未缴书在 FNE 侧无记录）
+        sql: "toDateOrNull({CUBE}.`fdate`)"
+        type: time
+      - name: unpaid_bucket
+        title: 未缴时长档位
+        description: 当前日−开具日期（天），q22 分档维度，拍板4 时长序列 <1天/1–10天/
+          10–100天/≥100天，开具日空落"未知"档；实测池以 ≥100天 为主（6,109/6,214，
+          存量历史票）
+        sql: "multiIf(toDateOrNull({CUBE}.`fdate`) IS NULL, '未知', dateDiff('day', toDateOrNull({CUBE}.`fdate`), today()) < 1, '<1天', dateDiff('day', toDateOrNull({CUBE}.`fdate`), today()) < 10, '1–10天', dateDiff('day', toDateOrNull({CUBE}.`fdate`), today()) < 100, '10–100天', '≥100天')"
+        type: string
+      - name: state
+        title: 缴款书状态（UNE 侧）
+        description: fstate——UNE 侧票状态（代码字典 BillStateConsts）：1正常未缴 2作废
+          3已缴款未到账 4已到账 5已缴款；池内已排除 2，实测构成 1=4,106、3=2,108
+          （state=3 但 FNE 无记录属状态未回写/单边数据，按生产左连判定仍算未缴）
+        sql: "{CUBE}.`fstate`"
+        type: string
+      - name: item_code
+        title: 项目编码
+        sql: "{CUBE}.`fitemcode`"
+        type: string
+      - name: item_name
+        title: 项目名称
+        description: fitemname 原值——一码多名时以 item_code 分组
+        sql: "{CUBE}.`fitemname`"
+        type: string
+      - name: payer_name
+        title: 缴款人名称
+        description: fpayername——催缴清单用（同宽表 q14 拍板，可展示）
+        sql: "{CUBE}.`fpayername`"
+        type: string
+      - name: bus_type
+        title: 业务类型
+        description: fbustype（直缴/汇缴）
+        sql: "{CUBE}.`fbustype`"
+        type: string
+      - name: acc_agen_code
+        title: 归属单位编码
+        description: faccagencode——缴款通知书归属单位，行级过滤键（语义待 ETL/业务复核）
+        sql: "{CUBE}.`faccagencode`"
+        type: string
+      - name: rgn_code
+        title: 归属区划编码
+        description: faccrgncode——缴款通知书区划，行级过滤键；值域与收入区划同体系
+          （530000/530100），列语义待 ETL/业务复核
+        sql: "{CUBE}.`faccrgncode`"
+        type: string
+
+    # 行级权限三条款骨架同 daybook/cbill（26-资金模块建模开发方案 §3.2）；白名单制：
+    # 未命中任何策略=整表拒绝 1=0。faccrgncode/faccagencode 语义未实证，命中过滤后
+    # 行数偏少属预期（fbelongrgncode 82% 空串故未选它）
+    access_policy:
+      - group: "*"
+        conditions:
+          - if: "{ securityContext.region_code }"
+        row_level:
+          filters:
+            - member: rgn_code
+              operator: equals
+              values: [ "{ securityContext.region_code }" ]
+      - group: "*"
+        conditions:
+          - if: "{ securityContext.agency_code }"
+        row_level:
+          filters:
+            - member: acc_agen_code
+              operator: equals
+              values: [ "{ securityContext.agency_code }" ]
+      - group: "*"
+        conditions:
+          - if: "{ not securityContext.region_code }"
+          - if: "{ not securityContext.agency_code }"
+        row_level:
+          allow_all: true

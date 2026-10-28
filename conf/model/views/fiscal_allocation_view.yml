@@ -9,10 +9,18 @@ views:
         划入方看 rec_rgn_code/rec_agency_code，方向不可混用（"划入划出"按方向过滤，勿用同一字段）。
         金额：分入金额用 im_amt，划拨金额用 trans_amt；分组必须用 *_code，*_name 为别名拼接展示、不作准。
         收入类型（正常/跨区划）用 income_type（区划比对 v1，上/下级分入待层级 ETL）；
+        归属级次（中央/省/市/县）用 bgt_level（收入区划→字典110 真链，round-02 q20），
+        四级占比=各级 im_amt÷总额，分母用不带维度单独全量查询；"完成清分"过滤
+        （fispayenter）CK 未落地暂不可用，按完成清分口径查为全量属已知限制待 ETL 补列；
         是否分成/分解来源用 calc_source（1不分成 2分成 3提留 4余额），分成比例无数据列。
         划转信息按轮分列：首轮划拨凭证号/是否划转在 trans_no/is_transfer，二次划转轮在 _last 系
         （ftransno_last/fistransfer_last/enter_date/trans_date）；划转到账侧源端未同步，
         按划转到账过滤或分组为空属预期，待 ETL 补数；
+        待划拨金额用 pending_trans_amt（ftransamt 合计 WHERE fistransfer!='1'，别名"未划拨金额"，
+        时间轴 clear_date；round-02 q16）；在途滞留（已下达未到账）=is_transfer='1'+is_enter='0'
+        +下达日 trans_order_date 落当期（round-02 q24；is_enter=fisenter 直挂（源侧 fiseenter 的
+        落地列名）+fenterdate 非空兜底，实测近全空；fstats∈{1,9} 因 ftransstats 整列空不入过滤；
+        trans_order_date 实测近全空，按下达日过滤/分档为空属预期，勿用 trans_date 月分组近似分档）；
         是否汇总用 collect_flag（fcollectid 非空衍生）。
         划拨到账日期在 enter_date（二次划转到账）；treasury 视图同名 enter_date 是入库口径、
         collection 视图同名是报文侧首次到账——三视图同名三种节点勿混用；
@@ -37,9 +45,12 @@ views:
           - trans_amt
           - trans_amt_yoy_diff
           - trans_amt_yoy_rate
+          - pending_trans_amt
+          - trans_bill_count
           - pay_code
           - pay_date
           - clear_date
+          - trans_order_date
           - trans_date
           - enter_date
           - chg_agency_code
@@ -47,6 +58,7 @@ views:
           - chg_rgn_code
           - rec_rgn_code
           - rec_rgn_name
+          - bgt_level
           - item_code
           - item_name
           - rec_sub_code
@@ -62,6 +74,7 @@ views:
           - bgt_style
           - calc_source
           - is_transfer
+          - is_enter
           - trans_stats
           - reconcile_status
           - collect_flag

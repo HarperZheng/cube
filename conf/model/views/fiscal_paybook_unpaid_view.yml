@@ -1,0 +1,32 @@
+# 未缴缴款书视图—— round-03 q22（26-资金模块建模开发方案 §八 惯例）
+# 消费方（BI/前端/REST）统一从 view 查；cube 层只留原料。
+views:
+  - name: fiscal_paybook_unpaid_view
+    title: 未缴缴款书
+    description: 已开具但缴款人一直未缴款的缴款通知书池（une_paybook_high 反连宽表，已排作废）；
+      未缴时长分档、未缴笔数、催缴清单
+    meta:
+      ai_context: >-
+        未缴缴款书池视图（round-03 q22）："已开具但未缴款"的判定口径=UNE 侧缴款通知书按
+        fpaycode 反连缴款宽表无记录（生产左连判定 UPayBook.xml:1428-1431），池内已排作废
+        （fstate='2'）。未缴笔数用 unpaid_paybook_count；未缴时长分档用 unpaid_bucket
+        （当前日−issue_date，拍板4 时长序列 <1天/1–10天/10–100天/≥100天）。
+        时间锚是 issue_date（开具日期，une 侧 fdate）——勿用缴款宽表的 pay_date（缴款日期，
+        未缴书没有缴款动作）或 fill_date（FNE 侧列，未缴书在 FNE 侧无记录）。
+        勿在 fiscal_collection_view 用 state='1' 判未缴（宽表主表为 FNE 缴款书，缴款后生成，
+        state='1' 仅 1 行不代表未缴池）。池以存量历史票为主（实测 ≥100天 档 6,109/6,214）。
+        缴款书状态 state 是 UNE 侧票状态（1正常未缴/3已缴款未到账等，作废已排除）。
+    cubes:
+      - join_path: fiscal_paybook_unpaid
+        includes:
+          - unpaid_paybook_count
+          - pay_code
+          - issue_date
+          - unpaid_bucket
+          - state
+          - item_code
+          - item_name
+          - payer_name
+          - bus_type
+          - acc_agen_code
+          - rgn_code

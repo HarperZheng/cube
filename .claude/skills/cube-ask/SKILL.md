@@ -94,8 +94,10 @@ curl -s http://localhost:4000/agent/tools
 组装规则（同 `GET /agent/tools` 的 rules，两处一致）：filter 只用
 `{member, operator, values}`，**禁止 SQL 片段**；必带 `limit`（默认 100）
 和 `order`（默认按度量 desc）；时间范围用 `timeDimensions` 的
-`dateRange`，不用 filters 拼日期字符串；度量未指明 → 主度量 + `count`
-附列；纯汇总/分组查询 `total` 一律 null（无分母语义不造分母）。
+`dateRange`，不用 filters 拼日期字符串；度量严格按问句范围选——问句要
+什么度量查什么度量（金额问句查金额度量，问句含笔数/单数语义才查对应
+计数度量）；问句未指明度量 → 按主题主度量单查；纯汇总/分组查询
+`total` 一律 null（无分母语义不造分母）。
 
 ## 第3步：发起接口查询（POST /agent/query，localhost:4000）
 

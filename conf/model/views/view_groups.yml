@@ -10,3 +10,5 @@ view_groups:
       - fiscal_collection_view
       - fiscal_allocation_view
       - fiscal_treasury_view
+      - fiscal_paybook_unpaid_view
+      - fiscal_income_daybook_view

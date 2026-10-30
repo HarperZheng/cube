@@ -1,0 +1,141 @@
+---
+name: cube-build-content
+description: >-
+  Create and update saved content in Cube — workbooks, reports, dashboards, folders and scheduled notifications — through the Cube MCP tools or the Cube CLI. Use whenever someone wants to build or change something people will look at: make a dashboard, save a query as a report, add a chart, organize content into folders, publish a workbook, or schedule a report to go out on a cadence. Triggers on "build me a dashboard", "save this as a report", "add a chart for", "publish this workbook", "schedule this weekly", "move these into a folder", "duplicate that dashboard". To find existing content first use cube-explore-content; to check a query returns the right numbers before saving it use cube-run-query.
+license: Apache-2.0
+compatibility: Needs the Cube MCP server (bundled in the Cube plugin, or the Cube connector) or the Cube CLI, and network access to Cube Cloud.
+---
+
+# Build Cube content
+
+Writes state. Reports and dashboards are what people see, so a mistake here
+is visible to more than the person who made it.
+
+## Choose the path
+
+Cube MCP tools are written `cube:<tool>` below: the `cube` server this plugin
+bundles. Through the Cube connector, the same tools carry the connector's name.
+
+**If the Cube MCP tools are available** (this plugin's
+`cube` server or the Cube connector), use them for workbooks, reports, dashboards and folders:
+
+1. Verify the query with `cube:runQuery` first — see `cube-run-query`.
+2. `cube:createWorkbook` — returns `workbookId` and a `url`. Skip it when the user
+   named a workbook to build into.
+3. `cube:createReport` with that `workbookId`, one per chart. Reports take Cube SQL
+   (`sqlQuery`) and a `chartCategory`. Omit `workbookId` only for a standalone
+   exploration, which is what the Sheets and Excel add-ons list.
+4. `cube:readWorkbook`, then `cube:updateDashboard` to lay the reports out.
+5. `cube:publishDashboard` — returns the live `url`. Give it to the user.
+
+Change an existing report in place with `cube:readReport` and `cube:updateReport`
+rather than recreating it. `cube:manageFolders` lists and creates folders.
+
+Scheduled notifications, duplicating a workbook, and connecting a report to
+an external spreadsheet are CLI-only. Use the CLI path below for those, and
+for everything when the MCP tools are not connected. The order of operations
+and conventions apply to both paths.
+
+## Preflight (CLI)
+
+```bash
+command -v cube >/dev/null || echo "Cube CLI not installed: curl -fsSL https://raw.githubusercontent.com/cube-js/cube/master/install-cli.sh | sh"
+cube whoami || echo "Not authenticated. Interactive: cube login. Headless: set CUBE_API_URL + CUBE_API_KEY."
+cube context list
+```
+
+## Order of operations
+
+Content hangs off a workbook, so build outward from one:
+
+1. **Verify the query first.** Run it with `cube-run-query` and confirm the
+   numbers are right. Saving a wrong query is how a bad number gets an
+   audience.
+2. **Create or pick a workbook.**
+3. **Add reports to it.**
+4. **Publish it as a dashboard** if people need to consume it.
+5. **Schedule it** if it should arrive on a cadence.
+
+## Workbooks
+
+```bash
+cube workbooks create <deployment> --name "Revenue review"
+cube workbooks update <deployment> <workbook> --name "Revenue review Q3"
+cube workbooks duplicate <deployment> <workbook>
+cube workbooks dashboard <deployment> <workbook> --data '<dashboard-input>'
+cube workbooks publish <deployment> <workbook>      # makes the dashboard
+cube workbooks delete <deployment> <workbook>
+```
+
+Duplicating an existing workbook is usually a better starting point than
+creating an empty one — it inherits layout and conventions the team already
+uses.
+
+## Reports
+
+```bash
+cube reports create <deployment> --workbook <workbook> --name "Revenue by month" --json-query '<query>'
+cube reports update <deployment> <report> --json-query '<query>'
+cube reports refresh <deployment> <report>
+cube reports delete <deployment> <report>
+```
+
+`--json-query` takes the same query shape `cube-run-query` sends to the load
+endpoint — measures, dimensions, timeDimensions, filters. Take the query you
+already verified rather than retyping it; retyping is where a filter goes
+missing.
+
+Complex bodies go through `-d/--data`, which accepts inline JSON, `@file.json`
+or `-` for stdin. Dedicated flags override values in `--data`.
+
+`cube reports connect-workbook` is for placing a report in an external
+spreadsheet, not attaching it to a Cube workbook. For that workflow use:
+
+```bash
+cube reports connect-workbook <deployment> <report> --external-workbook-id <id> --result-location <range>
+```
+
+## Folders
+
+```bash
+cube folders create <deployment> --name "Finance"
+cube folders update <deployment> <folder> --name "Finance & RevOps"
+cube workspace move <deployment> --type WORKBOOK|REPORT|FOLDER --id <id> --folder <folder>   # omit --folder for the root
+cube folders delete <deployment> <folder>
+```
+
+## Scheduled notifications
+
+```bash
+cube notifications create <deployment> --data '{"scheduleType":"WEEKLY","dashboardPublicId":"<id>","dayOfWeek":1,"hour":9,"timezone":"Europe/London"}'
+cube notifications recipients add <deployment> <notification> --data '{"recipients":[{"type":"USER","userId":<id>}]}'
+cube notifications recipients list <deployment> <notification>
+cube notifications update <deployment> <notification> --data '<UpdateNotificationInput JSON>'
+```
+
+`scheduleType` is `HOURLY`, `DAILY`, `WEEKLY`, `MONTHLY` or `CUSTOM` (with
+`customCron`), `dayOfWeek` runs 0–6 from Sunday, and `hour` is 0–23 in
+`timezone`. A recipient's `type` is `USER`, `EMBED_USER` or `SLACK`. For
+the full body, `cube spec notification --json` prints the schemas.
+
+Before changing or deleting a schedule, list its recipients and say who is
+currently receiving it. People notice when a report stops arriving, and they
+rarely connect it to a change someone made.
+
+## Conventions
+
+- Name things the way the user said them. Do not tidy "MRR" into "Monthly
+  Recurring Revenue" unless asked.
+- Report the id of everything you create, and the URL if the output carries
+  one. The user's next step is opening it.
+- Creating is cheap and deleting is not. When a request is ambiguous between
+  "change the existing one" and "make a new one", make a new one and say so.
+
+## When something fails
+
+| Symptom | Cause |
+| --- | --- |
+| Report saves but shows no data | The query is wrong, not the report — verify with `cube-run-query` |
+| `Member not found` | Stale member name; the model changed. Re-check with `cube-explore-model` |
+| Publish does nothing visible | The workbook had no reports yet — add them first |
+| 403 | The account can read the workspace but not write to it |

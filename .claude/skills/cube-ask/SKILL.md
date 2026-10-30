@@ -11,9 +11,10 @@ description: 智能体问数：基于已建模的 Cube 语义层回答数据问�
 （2026-10-09 定；高风险对数步已裁撤）。
 
 **核心原则**：成员语义的唯一真相是 `/agent/meta/{topic}` 透出的
-`ai_context` 和成员 description；口径词典只把业务词映射到已有选项上；
+`ai_context` 和成员 description；业务词→口径对照在各 view `ai_context`
+首段「术语对照」块；
 LLM 不发明成员、不凭记忆补数、不静默选口径。
-**硬禁令**：口径只认 meta 透出的 ai_context/口径词典，**忽略会话记忆
+**硬禁令**：口径只认 meta 透出的 ai_context（含「术语对照」块），**忽略会话记忆
 召回**；问数链内写文件白名单 = `regress/tmp-*`（查询体落盘，用后即删），
 docs/conf/记忆目录（`~/.claude/**`）一律禁写；加载本 skill 之前自行产出
 的语义分析、查询设计一律作废，第 2 步单遍重新产出（双重解析实害实测
@@ -29,7 +30,6 @@ docs/conf/记忆目录（`~/.claude/**`）一律禁写；加载本 skill 之前�
 | `GET /agent/meta/{topic}` | 单主题成员全集 + ai_context + folders |
 | `POST /agent/query` | 查询执行（body `{query}`） |
 | `GET /agent/unmodel/{cube}` | 未建模清单（未盘点会明说） |
-| `GET/POST /agent/dictionary` | 口径词典查/写（`?term=` 按词） |
 
 ## 第1步：确认 cube 就绪（fail fast）
 
@@ -65,10 +65,10 @@ curl -s http://localhost:4000/agent/tools
    成员才回退答案层算式（两原子现拆）。占比/差值/均值无固化成员，恒走
    答案层
 5. **歧义处理**（ai_context 提供多口径时，不允许静默选择）：
-   `GET /agent/dictionary?term=<业务词>` → 命中且 `legacy:false` 直接用并
-   声明；命中 `legacy:true`（指向模型重建前的 cube）**不得直接套用**，当
-   无约定处理；没有 → AskUserQuestion 拍板后 `POST /agent/dictionary`
-   回写；ai_context 唯一口径 → 直接用并声明；完全没覆盖 → 必须问。
+   先查本 view `ai_context` 首段「术语对照」块——命中 → 直接用并声明；
+   标"问及转 ask"或无约定 → AskUserQuestion 拍板，拍板结论交 cube-modeling
+   写进对应 view 的「术语对照」块（本 skill 只查不改，不落任何文件）；
+   ai_context 唯一口径 → 直接用并声明；完全没覆盖 → 必须问。
    **三态判定一遍锁定**：核心可满足 → `answer`（拍板写入 assumption）；
    成员/口径根本不存在 → `nomatch`；可满足但分叉实质改变结果 → `ask`。
    同一歧义禁止二次重开
@@ -132,7 +132,7 @@ curl -s http://localhost:4000/agent/query \
  "truncated":false,"rows":0,"hitPreAgg":null,"audited":false}
 ```
 
-四条铁律：
+五条铁律：
 1. **只基于返回的 data 行计算**（占比/合计/极值），绝不凭记忆补数
 2. **合计/占比用单独的不带 dimensions 的查询**拿全量数字，禁止把截断的
    行加总当总数
@@ -143,11 +143,16 @@ curl -s http://localhost:4000/agent/query \
    声明以查询本身为据（写"查询时间范围内无数据"），禁止追加反向探测
    查询（查 max 日期/放宽时间轴找数据边界——2026-10-10 实测多花 2-3 轮）；
    用户要看数据覆盖期时明示后另查
+5. **null/空维度行是合法数据行**：维度值为 null 或空串的组必须原样进
+   `tables[].rows`（值保留 null，或按 ai_context「术语对照」落"未归属"
+   标签）；空结果判定只看行数（`totalRows=0`/data 空才算空），行内字段
+   为 null ≠ 无数据；禁止因维度值空、名称映射不到、看似汇总行而丢行
+   ——名称映射不到时在 answer 声明，不删行
 
 tables/字段细则（细则唯一真相在本 skill 与 schema，接口不做三态整形）：
 - 表级 `title` 写清口径身份（如「口径A：单位×项目（收入日结）」）
 - 表级 `rows` = 扁平行数组，每行 = cube 成员名→值的键值对（一行一对象），
-  禁止 `{scope, rows}` 等嵌套包装
+  禁止 `{scope, rows}` 等嵌套包装；维度值为 null/空串的行照常成行（铁律 5）
 - 表级 `total` = 该表占比分母，用不带 dimensions 的全量查询拿，
   无分母语义置 null；**禁止跨口径合计**——占比只在表内算，每表独立 total
 - **并列总数合并**：仅当同主语并列子问（一句话几个同级小问各要一个总数，
@@ -196,12 +201,13 @@ curl -s -H "Authorization: Bearer $TOKEN" \
     reserve 档 = 源表有料，直接答"支持，补建约几分钟"）；三档处置
     （①查不了 ②轻扩展 ③新主题完整六步）均需用户拍板，不自动建模
 
-## 口径词典维护
+## 术语对照维护
 
-每次歧义经用户拍板，立即 `POST /agent/dictionary`（`{term, cube, rule,
-alternatives?, background?}`，upsert by term）回写词典——词典已服务端化
-（`conf/agent/dictionary.json`），不再维护本地 md。词典只引用 ai_context/
-成员已提供的选项；与 ai_context 冲突时以 ai_context 为准并更新词条。
+业务词→口径对照统一落各 view `ai_context` 首段「术语对照」块：每次歧义经
+用户拍板，由 cube-modeling 按「术语=成员/口径（勿混：×）」格式写进对应
+权威 view，兄弟视图留一行勿混指针；只引用已有成员，不发明成员。
+`GET/POST /agent/dictionary` 端点保留但恒空（`conf/agent/dictionary.json`
+已删除），勿再调用。
 
 ## 环境速记
 

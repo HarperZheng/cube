@@ -5,11 +5,15 @@ views:
     description: 清分流向事实（fdt，唯一带 from→to 的粒度）；划入划出、收入来源、专户国库
     meta:
       ai_context: >-
+        「术语对照」：分入金额=im_amt；资金去向（国库/专户）=bgt_style；跨区划分入=rec_rgn_code=
+        本区划且 income_type='9跨区划'，按 chg_rgn_code 分组；收入记账到本单位=rec_agency_code
+        过滤（名称列缺口，仅识别码可过滤）；执收单位=chg_agency_*；勿用 trans_amt/funtranamt
+        顶替分入金额，勿用资金性质 rec_funds_nature_code 判去向。
         资金流向视图，一行一笔清分，from→to 由区划/单位成对字段表达：划出方看 chg_rgn_code/chg_agency_code，
         划入方看 rec_rgn_code/rec_agency_code，方向不可混用（"划入划出"按方向过滤，勿用同一字段）。
         金额：分入金额用 im_amt，划拨金额用 trans_amt；分组必须用 *_code，*_name 为别名拼接展示、不作准。
         收入类型（正常/跨区划）用 income_type（区划比对 v1，上/下级分入待层级 ETL）；
-        归属级次（中央/省/市/县）用 bgt_level（收入区划→字典110 真链，round-02 q20），
+        归属级次（中央/省/市/县）用 bgt_level（收入区划→字典110 真链），
         四级占比=各级 im_amt÷总额，分母用不带维度单独全量查询；"完成清分"过滤
         （fispayenter）CK 未落地暂不可用，按完成清分口径查为全量属已知限制待 ETL 补列；
         是否分成/分解来源用 calc_source（1不分成 2分成 3提留 4余额），分成比例无数据列。
@@ -17,10 +21,12 @@ views:
         （ftransno_last/fistransfer_last/enter_date/trans_date）；划转到账侧源端未同步，
         按划转到账过滤或分组为空属预期，待 ETL 补数；
         待划拨金额用 pending_trans_amt（ftransamt 合计 WHERE fistransfer!='1'，别名"未划拨金额"，
-        时间轴 clear_date；round-02 q16）；在途滞留（已下达未到账）=is_transfer='1'+is_enter='0'
-        +下达日 trans_order_date 落当期（round-02 q24；is_enter=fisenter 直挂（源侧 fiseenter 的
-        落地列名）+fenterdate 非空兜底，实测近全空；fstats∈{1,9} 因 ftransstats 整列空不入过滤；
-        trans_order_date 实测近全空，按下达日过滤/分档为空属预期，勿用 trans_date 月分组近似分档）；
+        时间轴 clear_date）；在途滞留（已下达划拨指令、资金尚未划转到账）的分档
+        查询在财政收入视图 fiscal_collection_view：transiting_amt（金额）/transiting_bill_count
+        （笔数，fistransfer='1' 且 fisenter='0' 池）+ transit_bucket 时长分档（锚 trans_date 划转
+        回执日；池为存量口径，日期实测近全空，按"今年下达"过滤会清空在途池属数据现实勿加）；
+        本视图无时长分档成员、trans_order_date 近全空，勿在本视图拼分档；与"未划拨金额"
+        （pending_trans_amt，互补池）勿混。
         是否汇总用 collect_flag（fcollectid 非空衍生）。
         划拨到账日期在 enter_date（二次划转到账）；treasury 视图同名 enter_date 是入库口径、
         collection 视图同名是报文侧首次到账——三视图同名三种节点勿混用；
@@ -66,8 +72,6 @@ views:
           - rec_agency_code
           - rec_funds_nature_code
           - rec_funds_nature_name
-          - rec_bgt_agen_code
-          - rec_bgt_agen_name
           - rec_bank_code
           - rec_bank_name
           - rec_acct_type
@@ -94,8 +98,6 @@ views:
           - rec_agency_code
           - rec_funds_nature_code
           - rec_funds_nature_name
-          - rec_bgt_agen_code
-          - rec_bgt_agen_name
       - name: transfer_out
         includes:
           - chg_agency_code

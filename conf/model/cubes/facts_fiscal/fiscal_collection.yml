@@ -1,15 +1,14 @@
-# 财政缴款全景事实（fne_paybook_full_high）—— 非税收入全景 P7 建模
-# docs/cube-dataqa-topic/26-非税收入全景建模初步设计.md §三 / 26-资金模块建模开发方案 §五
-# 缴收分侧：无前缀=缴款票面、rec_*=收入归属（§4.3）；码名对：code 分组 + name 展示（§4.2）
+# 财政缴款全景事实（fne_paybook_full_high）
+# 缴收分侧：无前缀=缴款票面、rec_*=收入归属；码名对：code 分组 + name 展示
 # 口径：到账金额按 freceiveddate 衍生（fisenter='1' 实测不可用）；ftotalamt 禁 sum（fan trap）
-# ⚠️ CK 23.3.15 限制（2026-10-10 实测）：派生表同层 2 个及以上子查询 LEFT JOIN 时，
+# ⚠️ CK 23.3.15 限制：派生表同层 2 个及以上子查询 LEFT JOIN 时，
 #    外层查询无法解析星号展开列（UNKNOWN_IDENTIFIER）；归一化分 5 层嵌套、每层仅 1 个 join。
 cubes:
   - name: fiscal_collection
     title: 财政缴款全景
     description: |
       缴款全景事实 fne_paybook_full_high，明细粒度缴款书×项目行。
-      覆盖缴款+代收+收入归属+划拨状态(_last)；场景 1/2/4/5/6/7/8/12（§3.3.1）。
+      覆盖缴款+代收+收入归属+划拨状态(_last)。
       消费方统一从 fiscal_collection_view 查；cube 层只留原料。
     public: true
 
@@ -40,8 +39,8 @@ cubes:
       LEFT JOIN (SELECT frecsubcode,
                         arrayStringConcat(arraySort(groupUniqArray(frecsubname)), ' / ') AS rec_sub_name_canon
                  FROM fne_paybook_full_high WHERE frecsubcode != '' GROUP BY frecsubcode) rs ON x4.frecsubcode = rs.frecsubcode
-      # ── x5：每书头行标记（q10/q15 头表口径金额）——宽表含字节级重复行（1,281 行中 132 本书的
-      #    min(fid) 头行物理重复，实测 N1），sumIf 限首行仍会重复计值（2026 虚高 4,492.58 实测）；
+      # ── x5：每书头行标记（头表口径金额）——宽表含字节级重复行（部分书的
+      #    min(fid) 头行物理重复），sumIf 限首行仍会重复计值；
       #    h 内层先取每书 min(fid) 再自 join (fpaycode,fid) 行数得头行物理行数 book_head_rows，
       #    paybook_amt 以 sum(ftotalamt/book_head_rows) 限头行 → 每书恰计一次（头行全同值，
       #    任何查询过滤下重复行 all-or-nothing，归一化严格成立）──
@@ -52,11 +51,13 @@ cubes:
         INNER JOIN (SELECT fpaycode, fid, count() AS cnt FROM fne_paybook_full_high GROUP BY fpaycode, fid) fc
           ON b.fpaycode = fc.fpaycode AND b.mf = fc.fid
       ) h ON x5.fpaycode = h.fpaycode
-      # ── x6：缴库入库日期（q21 全程耗时终点）——fne_treasury_transfer_new 按 fpaycode 聚合取
-      #    MAX(fenterdate)（一笔缴款可拆多笔缴库）；⚠ 该表 fpaycode 当前未装载（505 行全空串，
-      #    join 命中 0，全落"未缴库"档属数据现实），ETL 补装载后自动生效 ──
+      # ── x6：缴库入库日期（全程耗时终点）+ 已入库标记——fne_treasury_transfer_new
+      #    按 fpaycode 聚合取 MAX(fenterdate)（一笔缴款可拆多笔缴库）与 max(fenterstatus='1')
+      #    已入库标记；⚠ 该表 fpaycode 当前未装载（join 命中 0，全落"未缴库"档
+      #    属数据现实），ETL 补装载后自动生效 ──
       ) x6
-      LEFT JOIN (SELECT fpaycode, max(toDateOrNull(fenterdate)) AS treasury_enter_date
+      LEFT JOIN (SELECT fpaycode, max(toDateOrNull(fenterdate)) AS treasury_enter_date,
+                        max(if(fenterstatus = '1', 1, 0)) AS treasury_entered_flag
                  FROM fne_treasury_transfer_new GROUP BY fpaycode) tb ON x6.fpaycode = tb.fpaycode
 
     measures:
@@ -77,31 +78,20 @@ cubes:
         type: sum
       - name: entered_amt
         title: 到账金额(元)
-        description: sum(fimamt) WHERE freceiveddate 非空——2026-10-09 口径（fisenter 判定
-          实测不可用）；完整判定=三条件（fisenter+fenterdate+ftrnasreconciledate），v1
-          按单条件
+        description: sum(fimamt) WHERE freceiveddate 非空（fisenter 判定实测不可用，
+          按到账回执列单条件判定）；完整判定=三条件（fisenter+fenterdate+ftrnasreconciledate），
+          未采用
         sql: "{CUBE}.`fimamt`"
         type: sum
         filters:
           - sql: "{CUBE}.`freceiveddate` != ''"
-      - name: total_amt
-        title: 票面金额(元)
-        description: 整票金额复印在每明细行（fan trap）——单笔缴款金额取本成员 max（q19 分档
-          同源）；头表合计口径用 paybook_amt（sum 限每书首行，q10），禁对本成员 sum
-        sql: "{CUBE}.`ftotalamt`"
-        type: max
-      - name: number
-        title: 执收数量
-        description: fnumber 合计——跨计量单位混总无意义，按 units 分组时才可加（初步设计 §八.9）
-        sql: "{CUBE}.`fnumber`"
-        type: sum
-      # ── 同环比族（28 号方案批 2 全后缀测试轮）──
+      # ── 同环比族 ──
       # 每原料三件套×3 周期：ly(1year)/lm(1month)/lq(1quarter) 伴生 + yoy/mom/qoq 的 diff/rate
-      # 轴随族（§3.3）：amt/count → pay_date；entered_amt → received_date
+      # 轴随族：amt/count → pay_date；entered_amt → received_date
       # 伴生=内部实现（timeShift 是成员级属性、sql 无内联平移语法，是 diff/rate 的编译依赖，勿单删），不进 view；diff/rate 必进
       # multiStage 现算不进预聚合（同 bill_count 惯例）
-      # ⚠️ 季度平移写 3 months 勿写 1 quarter——cubestore(Arrow) 不解析 "1 quarter"（2026-10-13 实测
-      #    Arrow error: Invalid input syntax for type interval），季长恒 3 个月，quarter 分组下两者等价
+      # ⚠️ 季度平移写 3 months 勿写 1 quarter——cubestore(Arrow) 不解析 "1 quarter"
+      #    （Arrow error: Invalid input syntax for type interval），季长恒 3 个月，quarter 分组下两者等价
       - name: amt_ly
         title: 缴款金额(元)·去年同期
         description: 内部伴生——amt 平移 1 年（钉 pay_date），amt_yoy_diff/amt_yoy_rate 的编译依赖，勿进 view includes
@@ -303,46 +293,43 @@ cubes:
         sql: '100.0 * ({entered_amt} - {entered_amt_lq}) / NULLIF({entered_amt_lq}, 0)'
         type: number
 
-      # ── q10/q15 头表口径金额（round-03）：缴款书总额 SUM(ftotalamt) 每书计一次 ──
-      # 宽表 1,281 行含字节级重复行（132 本书的 min(fid) 头行物理重复，2026-10-28 实测），
-      # 直接 sumIf(fid=头fid) 会重复计值（2026 虚高 4,492.58）；本成员以 sum(ftotalamt/头行物理
-      # 行数) 限头行归一化——每书恰计一次（2026 实测 14,980,463.55；对照 amt 明细行合计
-      # 14,985,270.13）。book_head_fid/book_head_rows 由主 sql x5 层 join 带入
+      # ── 头表口径金额：缴款书总额 SUM(ftotalamt) 每书计一次 ──
+      # 宽表含字节级重复行（部分书的 min(fid) 头行物理重复），
+      # 直接 sumIf(fid=头fid) 会重复计值；本成员以 sum(ftotalamt/头行物理
+      # 行数) 限头行归一化——每书恰计一次。book_head_fid/book_head_rows 由主 sql x5 层 join 带入
       - name: paybook_amt
         title: 缴款金额(元)（头表口径）
-        description: sum 限每书头行并按头行物理行数归一化——缴款书总额口径（q10/q15 拍板
-          SUM(ftotalamt)，非明细行 famt）；与 amt（明细行合计）数值不等勿互混；月走势/代理银行
-          排名类问题用本成员按 pay_date 分组、答案层自算环比（amt_mom_* 组合 2026-10-28 实测
-          已恢复产出，基础度量形态仍为拍板主路径）
+        description: sum 限每书头行并按头行物理行数归一化——缴款书总额口径（SUM(ftotalamt)，
+          非明细行 famt）；与 amt（明细行合计）数值不等勿互混；月走势/代理银行
+          排名类问题用本成员按 pay_date 分组、答案层自算环比
         sql: "{CUBE}.`ftotalamt` / book_head_rows"
         type: sum
         filters:
           - sql: "{CUBE}.`fid` = book_head_fid"
 
-      # ── q21 全程耗时（round-03）：缴款→缴库，终点=每书最晚缴库日（主 sql x6 层带入）──
-      # ⚠ 断供现状：fne_treasury_transfer_new.fpaycode 未装载（505 行全空串），join 命中 0，
+      # ── 全程耗时：缴款→缴库，终点=每书最晚缴库日（主 sql x6 层带入）──
+      # ⚠ 断供现状：fne_treasury_transfer_new.fpaycode 未装载，join 命中 0，
       # 未缴库行 treasury_enter_date 落 NULL（Nullable 列 CK join miss 默认值即 NULL），
       # 查询全落"未缴库"档属数据现实，ETL 补装载后自动生效
       - name: entered_paybook_count
         title: 已缴库笔数
         description: countDistinct fpaycode 限已有缴库记录（treasury_enter_date 非空非 1970）——
-          q21 耗时分档合计的导出量核对基准；一笔缴款可拆多笔缴库，每书取最晚入库日
+          全程耗时分档合计的导出量核对基准；一笔缴款可拆多笔缴库，每书取最晚入库日
         sql: "{CUBE}.`fpaycode`"
         type: countDistinct
         filters:
           - sql: "(treasury_enter_date IS NOT NULL AND treasury_enter_date != toDate('1970-01-01'))"
 
-      # ── q24 在途滞留（round-03）：指令已发未到账存量池（宽表列）──
-      # 池条件落地退化：源拍板 fstats IN('1','9') 的 fstats 列宽表未同步（round-02 trans_stats、
-      # round-03 fstats 两次列名误记，实库无此列），按 datus 同款先例不作过滤依据，7=失败
-      # 由 fisenter='0' OR fenterdate 空兜底；"今年下达 ftransdate 落 2026"同样不可执行
-      # （实测池内 37 行仅 1 行 ftransdate 非空且 2024）——本组为存量在途池口径，
+      # ── 在途滞留：指令已发未到账存量池（宽表列）──
+      # 池条件落地退化：fstats 列实库无此列，不作过滤依据，7=失败
+      # 由 fisenter='0' OR fenterdate 空兜底；"今年下达"同样不可执行
+      # （池内 ftransdate 仅个别行非空）——本组为存量在途池口径，
       # 题面"今年"按 trans_date 过滤会清空在途池属数据现实
       - name: transiting_amt
         title: 在途滞留金额(元)
         description: sum(ftransamt) 限在途滞留池（fistransfer='1' 且 fisenter='0' 或入库日空）——
-          q24 拍板口径（fstats 条件落地不可执行见上）；与 allocation 视图 pending_trans_amt
-          （未划拨，q16 互补池）勿混；池内 ftransamt per ftransno 实测常数，sum 无复印虚高
+          在途滞留池口径（fstats 条件落地不可执行见上）；与 allocation 视图 pending_trans_amt
+          （未划拨，互补池）勿混；池内 ftransamt per ftransno 实测常数，sum 无复印虚高
         sql: "{CUBE}.`ftransamt`"
         type: sum
         filters:
@@ -356,20 +343,94 @@ cubes:
         filters:
           - sql: "{CUBE}.`fistransfer` = '1' AND ({CUBE}.`fisenter` = '0' OR {CUBE}.`fenterdate` = '')"
 
+      # ── 异常/时效族（7 个过滤型度量，笔数键统一 fpaycode）──
+      # fstats 全库无此列，相关池维持退化口径（见不建清单注记）
+      - name: late_received_paybook_count
+        title: 超期到账笔数
+        description: countDistinct fpaycode 限已到账（is_received=1）且到账超 10 天
+          （到账日−缴款日>10，到账日非空才参与）——"缴款后资金超过10天才到账"；
+          起算缴款日 fdate，到账锚 received_date
+        sql: "{CUBE}.`fpaycode`"
+        type: countDistinct
+        filters:
+          - sql: "{CUBE}.`fisreceived` = 1 AND {CUBE}.`freceiveddate` != '' AND dateDiff('day', toDateOrNull({CUBE}.`fdate`), toDateOrNull({CUBE}.`freceiveddate`)) > 10"
+      - name: late_unreconciled_paybook_count
+        title: 超期未对账笔数
+        description: countDistinct fpaycode 限已到账且未完成资金对账（fisfundsrec=0 或
+          ffundsrecdate 空）且到账后超 15 天（当前日−到账日>15）——"资金到账后超过15天
+          仍未完成对账"；fisfundsrec 为 Nullable(UInt32) 数值型比较不加引号；
+          勿用缴库批次数顶替
+        sql: "{CUBE}.`fpaycode`"
+        type: countDistinct
+        filters:
+          - sql: "{CUBE}.`fisreceived` = 1 AND ({CUBE}.`fisfundsrec` = 0 OR {CUBE}.`ffundsrecdate` = '') AND {CUBE}.`freceiveddate` != '' AND dateDiff('day', toDateOrNull({CUBE}.`freceiveddate`), today()) > 15"
+      - name: pay_before_fill_paybook_count
+        title: 缴款早于开具笔数
+        description: countDistinct fpaycode 限缴款日期早于开票日期（fdate<ffilldate，两列非空
+          才参与比较）——异常存在性校验（代码仅兜底纠偏无校验，历史数据可能存在）
+        sql: "{CUBE}.`fpaycode`"
+        type: countDistinct
+        filters:
+          - sql: "{CUBE}.`fdate` != '' AND {CUBE}.`ffilldate` != '' AND toDateOrNull({CUBE}.`fdate`) < toDateOrNull({CUBE}.`ffilldate`)"
+      - name: no_income_paybook_count
+        title: 未形成收入记录笔数
+        description: countDistinct fpaycode 限已到账（is_received=1）且 fpaycode 在收入流水表
+          无记录（NOT IN fne_income_daybook——NOT IN 形态双环境免疫，join_use_nulls 差异
+          见 fiscal_paybook_unpaid 头注）——"已缴款但尚未形成收入记录"
+        sql: "{CUBE}.`fpaycode`"
+        type: countDistinct
+        filters:
+          - sql: "{CUBE}.`fisreceived` = 1 AND {CUBE}.`fpaycode` NOT IN (SELECT fpaycode FROM fne_income_daybook)"
+      - name: fund_mismatch_paybook_count
+        title: 资金错配笔数（应缴国库实落专户）
+        description: countDistinct fpaycode 限资金性质应缴国库（frecfundsnaturecode∈
+          '11','12','13','14'，缴款侧 ffundsort 抽取改名落地列）且实落专户（fbgtstyle='2'）
+          ——错配判定=跨字段组合条件，按接收侧性质分组的口径非本判定
+        sql: "{CUBE}.`fpaycode`"
+        type: countDistinct
+        filters:
+          - sql: "{CUBE}.`frecfundsnaturecode` IN ('11','12','13','14') AND {CUBE}.`fbgtstyle` = '2'"
+      - name: received_before_pay_paybook_count
+        title: 到账早于缴款笔数
+        description: countDistinct fpaycode 限到账日期早于缴款日期（freceiveddate<fdate，
+          两列非空才参与比较）——异常存在性校验
+        sql: "{CUBE}.`fpaycode`"
+        type: countDistinct
+        filters:
+          - sql: "{CUBE}.`freceiveddate` != '' AND {CUBE}.`fdate` != '' AND toDateOrNull({CUBE}.`freceiveddate`) < toDateOrNull({CUBE}.`fdate`)"
+      # 已缴入国库未清分（fenterstatus='1'，x6 层 treasury_entered_flag 标记）但缴款书未完成
+      # 清分（fcollectid 空=未汇总；关联键 fpaycode，清分表无 ftransno 勿直连）；⚠ treasury 表
+      # fpaycode 当前未装载 join 命中 0（度量恒 0 属数据现实），ETL 补装载后自动生效
+      - name: entered_not_cleared_paybook_count
+        title: 已缴入国库未清分笔数
+        description: countDistinct fpaycode 限已缴入国库（fenterstatus='1'，主 sql x6 层
+          treasury_entered_flag）且未清分（fcollectid 空=未汇总中间态）——异常存在性校验
+        sql: "{CUBE}.`fpaycode`"
+        type: countDistinct
+        filters:
+          - sql: "treasury_entered_flag = 1 AND {CUBE}.`fcollectid` = ''"
+      - name: not_cleared_im_amt
+        title: 已缴入国库未清分金额(元)
+        description: sum(fimamt) 同池——已缴入国库未清分的辅口径金额
+        sql: "{CUBE}.`fimamt`"
+        type: sum
+        filters:
+          - sql: "treasury_entered_flag = 1 AND {CUBE}.`fcollectid` = ''"
+
     dimensions:
-      # ── 码名对（初步设计 §4.2）：code 分组 + name 展示；5 个归一化 + 执收区划原值 ──
+      # ── 码名对：code 分组 + name 展示；5 个归一化 + 执收区划原值 ──
       - name: chg_agency_code
         title: 执收单位编码
         sql: "{CUBE}.`fchgagencode`"
         type: string
       - name: chg_agency_name
         title: 执收单位名称
-        description: 全部别名字典序拼接（' / '）——一码多名测试脏数据，仅展示不作准，分组用 code（§4.4）
+        description: 全部别名字典序拼接（' / '）——一码多名测试脏数据，仅展示不作准，分组用 code
         sql: chg_agency_name_canon
         type: string
       - name: rec_rgn_code
         title: 收入区划编码
-        description: 收入归属区划（frecrgncode）——行级过滤维度，JWT region_code 注入于此（§3.1）
+        description: 收入归属区划（frecrgncode）——行级过滤维度，JWT region_code 注入于此
         sql: "{CUBE}.`frecrgncode`"
         type: string
       - name: rec_rgn_name
@@ -383,7 +444,7 @@ cubes:
         type: string
       - name: chg_rgn_name
         title: 执收区划名称
-        description: 原值不归一化（§4.2：名称列是 ETL 补充，2026-10-09 拍板）
+        description: 原值不归一化（名称列是 ETL 补充）
         sql: "{CUBE}.`fchgrgnname`"
         type: string
       - name: item_code
@@ -416,7 +477,7 @@ cubes:
         sql: rec_sub_name_canon
         type: string
 
-      # ── 缴收分侧其余成员（§4.3）──
+      # ── 缴收分侧其余成员 ──
       - name: funds_nature_code
         title: 资金性质编码（缴款票面）
         sql: "{CUBE}.`ffundsnaturecode`"
@@ -435,22 +496,26 @@ cubes:
         type: string
       - name: rec_bgt_agen_code
         title: 收入方预算归类编码
+        description: 收入侧预算单位以 fiscal_income_daybook_view 的 bgt_agen_name 为
+          权威；本列宽表回填当前全空，仅备查
         sql: "{CUBE}.`frecbgtagencode`"
         type: string
       - name: rec_bgt_agen_name
         title: 收入方预算归类名称
+        description: 收入侧预算单位以 fiscal_income_daybook_view 的 bgt_agen_name 为
+          权威；本列宽表回填当前全空，仅备查
         sql: "{CUBE}.`frecbgtagenname`"
         type: string
 
-      # ── 无名称实体（§4.3：只 code，不造名字）──
+      # ── 无名称实体（只 code，不造名字）──
       - name: rec_agency_code
         title: 收入单位编码
-        description: frecagenidcode——名称列缺口，待 ETL 补（核实项 7）
+        description: frecagenidcode——名称列缺口，待 ETL 补
         sql: "{CUBE}.`frecagenidcode`"
         type: string
       - name: chgfin_dept_id
         title: 归口业务处室ID
-        description: fchgfindeptid——高填充；fdeptid/fbusinessorgcode 实测全 0 不建（核实项 13/14）
+        description: fchgfindeptid——高填充；fdeptid/fbusinessorgcode 实测全 0 不建
         sql: "{CUBE}.`fchgfindeptid`"
         type: string
 
@@ -468,25 +533,8 @@ cubes:
         title: 收入类别名称
         sql: "{CUBE}.`fincomesortname`"
         type: string
-      - name: acc_agen_code
-        title: 代理单位编码
-        sql: "{CUBE}.`faccagencode`"
-        type: string
-      - name: acc_agen_name
-        title: 代理单位名称
-        sql: "{CUBE}.`faccagenname`"
-        type: string
-      - name: rec_bank_code
-        title: 收款银行编码
-        sql: "{CUBE}.`frecbankcode`"
-        type: string
-      - name: rec_bank_name
-        title: 收款银行名称
-        sql: "{CUBE}.`frecbankname`"
-        type: string
 
-      # ── 代理银行（round-03 q15）：生产口径=代收银行（PayBook.java:67 注释，字典 152），
-      #    收款银行 rec_bank_*（财政收款户开户行）与代理单位 acc_agen_* 均非"代理银行"口径 ──
+      # ── 代理银行：生产口径=代收银行（PayBook.java:67 注释，字典 152）──
       - name: pay_bank_code
         title: 代理银行编码
         description: fpaybankcode——生产口径"代理银行"（代收非税收入的银行，字典 152，
@@ -498,11 +546,6 @@ cubes:
         description: fpaybankname——字典翻译在抽取侧完成（fne_paybook_new.sql:57），原值展示
         sql: "{CUBE}.`fpaybankname`"
         type: string
-      - name: rec_acct_bank
-        title: 收款账户开户行名称
-        description: frecacctbank（fpf）；不用 fbankoutlet（=网点编码）
-        sql: "{CUBE}.`frecacctbank`"
-        type: string
       - name: rec_acct_name
         title: 收款账户名称
         sql: "{CUBE}.`frecacctname`"
@@ -513,8 +556,10 @@ cubes:
         sql: "{CUBE}.`frecaccttype`"
         type: string
       - name: bgt_style
-        title: 资金管理方式
-        description: fbgtstyle：1国库 2专户 3代收 4其他
+        title: 资金管理方式（缴款行回填）
+        description: fbgtstyle——资金管理方式的清分归属以 fiscal_allocation_view 的
+          bgt_style 为权威（清分表全覆盖，值域 1国库/2专户/4其他）；本列为缴款行
+          回填，未清分行空，仅备查
         sql: "{CUBE}.`fbgtstyle`"
         type: string
       - name: calc_source
@@ -528,38 +573,38 @@ cubes:
         type: string
       - name: state
         title: 缴款书状态
-        description: fstate：1未缴款(正常待缴) 2作废 3已缴款未到账 4已到账（round-02 q18/q22 拍板对齐
-          代码字典 BillStateConsts；CK 现状仅见 ''/'1'/'2'/'3'）；round-03 q22 起"未缴缴款书"判定
-          改走 fiscal_paybook_unpaid_view（une_paybook_high 主表反连宽表，une 侧 6,214 笔，
+        description: fstate：1未缴款(正常待缴) 2作废 3已缴款未到账 4已到账（代码字典
+          BillStateConsts；CK 现状仅见 ''/'1'/'2'/'3'）；"未缴缴款书"判定
+          走 fiscal_paybook_unpaid_view（une_paybook_high 主表反连宽表；
           宽表 fstate='1' 仅 1 行不代表未缴池）；本表主表为 FNE 缴款书（缴款后生成），分档
-          天然不含填制未缴（q19）；"完成缴款"勿用 state（3≠完成），用 is_received=1（q18）
+          天然不含填制未缴；"完成缴款"勿用 state（3≠完成），用 is_received=1
         sql: "{CUBE}.`fstate`"
         type: string
       - name: is_received
         title: 是否到账（缴款）
-        description: fisreceived——财政端缴款到账标志（0未到账 1已到账，Nullable(UInt32) 数值型，
-          实测 0→407 行 1→874 行无 NULL）；"完成的缴款"判定=is_received=1（round-02 q18 拍板，
-          替代 state='3' 旧口径）；到账日期轴 received_date，同 is_received='1' 子集口径
+        description: fisreceived——财政端缴款到账标志（0未到账 1已到账，Nullable(UInt32)
+          数值型比较不加引号）；"完成的缴款"判定=is_received=1；
+          到账日期轴 received_date，同 is_received='1' 子集口径
         sql: "{CUBE}.`fisreceived`"
         type: number
 
-      # ── 分档维度（round-02 q19）：单笔缴款金额按拍板4 十倍区间切桶 ──
+      # ── 分档维度：单笔缴款金额按十倍区间切桶 ──
       - name: amount_bucket
         title: 金额档位（单笔缴款）
-        description: ftotalamt（缴款书总额=单笔金额，round-02 q19 拍板，非明细行 famt）切桶——
-          拍板4 十倍区间：<1千/1千–1万/1万–10万/10万–100万/≥100万，中段左闭右开（1000
+        description: ftotalamt（缴款书总额=单笔金额，非明细行 famt）切桶——
+          十倍区间：<1千/1千–1万/1万–10万/10万–100万/≥100万，中段左闭右开（1000
           归 1千–1万 档、10000 归 1万–10万 档，依此类推）；同票各行同值（fan trap），分桶
-          计数必须配 paybook_count（countDistinct fpaycode），禁 count（行数重复计）；单笔
-          金额数值用 total_amt（max 取值，禁 sum）；实测 ftotalamt 无 NULL（0/1281 行），
+          计数必须配 paybook_count（countDistinct fpaycode），禁 count（行数重复计）；
+          实测 ftotalamt 无 NULL，
           isNull 兜底 '未知' 档防 NULL 落尾档；分档口径=今年缴款 pay_date 落当年+排除作废
-          state!='2'（q19 拍板）；已缴判定 round-03 注记——本表主表为 FNE 缴款书（缴款后
+          state!='2'；已缴判定注记——本表主表为 FNE 缴款书（缴款后
           生成，未缴书不入宽表），分档天然不含填制未缴，无需另加判定；paybook_count 数的是
           缴款动作非票据张数（一个 fpaycode 可跨多张明细缴款书，汇总缴款陷阱）
         sql: "multiIf(isNull({CUBE}.`ftotalamt`), '未知', {CUBE}.`ftotalamt` < 1000, '<1千', {CUBE}.`ftotalamt` < 10000, '1千–1万', {CUBE}.`ftotalamt` < 100000, '1万–10万', {CUBE}.`ftotalamt` < 1000000, '10万–100万', '≥100万')"
         type: string
       - name: pay_code
         title: 缴款码
-        description: fpaycode——票据流 join 桥（§3.5）
+        description: fpaycode——票据流 join 桥
         sql: "{CUBE}.`fpaycode`"
         type: string
       - name: units
@@ -567,34 +612,34 @@ cubes:
         sql: "{CUBE}.`funits`"
         type: string
 
-      # ── 时间维度（全 String → toDateOrNull，初步设计 §八.5；time_shift 同期对比靠 pay_date）──
+      # ── 时间维度（全 String → toDateOrNull；time_shift 同期对比靠 pay_date）──
       - name: pay_date
         title: 缴款日期
         description: fdate——缴款口径主时间轴（缴款/收入统计默认轴，同环比族钉它）；
-          跨日缴款勿用 ffilldate（§2.1）。注："fdate 为 fpaytime 派生落地列"系误记已删
-          （fpaytime 实测纯时分秒'10:15:12'形态，无日期部分）
+          跨日缴款勿用 ffilldate。注：fpaytime 是纯时分秒'10:15:12'形态、无日期部分，
+          与 fdate 无派生关系
         sql: "toDateOrNull({CUBE}.`fdate`)"
         type: time
       - name: received_date
         title: 资金到账日期
         description: freceiveddate——前端"收入日期"即绑它；与 enter_date 口径不同勿混用。
-          xls#30 ffundsrecdate（归类#49 缴款到账日期）与 freceiveddate 同义近轴不双建
+          ffundsrecdate（资金对账/缴款到账日期）与 freceiveddate 同义近轴不双建
         sql: "toDateOrNull({CUBE}.`freceiveddate`)"
         type: time
       - name: enter_date
         title: 划拨到账日期（报文侧）
-        description: fenterdate——划拨到账日期（xls#135，源 FNE_TRANSFER_BANK_MSG 银行划拨报文，
+        description: fenterdate——划拨到账日期（源 FNE_TRANSFER_BANK_MSG 银行划拨报文，
           清分资金到账日）。查询为空属预期，ETL 补数后自动生效；
-          "到账"现用 received_date（资金到账日期，xls#56）。treasury 视图同名 enter_date 是
+          "到账"现用 received_date（资金到账日期）。treasury 视图同名 enter_date 是
           入库日期、allocation 视图同名是二次划转到账日期——三视图同名三种节点勿混查
         sql: "toDateOrNull({CUBE}.`fenterdate`)"
         type: time
 
-      # ── q21/q24 资金链节点（round-03）──
+      # ── 资金链节点 ──
       - name: treasury_enter_date
         title: 缴库入库日期（缴款书口径，取最晚）
         description: fne_treasury_transfer_new.fenterdate 按 fpaycode 聚合 MAX（主 sql x6 层带入，
-          一笔缴款可拆多笔缴库取最晚）——q21 全程耗时终点（国库回执入库日）。⚠ 与本表
+          一笔缴款可拆多笔缴库取最晚）——全程耗时终点（国库回执入库日）。⚠ 与本表
           enter_date（划转 MSG 到账）、treasury 视图 enter_date（缴库单粒度）同名不同物勿混；
           未缴库行落 NULL（join miss，Nullable 列 CK 默认值即 NULL）；该表 fpaycode
           当前未装载，join 命中 0 属数据现实，ETL 补装载后自动生效
@@ -602,70 +647,60 @@ cubes:
         type: time
       - name: duration_bucket
         title: 缴库耗时档位
-        description: 全程耗时=缴库入库日期−缴款日期（天），q21 分档维度，拍板4 时长序列
+        description: 全程耗时=缴库入库日期−缴款日期（天），全程耗时分档维度，时长序列
           <1天/1–10天/10–100天/≥100天；未缴库（终点空，NULL∨1970 双哨兵判定）落"未缴库"档，
-          分档笔数用 paybook_count（拍板5 fpaycode 去重）
+          分档笔数用 paybook_count（fpaycode 去重）
         sql: "multiIf(treasury_enter_date IS NULL OR treasury_enter_date = toDate('1970-01-01'), '未缴库', dateDiff('day', toDateOrNull({CUBE}.`fdate`), treasury_enter_date) < 1, '<1天', dateDiff('day', toDateOrNull({CUBE}.`fdate`), treasury_enter_date) < 10, '1–10天', dateDiff('day', toDateOrNull({CUBE}.`fdate`), treasury_enter_date) < 100, '10–100天', '≥100天')"
         type: string
       - name: trans_date
         title: 划转回执日期
         description: ftransdate——银行回执成功时写入（RestTransferService.java:279），语义≈划转
-          执行/回执日；"下达"（fstats 0→1）无独立日期字段，q24 滞留起算锚以此为最接近可用字段
-          （近似已注记待人定）。实测仅 2 行非空（其一 2024）——"今年下达"过滤会清空在途池
+          执行/回执日；"下达"（fstats 0→1）无独立日期字段，滞留起算锚以此为最接近可用字段
+          （近似待人定）。实测仅 2 行非空——"今年下达"过滤会清空在途池
         sql: "toDateOrNull({CUBE}.`ftransdate`)"
         type: time
       - name: transit_bucket
         title: 在途滞留时长档位
-        description: 当前日−划转回执日期（天），q24 分档维度，拍板4 时长序列；回执日空落"未知"
+        description: 当前日−划转回执日期（天），在途滞留分档维度，时长序列；回执日空落"未知"
           档（存量池实测绝大多数行落此桶）；配 transiting_amt/transiting_bill_count 使用
         sql: "multiIf(toDateOrNull({CUBE}.`ftransdate`) IS NULL, '未知', dateDiff('day', toDateOrNull({CUBE}.`ftransdate`), today()) < 1, '<1天', dateDiff('day', toDateOrNull({CUBE}.`ftransdate`), today()) < 10, '1–10天', dateDiff('day', toDateOrNull({CUBE}.`ftransdate`), today()) < 100, '10–100天', '≥100天')"
         type: string
-      - name: clear_date
-        title: 清分日期
-        description: fcleardate——独立口径，与缴款日期无关
-        sql: "toDateOrNull({CUBE}.`fcleardate`)"
-        type: time
-      - name: eff_date
-        title: 缴款书有效期
-        description: feffdate——欠缴催缴判定（场景 12：fstate=待缴款 + 已过期）
-        sql: "toDateOrNull({CUBE}.`feffdate`)"
-        type: time
       - name: fill_date
         title: 开具日期（填开）
-        description: ffilldate——票面开具/填开日期；跨日缴款时 ≠ pay_date（§2.1）。精度仅到日，
+        description: ffilldate——票面开具/填开日期；跨日缴款时 ≠ pay_date。精度仅到日，
           "超24小时"按"开具日期早于今天"近似（昨日深夜开票不足24h会被计入）
         sql: "toDateOrNull({CUBE}.`ffilldate`)"
         type: time
       - name: reconcile_date
         title: 对账日期（缴款书）
-        description: freconciledate——缴款书对账日期（xls#57，缴款记录对账，配#34 是否对账
-          FISRECONCILE）；与 ffundsrecdate（资金对账/缴款到账日期，xls#30）是两笔对账，本表只建
+        description: freconciledate——缴款书对账日期（缴款记录对账）；与 ffundsrecdate
+          （资金对账/缴款到账日期）是两笔对账，本表只建
           记录对账轴。与 received_date（资金到账）两口径勿混用——实测有已对账未到账、
           也有已到账未对账行，对账与到账无严格先后；treasury 视图同名是缴库对账口径
         sql: "toDateOrNull({CUBE}.`freconciledate`)"
         type: time
 
-      # ── 不建清单（2026-10-23 29 号文档核对 + CK 实测拍板；2026-10-27 round-03 更新）：
-      #    ffundsrecdate（资金对账日期，与 freceiveddate 同覆盖）；fcleartime（清分时间，clear_date 已有日粒度）；
+      # ── 不建清单：
+      #    ffundsrecdate（资金对账日期，与 freceiveddate 同覆盖）；fcleartime（清分时间，不作维度）；
       #    ftrnasreconciledate（到账对账日期基本无值，entered_amt 三条件判定备查，不当维度）；
       #    ftransdate_last/fenterdate_last/fisenter_last/ftransno_last（_last 历史对照列，取数辨析
       #    同 syn_transfer.ktr rename 回填，现口径用当期列）；
-      #    ftransdate 已解禁（round-03 q24 建轴 trans_date，存量池注记见该成员）；
-      #    fstats（源拍板 q24 池条件含 fstats IN('1','9')，实库无此列——round-02 trans_stats、
-      #    round-03 fstats 两次列名误记，ETL 未同步划转报文状态，池条件落地退化见 transiting_amt）；
-      #    fconfirmdate（曾建 confirm_date 后删，2026-10-23 拍板——与 pay_date 基本同日、
-      #    个别行反而早于缴款日，无独立轴价值）；fpaytime（曾建 pay_time 后删，同日拍板——纯时分秒
-      #    '10:15:12'形态，与 fdate 无派生关系，完整缴款时刻需 fdate+fpaytime 拼合，暂无场景不建）
+      #    ftransdate 已建 trans_date（存量池注记见该成员）；
+      #    fstats（实库无此列——仅 ftransstats 落划转 4 表且整列空，池条件落地退化见
+      #    transiting_amt）；
+      #    fconfirmdate（与 pay_date 基本同日、个别行反而早于缴款日，无独立轴价值）；
+      #    fpaytime（纯时分秒'10:15:12'形态，与 fdate 无派生关系，完整缴款时刻需
+      #    fdate+fpaytime 拼合，暂无场景不建）
 
-      # ── 敏感字段（§4.3：建维度 + mask 脱敏）──
+      # ── 敏感字段（建维度 + mask 脱敏）──
       - name: payer_name
         title: 缴款人名称
-        description: fpayername——2026-10-26 round-02 q14 拍板解除脱敏（实测非空 1,268/1,281 行，
-          TopN 排名/明细可出缴款人）；fpayerno/fpayerid 账号敏感仍不建维度
+        description: fpayername——已解除脱敏（TopN 排名/明细可出缴款人）；
+          fpayerno/fpayerid 账号敏感仍不建维度
         sql: "{CUBE}.`fpayername`"
         type: string
 
-      # ── 技术键（可建但 public: false，§4.3）──
+      # ── 技术键（可建但 public: false）──
       - name: fpid
         title: 缴款书ID
         sql: "{CUBE}.`fpid`"
@@ -683,17 +718,16 @@ cubes:
         public: false
       - name: data_tag
         title: 数据标签
-        description: fdatatag 实测全空（核实项 5）
+        description: fdatatag 实测全空
         sql: "{CUBE}.`fdatatag`"
         type: string
         public: false
 
-    # 行级权限：三条款骨架与五要素语义见 26-资金模块建模开发方案 §3.2（group/conditions/member_level/member_masking/row_level），
-    # JWT 占位符与 claims 约定见 §3.1，白名单制硬语义见 §3.2（未命中任何策略=整表拒绝 1=0）。
+    # 行级权限：三条款骨架（group/conditions/row_level），白名单制
+    # （未命中任何策略=整表拒绝 1=0）。
     # collection 差异点：① 财政用户区划过滤落 rec_rgn_code（收入归属区划=财政口径），不是执收区划；
-    # ② payer_name 脱敏已解除（2026-10-26 round-02 q14 拍板，原 excludes+masking 同条策略移除；
-    #    fpayerno/fpayerid 账号类仍不建维度）；③ rec_rgn_code 空值行丢行已核（初步设计 §9.2 #16）。
-    # 完整过程同 daybook/cbill（docs/11、03-行级权限记录）。
+    # ② payer_name 脱敏已解除（fpayerno/fpayerid 账号类仍不建维度）；
+    # ③ rec_rgn_code 空值行丢行属已知行为。
     access_policy:
       # ① 财政用户：JWT 带 region_code → 收入归属区划=本区划
       - group: "*"

@@ -1,4 +1,4 @@
-# 收入流水视图—— round-03 q23（26-资金模块建模开发方案 §八 惯例）
+# 收入流水视图
 # 消费方（BI/前端/REST）统一从 view 查；cube 层只留原料。
 views:
   - name: fiscal_income_daybook_view
@@ -7,23 +7,40 @@ views:
       滞留时长分档
     meta:
       ai_context: >-
-        收入流水视图（round-03 q23）："执收单位已收上来但还没有汇缴上缴的资金"（已收未汇缴）
-        用 stay_amt（sum(fimamt) 限 fisgenerec=0，存量池，实测 740 行/147.2 万元），滞留时长
-        分档用 stay_bucket（当前日−received_date，拍板4 时长序列）。时间锚是 received_date
+        「术语对照」：已收未汇缴=stay_amt；已完成财政记账=recorded_amt/recorded_count
+        （fisgeneacct=1，当前恒 0 属数据现实）；收入单位=income_agen_name；
+        预算单位=bgt_agen_name；主管部门=dept_name；收入金额=income_amt；预算科目分组=sub_name
+        （空编码行已内置落"未归属"组，单列不摊入）；收入日期/记账日期/今年（收入侧）=income_date。
+        口径细节：fisgeneacct 是数值比较（=1，实测尚无=1 行，问及按 0 报并声明数据现实，勿回退
+        "已入国库"口径——income_status/enter_status 是缴库侧口径）；stay_amt 是滞留池（存量池）；
+        收入金额本级口径=own_income_amt 勿擅自互换；received_date 是到账锚，仅滞留时长口径用。
+        收入流水视图："执收单位已收上来但还没有汇缴上缴的资金"（已收未汇缴）
+        用 stay_amt（sum(fimamt) 限 fisgenerec=0，存量池），滞留时长
+        分档用 stay_bucket（当前日−received_date，时长序列 <1天/1–10天/10–100天/≥100天）。
+        时间锚是 received_date
         （资金到账日期）；存量池口径，题面无"今年"时勿按 received_date 过滤当年。
-        "是否生成缴库记录"判定用 fisgenerec=0（数值型），勿用 fbatchno 空否替代（round-02
-        混装过滤已废除）。income_amt 是不限池的流水对照基准。fownimamt（本级收入，按
-        fiodirection 加权）与 fimamt 的口径差待人定，勿擅自互换。与缴款宽表的"到账金额
+        "是否生成缴库记录"判定用 fisgenerec=0（数值型），勿用 fbatchno 空否替代（fbatchno
+        是汇缴批次回填列，未汇缴行本就为空，判不出"未汇缴"）。income_amt 是不限池的流水对照基准。与缴款宽表的"到账金额
         entered_amt"（fisreceived 口径）是两个数据源两套口径，勿互混。
+        收入侧统计（收入单位/预算科目/预算单位/主管部门/收入区划排名、"已完成财政记账"）
+        在本视图查，勿回财政收入视图用 rec_* 顶替（rec_agency_code/rec_bgt_agen_* 是
+        缴款宽表回填列，rec_agency_code 连名称列都没有）；时间轴一律 income_date，
+        received_date 仅滞留时长口径使用；收入区划名称=rgn_name
+        （落库列免 join，一码多名以 rgn_code 为准）。
     cubes:
       - join_path: fiscal_income_daybook
         includes:
           - stay_amt
           - income_amt
+          - own_income_amt
+          - recorded_amt
+          - recorded_count
           - pay_code
           - received_date
+          - income_date
           - stay_bucket
           - fisgenerec
+          - fisgeneacct
           - batch_no
           - bus_type
           - sub_code
@@ -32,4 +49,9 @@ views:
           - funds_nature_name
           - chg_agen_code
           - chg_agen_name
+          - income_agen_name
+          - bgt_agen_name
+          - dept_name
+          - fin_dept_name
           - rgn_code
+          - rgn_name

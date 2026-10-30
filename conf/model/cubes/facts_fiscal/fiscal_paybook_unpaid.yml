@@ -1,15 +1,16 @@
-# 未缴缴款书（une_paybook_high 反连宽表）—— 非税收入全景 round-03 q22 建模
-# 回改单 rounds/round-03/feedback.md q22：已开具但缴款人一直未缴款的缴款通知书分档
+# 未缴缴款书（une_paybook_high 反连宽表）
 # 口径：未缴=生产左连判定（UPayBook.xml:1428-1431，UNE 有 FNE 无记录）+有效 fstate≠'2'；
 #       未缴缴款书不入缴款宽表（主表 FNE_PAYBOOK），故主表取 une_paybook_high
 # ⚠ CK join_use_nulls 双环境：直连 CK session 默认 0（miss 右列填类型默认值 String→空串），
-#    cube 驱动 session 强制 1（miss 右列填 NULL，2026-10-28 实测 P1）——反连判定写
+#    cube 驱动 session 强制 1（miss 右列填 NULL）——反连判定写
 #    f.fpaycode='' 在 cube 运行时全灭（0 行）、写 IS NULL 在直连全灭，均勿用；
-#    落地用 NOT IN 子查询形态（两种 settings 下同为 6,214 笔，P3/P4 实测）
+#    落地用 NOT IN 子查询形态（两种 settings 下同数）
 # ⚠ CK 别名遮蔽：SELECT 里 any(fstate) AS fstate 与源列同名时，同层 WHERE fstate 会被
-#    解析成 SELECT 别名 → ILLEGAL_AGGREGATION（2026-10-28 实测）——同层 WHERE 必须限定
-#    表名（une_paybook_high.fstate）或输出别名换名，两种写法均实测 6,214 笔通过
-# 实测（2026-10-27）：une 非作废 7,176 笔 ∩ 宽表 962 笔 → 未缴池 6,214 笔（state 1=4,106、3=2,108）
+#    解析成 SELECT 别名 → ILLEGAL_AGGREGATION——同层 WHERE 必须限定
+#    表名（une_paybook_high.fstate）或输出别名换名
+# 数据现状：une 无 ffilldate/frecmode 列——开具日时长锚用 fdate（issue_date 口径即此）；
+#   feffdate/ftotalamt 全表无空值；
+#   主 sql 内层 SELECT 携带全部维度列（内层少列会让对应维度 missing column）
 cubes:
   - name: fiscal_paybook_unpaid
     title: 未缴缴款书
@@ -21,7 +22,11 @@ cubes:
 
     sql: |
       SELECT * FROM (
-        SELECT fpaycode, any(fdate) AS fdate, any(fstate) AS fstate
+        SELECT fpaycode, any(fdate) AS fdate, any(fstate) AS fstate,
+               any(feffdate) AS feffdate, any(ftotalamt) AS ftotalamt,
+               any(fitemcode) AS fitemcode, any(fitemname) AS fitemname,
+               any(fpayername) AS fpayername, any(fbustype) AS fbustype,
+               any(faccagencode) AS faccagencode, any(faccrgncode) AS faccrgncode
         FROM une_paybook_high
         WHERE une_paybook_high.fstate != '2'
         GROUP BY fpaycode
@@ -31,10 +36,16 @@ cubes:
     measures:
       - name: unpaid_paybook_count
         title: 未缴笔数
-        description: countDistinct fpaycode——未缴缴款书笔数（拍板5 笔数键统一 fpaycode）；
-          实测池 6,214 笔（2026-10-27），分档合计应等于它
+        description: countDistinct fpaycode——未缴缴款书笔数（笔数键统一 fpaycode）；
+          分档合计应等于本计数
         sql: "{CUBE}.`fpaycode`"
         type: countDistinct
+      - name: unpaid_paybook_amt
+        title: 未缴票面金额(元)
+        description: sum(ftotalamt)——未缴池票面金额合计（单笔票面=ftotalamt 口径，非明细
+          famt）；池内一书一行无重复计费；une 全表该列无空值
+        sql: "{CUBE}.`ftotalamt`"
+        type: sum
 
     dimensions:
       - name: pay_code
@@ -44,23 +55,37 @@ cubes:
         type: string
       - name: issue_date
         title: 开具日期
-        description: une_paybook_high.fdate——缴款通知书开具日（UPayBook.xml:1406，q22 未缴
-          时长起算锚）。⚠ 与缴款宽表 fdate（缴款日期）同列名不同义勿混；round-02 行 ffilldate
-          是 FNE 侧列名已作废（未缴书在 FNE 侧无记录）
+        description: une_paybook_high.fdate——缴款通知书开具日（UPayBook.xml:1406，未缴
+          时长起算锚）。⚠ 与缴款宽表 fdate（缴款日期）同列名不同义勿混；une 无 ffilldate
+          列，开具日锚用本列
         sql: "toDateOrNull({CUBE}.`fdate`)"
         type: time
+      - name: eff_date
+        title: 有效期截止日期
+        description: feffdate——缴款书有效期截止日（过期判定两处代码口径并存：严格比较
+          OpenQueryAPIServiceImpl.java:615 与 <= EInvoiceToCloudErrorDataDao.xml:79，本池按
+          当日仍有效=feffdate>=当前日）；une 全表该列无空值
+        sql: "toDateOrNull({CUBE}.`feffdate`)"
+        type: time
+      - name: eff_state
+        title: 有效期状态
+        description: 三档衍生——有效=feffdate>=当前日、已过期=feffdate<当前日、未知=空；
+          "仍有效未作废"=本字段='有效'（完整口径叠加 state='1'）；"已过期未缴"=本字段=
+          '已过期' AND state='1'；勾稽关系：有效+已过期（同 state='1'）合计=未缴总数
+        sql: "multiIf(toDateOrNull({CUBE}.`feffdate`) IS NULL, '未知', toDateOrNull({CUBE}.`feffdate`) >= today(), '有效', '已过期')"
+        type: string
       - name: unpaid_bucket
         title: 未缴时长档位
-        description: 当前日−开具日期（天），q22 分档维度，拍板4 时长序列 <1天/1–10天/
-          10–100天/≥100天，开具日空落"未知"档；实测池以 ≥100天 为主（6,109/6,214，
-          存量历史票）
+        description: 当前日−开具日期（天），分档维度，时长序列 <1天/1–10天/
+          10–100天/≥100天，开具日空落"未知"档；池以 ≥100天 档为主（存量历史票）
         sql: "multiIf(toDateOrNull({CUBE}.`fdate`) IS NULL, '未知', dateDiff('day', toDateOrNull({CUBE}.`fdate`), today()) < 1, '<1天', dateDiff('day', toDateOrNull({CUBE}.`fdate`), today()) < 10, '1–10天', dateDiff('day', toDateOrNull({CUBE}.`fdate`), today()) < 100, '10–100天', '≥100天')"
         type: string
       - name: state
         title: 缴款书状态（UNE 侧）
         description: fstate——UNE 侧票状态（代码字典 BillStateConsts）：1正常未缴 2作废
-          3已缴款未到账 4已到账 5已缴款；池内已排除 2，实测构成 1=4,106、3=2,108
-          （state=3 但 FNE 无记录属状态未回写/单边数据，按生产左连判定仍算未缴）
+          3已缴款未到账 4已到账 5已缴款；池内已排除 2，池内构成以 1 正常未缴与
+          3 已缴款未到账为主（state=3 但 FNE 无记录属状态未回写/单边数据，按生产左连
+          判定仍算未缴）；"未缴完整口径"=本字段='1'（单边数据在完整口径下不计）
         sql: "{CUBE}.`fstate`"
         type: string
       - name: item_code
@@ -74,7 +99,7 @@ cubes:
         type: string
       - name: payer_name
         title: 缴款人名称
-        description: fpayername——催缴清单用（同宽表 q14 拍板，可展示）
+        description: fpayername——催缴清单用（可分组/排名/展示缴款人名称，账号类字段不建维度）
         sql: "{CUBE}.`fpayername`"
         type: string
       - name: bus_type
@@ -94,9 +119,9 @@ cubes:
         sql: "{CUBE}.`faccrgncode`"
         type: string
 
-    # 行级权限三条款骨架同 daybook/cbill（26-资金模块建模开发方案 §3.2）；白名单制：
+    # 行级权限三条款骨架（group/conditions/row_level），白名单制：
     # 未命中任何策略=整表拒绝 1=0。faccrgncode/faccagencode 语义未实证，命中过滤后
-    # 行数偏少属预期（fbelongrgncode 82% 空串故未选它）
+    # 行数偏少属预期（fbelongrgncode 空串占比高故未选它）
     access_policy:
       - group: "*"
         conditions:

@@ -1,16 +1,15 @@
-# 清分流向事实（fne_funddivide_transfer）—— 非税收入全景 P7 建模
-# docs/cube-dataqa-topic/26-资金模块建模开发方案.md §六
+# 清分流向事实（fne_funddivide_transfer）
 # FUNDDIVIDE+COLLECT+CAPITAL 三表打平；一行一笔清分，from→to 由区划/单位成对字段表达
-# 口径：收入类型 v1 只做区划比对（层级依赖初步设计核实项 7 ETL）；是否汇总=fcollectid 非空
-# ⚠️ CK 23.3.15 限制（2026-10-10 实测）：派生表同层 2 个及以上子查询 LEFT JOIN 时，
+# 口径：收入类型 v1 只做区划比对（上级/下级分入依赖层级 ETL）；是否汇总=fcollectid 非空
+# ⚠️ CK 23.3.15 限制：派生表同层 2 个及以上子查询 LEFT JOIN 时，
 #    外层查询无法解析星号展开列（UNKNOWN_IDENTIFIER）；归一化嵌套、每层仅 1 个 join。
-#    2026-10-26 round-02 q20 起 4 层→6 层（新增 afa_auth_region→afa_res_dictitem 归属级次真链）。
+#    归属级次真链再嵌 2 层（afa_auth_region→afa_res_dictitem），现共 6 层。
 cubes:
   - name: fiscal_allocation
     title: 清分流向
     description: |
       清分流向事实 fne_funddivide_transfer，一行一笔清分。
-      划入划出/收入来源/专户国库/划转状态；场景 3/10/11/14/15/16（§3.3）。
+      划入划出/收入来源/专户国库/划转状态。
       消费方统一从 fiscal_allocation_view 查；cube 层只留原料。
     public: true
 
@@ -55,26 +54,28 @@ cubes:
         type: sum
       - name: trans_amt
         title: 划拨金额(元)
-        description: ftransamt 合计——划拨口径
+        description: ftransamt 合计——每笔清分的划转指令金额流水，非在途余额、非存量
+          状态；"在途滞留"（已发指令未到账）在 fiscal_collection_view
+          （transiting_amt/transiting_bill_count + transit_bucket）
         sql: "{CUBE}.`ftransamt`"
         type: sum
       - name: pending_trans_amt
         title: 待划拨金额(元)
-        description: ftransamt 合计 WHERE fistransfer!='1'——未划拨口径（round-02 q16 拍板；
-          trans_stats 整列未同步不作过滤依据）。别名：未划拨金额。2026 年勾稽 424=已划拨 324+未划拨 100
-          （2026-10-26 前置验证实测）。过滤型度量：与已划拨方向同查询分组时其他方向组为 null 属引擎行为
+        description: ftransamt 合计 WHERE fistransfer!='1'——未划拨口径（trans_stats 整列
+          未同步不作过滤依据）。别名：未划拨金额。过滤型度量：与已划拨方向同查询分组时
+          其他方向组为 null 属引擎行为
         sql: "{CUBE}.`ftransamt`"
         type: sum
         filters:
           - sql: "{CUBE}.`fistransfer` != '1'"
       - name: trans_bill_count
         title: 划拨单数
-        description: ftransno 去重计数——一张划拨单可能覆盖多行清分（round-02 q24 在途滞留辅指标
-          COUNT(DISTINCT FTRANSNO)，与清分记录数 count 口径不同）
+        description: ftransno 去重计数——一张划拨单可能覆盖多行清分，与清分记录数
+          count 口径不同
         sql: "{CUBE}.`ftransno`"
         type: countDistinct
 
-      # ── 同比族（28 号方案批 3）：与上年同期比；仅 pay_date 一条轴 ──
+      # ── 同比族：与上年同期比；仅 pay_date 一条轴 ──
       # trans_date/enter_date 是 _last 划转轴（二次划转轮），平移无意义，不参与同环比；
       # multiStage 现算不进预聚合；写法同批 1/2 camelCase；
       # _ly 伴生为差值成员的编译依赖（timeShift 是成员级属性、sql 无内联平移语法，勿单删），不进 view includes
@@ -126,7 +127,7 @@ cubes:
         multiStage: true
         sql: '{trans_amt} - {trans_amt_ly}'
         type: number
-      # ── 增长率（28 号方案批 4）：复用批 3 的 _ly 伴生，无新增平移成员 ──
+      # ── 增长率：复用同比族的 _ly 伴生，无新增平移成员 ──
       - name: count_yoy_rate
         title: 清分记录数同比增长率(%)
         description: 清分记录数同比增长率=(本期−上年同期)÷上年同期×100——引擎已算；上年同期为 0 或无数据时为 null，报"无法计算/该期无数据"勿按 0
@@ -159,12 +160,12 @@ cubes:
         type: string
       - name: chg_rgn_code
         title: 划出方区划编码
-        description: fchgrgncode——fdt 无名称列（§2.2）
+        description: fchgrgncode——fdt 无名称列
         sql: "{CUBE}.`fchgrgncode`"
         type: string
       - name: rec_rgn_code
         title: 划入方区划编码
-        description: 收入归属区划——行级过滤维度（JWT region_code 注入，§3.1）
+        description: 收入归属区划——行级过滤维度（JWT region_code 注入）
         sql: "{CUBE}.`frecrgncode`"
         type: string
       - name: rec_rgn_name
@@ -174,10 +175,10 @@ cubes:
         type: string
       - name: bgt_level
         title: 归属级次
-        description: 收入归属区划的预算级次（round-02 q20 拍板真 join，弃静态映射）——
-          frecrgncode → afa_auth_region.fcode（fcode 唯一 191/191，fdt 728 行 frecrgncode
-          非空全命中）→ fbgtlevel（存 UUID=afa_res_dictitem.id，非字典码）→ afa_res_dictitem
-          字典110 取 fname：1中央级/2省级/3市级/4县级/5乡级（0共享实测无行；勿用 flevel 列——
+        description: 收入归属区划的预算级次（真 join 字典链）——
+          frecrgncode → afa_auth_region.fcode → fbgtlevel（存 UUID=afa_res_dictitem.id，
+          非字典码）→ afa_res_dictitem
+          字典110 取 fname：1中央级/2省级/3市级/4县级/5乡级（0共享无行；勿用 flevel 列——
           语义不同，530102 flevel=3 但 bgtlevel 组=县级）。四级占比=各级 im_amt÷总额，
           分母用不带维度单独全量查询。"完成清分"过滤（fispayenter/fpayenterdate）CK 落地
           无该列（transfer/_new 均无；fisenter、freconcilestatus 均近全空不作替代）——
@@ -219,16 +220,19 @@ cubes:
         type: string
       - name: rec_bgt_agen_code
         title: 收入方预算归类编码
-        description: frecbgtagencode（ETL 补充，待核）
+        description: frecbgtagencode——收入侧预算单位以 fiscal_income_daybook_view 的
+          bgt_agen_name 为权威；本列清分表当前全空，仅备查
         sql: "{CUBE}.`frecbgtagencode`"
         type: string
       - name: rec_bgt_agen_name
         title: 收入方预算归类名称
+        description: 收入侧预算单位以 fiscal_income_daybook_view 的 bgt_agen_name 为
+          权威；本列清分表当前全空，仅备查
         sql: "{CUBE}.`frecbgtagenname`"
         type: string
       - name: rec_bank_code
         title: 划转收款银行编码
-        description: ftransrecbankcode——fdt 无 frecbankcode（核实项 15 勘误）
+        description: ftransrecbankcode——fdt 无 frecbankcode 列
         sql: "{CUBE}.`ftransrecbankcode`"
         type: string
       - name: rec_bank_name
@@ -252,25 +256,24 @@ cubes:
         type: string
       - name: is_transfer
         title: 是否划转
-        description: fistransfer——是否划转（xls#143）：0否 1是，清分→划转的进度标志；源表另有
-          fistransfer_last=是否二次划转（xls#142），如出现二次划转数据再议加建
+        description: fistransfer——是否划转：0否 1是，清分→划转的进度标志；源表另有
+          fistransfer_last=是否二次划转，如出现二次划转数据再议加建
         sql: "{CUBE}.`fistransfer`"
         type: string
       - name: trans_stats
         title: 划转状态
         description: ftransstats：0未发 1已发 7失败 9成功 14校验不通过——明细行状态，非批次单据状态；
-          源侧 FSTATS 的 CK 落地列（datus 字段名 trans_stats，CK 物理列=ftransstats，round-02 q24
-          字段纠偏 2026-10-26；CK 无名为 trans_stats 的列）；整列未同步实测 728/728 空，
-          查询为空属预期，ETL 补数后自动生效；q24 拍板 fstats 1/9 配套条件因此落地不可执行，
-          不入在途池过滤
+          源侧 FSTATS 的 CK 落地列（CK 物理列=ftransstats，CK 无名为 trans_stats 的列）；
+          整列未同步（当前全空），查询为空属预期，ETL 补数后自动生效；
+          fstats 1/9 配套条件因此落地不可执行，不入在途池过滤
         sql: "{CUBE}.`ftransstats`"
         type: string
       - name: is_enter
         title: 是否到账（划拨）
-        description: 划拨资金是否到账——源侧 fiseenter 的 CK 落地列名=fisenter（2026-10-26 round-02 q24
-          字段纠偏分层定谳：源 FAMT/FSTATS/fiseenter → CK 落地 ftransamt/ftransstats/fisenter），
-          实测近全空（''690/'0'37/'1'1，共 728 行）；'1'已到账=fisenter='1' 或 fenterdate 非空
-          （拍板兜底条件，当前为同一行）/其余 '0'未到账（含未划转、已划转未回写）。
+        description: 划拨资金是否到账——源侧 fiseenter 的 CK 落地列名=fisenter（源
+          FAMT/FSTATS/fiseenter → CK 落地 ftransamt/ftransstats/fisenter），
+          实测近全空；'1'已到账=fisenter='1' 或 fenterdate 非空
+          （兜底条件，当前为同一行）/其余 '0'未到账（含未划转、已划转未回写）。
           在途滞留池执行口径与 datus 对齐（metrics.json 登记）：fistransfer='1'+fisenter='0'，
           fstats 1/9 因 ftransstats 整列空落地不可执行、不入过滤；fstats='9' 仅回执≠到账
           （ConvertUnit.java:426-428 vs EnterTransfer.xml:108-134）。ETL 补数后判定自动收紧
@@ -278,7 +281,7 @@ cubes:
         type: string
       - name: reconcile_status
         title: 到账对账状态
-        description: freconcilestatus（xls#140 到账对账状态）：0未对账 1对账成功 2对账失败；
+        description: freconcilestatus（到账对账状态）：0未对账 1对账成功 2对账失败；
           大半无值且'2'未出现，查询为空属预期，ETL 补数后自动生效
         sql: "{CUBE}.`freconcilestatus`"
         type: string
@@ -289,8 +292,8 @@ cubes:
         type: string
       - name: trans_no
         title: 划拨凭证号
-        description: ftransno——划拨凭证号（xls#103）；源表另有 ftransno_last=二次划拨凭证号
-          （xls#102），如出现二次划转数据再议加建
+        description: ftransno——划拨凭证号；源表另有 ftransno_last=二次划拨凭证号，
+          如出现二次划转数据再议加建
         sql: "{CUBE}.`ftransno`"
         type: string
       - name: pay_code
@@ -304,9 +307,9 @@ cubes:
         type: string
 
       # ── 时间维度 ──
-      # 不建（2026-10-23 29 号文档核对 + CK 实测拍板）：ftrnasreconciledate（到账对账日期，fdt 无
+      # 不建清单：ftrnasreconciledate（到账对账日期，fdt 无
       # freconciledate 列）——reconcile_status 的配对日期，待 ETL 补数后再议；
-      # fenterdate（首次划拨到账）不单独建轴，进 is_enter 兜底判定；ftransdate 已按 round-02 q24
+      # fenterdate（首次划拨到账）不单独建轴，进 is_enter 兜底判定；ftransdate
       # 建为 trans_order_date（下达日）
       - name: pay_date
         title: 缴款日期
@@ -314,26 +317,26 @@ cubes:
         type: time
       - name: clear_date
         title: 清分日期
-        description: fcleardate——xls#111 称清算日期（collection 视图同名成员 xls#66 称清分日期）；
+        description: fcleardate——源表称清算日期（collection 视图同名成员称清分日期）；
           按 fpaycode 对齐个别码两表微差（ETL 口径差）
         sql: "toDateOrNull({CUBE}.`fcleardate`)"
         type: time
       - name: trans_order_date
         title: 划拨下达日期
-        description: ftransdate——首次划转（划拨指令下达）日期，round-02 q24 在途滞留池起点锚；
-          2026-10-26 前置验证实测仅 2/728 行有值（近全空）——滞留时长分档缺起点锚，分档维度不建，
+        description: ftransdate——首次划转（划拨指令下达）日期，在途滞留池起点锚；
+          实测近全空——滞留时长分档缺起点锚，分档维度不建，
           ETL 补数后自动生效；二次划转轴在 trans_date
         sql: "toDateOrNull({CUBE}.`ftransdate`)"
         type: time
       - name: trans_date
         title: 划转日期（二次划转）
-        description: ftransdate_last——二次划转日期（xls#144，源设计"_last"即二次划转轮）。
+        description: ftransdate_last——二次划转日期（源设计"_last"即二次划转轮）。
           查询为空属预期，ETL 补数后自动生效；首次划转 ftransdate 亦基本无值
         sql: "toDateOrNull({CUBE}.`ftransdate_last`)"
         type: time
       - name: enter_date
         title: 划拨到账日期（二次划转）
-        description: fenterdate_last——二次划转到账日期（xls#136；源设计"_last"即二次划转轮，
+        description: fenterdate_last——二次划转到账日期（源设计"_last"即二次划转轮，
           非泛指最近一轮）。查询为空属预期，ETL 补数后自动生效；
           首次到账 fenterdate 亦基本无值，划转日期在 fdt 整体未同步。
           treasury 视图同名是入库日期、collection 视图同名是报文侧首次到账——三视图同名三种节点
@@ -359,10 +362,10 @@ cubes:
         type: string
         public: false
 
-# 行级权限：三条款骨架与五要素语义见 26-资金模块建模开发方案 §3.2，JWT 约定见 §3.1；
+# 行级权限：三条款骨架（group/conditions/row_level），JWT 约定 region_code/agency_code；
 # fdt 无缴款人字段，不需要 member_masking。
-# allocation 差异点：① 财政用户双区划 OR（chg_rgn=本 OR rec_rgn=本，§3.2 AND/OR #1/#2）——2026-10-10 实测通过；
-# ② 场景 14 的 AND（chg_agency=本 AND rec_rgn=本单位区划）需 JWT 双有（§3.2 AND/OR #3）。
+# allocation 差异点：① 财政用户双区划 OR（chg_rgn=本 OR rec_rgn=本）；
+# ② 单位用户按划出方单位过滤；"本单位+本单位区划" AND 组合需 JWT 双有。
     access_policy:
       # ① 财政用户：双区划 OR——本区划划出+划入均可见（嵌套 or: 条款，REST 同款）
       - group: "*"
@@ -377,7 +380,7 @@ cubes:
                 - member: rec_rgn_code
                   operator: equals
                   values: ["{ securityContext.region_code }"]
-      # ② 单位用户：划出方单位=本单位（场景 14 的 AND rec_rgn 扩展挂 §3.2 验证）
+      # ② 单位用户：划出方单位=本单位
       - group: "*"
         conditions:
           - if: "{ securityContext.agency_code }"

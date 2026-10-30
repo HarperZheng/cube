@@ -1,4 +1,4 @@
-# 缴库入库交付视图—— 非税收入全景 P10（26-资金模块建模开发方案 §八）
+# 缴库入库交付视图
 # 消费方（BI/前端/REST）统一从 view 查；cube 层只留原料。
 # 不建 folders：缴库入库无缴收分侧需求（单侧口径），成员约 20 个一屏可览——
 # folder 是 UI 分组，无分侧不硬造；AI 区分口径主力 = ai_context + title。
@@ -8,8 +8,15 @@ views:
     description: 缴库入库事实（ftm，去重后明细粒度缴库单×科目）；已入国库笔数/金额、按科目/区划汇总
     meta:
       ai_context: >-
+        「术语对照」：已缴入国库/已入国库=enter_status='1'，金额 amt、笔数 count、时间轴
+        enter_date；「已完成财政记账」≠已缴入国库（记账口径在收入流水视图，勿用 income_status
+        顶替该问法）。
+        全程耗时/环节时长类问题（各笔缴款从缴款到缴入国库的耗时按时长分档）的词条与成员在
+        财政收入视图 fiscal_collection_view：duration_bucket 分档（起点 pay_date 缴款日、终点
+        treasury_enter_date 缴库入库日·缴款书口径），笔数 paybook_count；本视图只有缴库单侧
+        时间轴（build_date/enter_date/reconcile_date），缴库数据无缴款码维度，无逐笔耗时成员。
         缴库入库视图，一行一笔缴库明细（缴库单×科目，已按明细去重）；缴库单数用 bill_count，明细笔数用 count。
-        四层状态：缴库回执成功 status='9'；已入国库 enter_status='1'（"已缴入国库"判定，全局拍板2）；
+        四层状态：缴库回执成功 status='9'；已入国库 enter_status='1'（"已缴入国库"判定）；
         国库记账 income_status='1'（记账回写层，仅用于"未入库先记账"类异常校验，不作入库判定）；
         对账成功 reconcile_status='1'。
         "已入国库/已缴入国库"判定= enter_status='1'：金额用 amt，笔数用 count，时间轴必须用 enter_date（入国库日期）；
@@ -17,7 +24,7 @@ views:
         enter_date（入国库）与 allocation/collection 视图的 enter_date（划拨到账）同名不同义；
         reconcile_date（缴库对账）与 enter_date 完全同日勿当独立轴；
         reconcile_status 是缴库对账状态，与 allocation 视图的到账对账状态同名不同节点。
-        金额：明细金额用 amt；total_amt 是整单金额复印在每明细行，禁 sum。
+        金额：明细金额用 amt。
         分组用 sub_code；sub_name 是全部别名字典序拼接（一码多名脏数据），仅展示不作准。
         缴库单科目是清分归属口径，与 collection 视图的缴款票面科目（sub_*）不可混用。
         双侧区划：资金来源侧 chg_rgn_code、收入归属侧 rec_rgn_code，均无名称列只出编码。
@@ -30,7 +37,6 @@ views:
           - count
           - bill_count
           - amt
-          - total_amt
           - amt_yoy_diff
           - amt_yoy_rate
           - count_yoy_diff

@@ -1,10 +1,9 @@
 # 缴库入库事实（fne_treasury_transfer_new）—— 非税收入全景 P10 建模
-# docs/cube-dataqa-topic/26-资金模块建模开发方案.md §七
 # 粒度：主 sql 按 fid 去重，一行一笔"缴库单×科目"明细；扇出源 ftranscollectid 不进维度（开放项 #7）
 # 口径：三环节 status='9'（回执）/enter_status='1'（已入国库）/reconcile_status='1'（对账）；
 #       "已入国库 N 笔"= count + enter_status='1'，时间轴用 enter_date；缴库量/日报按 build_date；
 #       ftotalamt=整单金额复印禁 sum（fan trap 实测）；fchgagencode 全空→无单位维度（②条款空结果属预期）
-# ⚠️ CK 23.3.15 惯例：每层仅 1 个 join、显式 ON；去重 any() 确定性依据=除 ftranscollectid 外同 fid 全恒定（2026-10-12 逐列验证）
+# ⚠️ CK 23.3.15 惯例：每层仅 1 个 join、显式 ON；去重 any() 确定性依据=除 ftranscollectid 外同 fid 全恒定
 cubes:
   - name: fiscal_treasury
     title: 缴库入库
@@ -55,16 +54,13 @@ cubes:
         drill_members: [build_date, trans_no, sub_code]
         sql: "{CUBE}.`famt`"
         type: sum
-      - name: total_amt
-        title: 缴库单票面金额(元)
-        description: 整单金额复印在每明细行（fan trap 实测：同单各科目行 ftotalamt 同值=各行 famt 之和）——仅供明细下钻，禁 sum，max=该组最大票面金额
-        sql: "{CUBE}.`ftotalamt`"
-        type: max
 
-      # ── 同比三件套（28 号方案批 1）：与上年同期比；时间轴随查询（build_date=缴库口径，enter_date=已入国库口径）──
+      # ── 同比三件套：与上年同期比；时间轴随查询（build_date=缴库口径，enter_date=已入国库口径）──
       # multiStage 现算不进预聚合（同 bill_count 惯例）；amt_ly/count_ly 为内部伴生（差值/增长率的编译依赖，
       # timeShift 是成员级属性、sql 无内联平移语法，勿单删），不进 view includes
       - name: amt_ly
+        title: 缴库金额(元)·去年同期
+        description: 内部伴生——amt 平移 1 年（build_date/enter_date 双轴），amt_yoy_diff/amt_yoy_rate 的编译依赖，勿进 view includes
         multiStage: true
         sql: '{amt}'
         type: sum
@@ -88,6 +84,7 @@ cubes:
         sql: '100.0 * ({amt} - {amt_ly}) / NULLIF({amt_ly}, 0)'
         type: number
       - name: count_ly
+        title: 缴库明细笔数·去年同期
         multiStage: true
         sql: '{count}'
         type: number
@@ -112,7 +109,7 @@ cubes:
         sql: '100.0 * ({count} - {count_ly}) / NULLIF({count_ly}, 0)'
         type: number
 
-      # ── 环比族（28 号方案批 4）：月环比钉上月（粒度 month）、季环比钉上季（粒度 quarter）──
+      # ── 环比族：月环比钉上月（粒度 month）、季环比钉上季（粒度 quarter）──
       # 双轴同同比族（build_date=缴库口径，enter_date=已入国库口径）；interval 季必须 3 months 勿写 quarter（注意点 10）；
       # multiStage 现算不进预聚合；_lm/_lq 伴生为编译依赖（勿单删），不进 view includes
       - name: amt_lm
@@ -217,7 +214,7 @@ cubes:
         type: number
 
     dimensions:
-      # ── 码名对（初步设计 §4.2）：本表仅科目有名称列；一码多名实测 ──
+      # ── 码名对：本表仅科目有名称列；一码多名实测 ──
       - name: sub_code
         title: 预算科目（缴库）
         description: fsubcode——缴库单科目=清分归属口径（与 collection 视图 rec_sub_* 同源），勿与缴款票面 sub_* 混用
@@ -232,7 +229,7 @@ cubes:
       # ── 普通维度（枚举写全，约定 #5）──
       - name: trans_no
         title: 缴库编号
-        description: ftransno——缴库单业务单号（70 张）
+        description: ftransno——缴库单业务单号
         sql: "{CUBE}.`ftransno`"
         type: string
       - name: status
@@ -247,21 +244,21 @@ cubes:
         type: string
       - name: income_status
         title: 国库记账状态
-        description: fincomestatus——已写国库收入（记账回写）判定：1已记账 0未记账（round-02 q27 补建，
-          实测 0→481 行 1→24 行）。与缴库回执 status/入库 enter_status 分属三层，
-          "已缴入国库"判定以 enter_status='1' 为准（全局拍板2），income_status 仅用于
+        description: fincomestatus——已写国库收入（记账回写）判定：1已记账 0未记账。
+          与缴库回执 status/入库 enter_status 分属三层，
+          "已缴入国库"判定以 enter_status='1' 为准，income_status 仅用于
           "未入库先记账"类异常校验
         sql: "{CUBE}.`fincomestatus`"
         type: string
       - name: reconcile_status
         title: 缴库对账状态
-        description: freconcilestatus——缴库对账状态（xls#218）：0未对账 1对账成功 2对账失败；
-          与 allocation 视图同名成员不同节点（allocation 为到账对账状态，xls#140），勿跨视图混用
+        description: freconcilestatus——缴库对账状态：0未对账 1对账成功 2对账失败；
+          与 allocation 视图同名成员不同节点（allocation 为到账对账状态），勿跨视图混用
         sql: "{CUBE}.`freconcilestatus`"
         type: string
       - name: sub_level
         title: 非税级次编码
-        description: fsublevel——0共享级 2省级（fsublevelname 印证）；初步设计 Blocked 项，2026-10-12 实测已同步解锁
+        description: fsublevel——0共享级 2省级（fsublevelname 印证）
         sql: "{CUBE}.`fsublevel`"
         type: string
       - name: sub_level_name
@@ -281,21 +278,21 @@ cubes:
         type: string
       - name: rec_rgn_code
         title: 收入区划编码
-        description: frecrgncode——收入归属区划；无名称列；行级过滤维度（JWT region_code 注入，§3.1）
+        description: frecrgncode——收入归属区划；无名称列；行级过滤维度（JWT region_code 注入）
         sql: "{CUBE}.`frecrgncode`"
         type: string
       - name: pay_acct_name
         title: 付款账户名称
-        description: fpayacctname——缴库付款方账户名（6 值）；账号类列（fpayacct/fpayacctidcode）敏感不建
+        description: fpayacctname——缴库付款方账户名；账号类列（fpayacct/fpayacctidcode）敏感不建
         sql: "{CUBE}.`fpayacctname`"
         type: string
       - name: rec_acct_name
         title: 收款账户名称
-        description: frecacctname——收款方账户名（3 值）；账号类列（frecacct/frecacctidcode）敏感不建
+        description: frecacctname——收款方账户名；账号类列（frecacct/frecacctidcode）敏感不建
         sql: "{CUBE}.`frecacctname`"
         type: string
 
-      # ── 无名称实体（§4.3：只 code，不造名字）──
+      # ── 无名称实体（只 code，不造名字）──
       - name: chg_agency_code
         title: 执收单位编码
         description: fchgagencode——源列全空；仅为②条款 access_policy 编译保留（不进 view），
@@ -304,32 +301,32 @@ cubes:
         type: string
 
       # ── 时间维度（全 String → toDateOrNull）──
-      # 不建（2026-10-23 29 号文档核对 + CK 实测拍板）：fsenddate（缴库发送日期）/ftransdate（扣款日期）
+      # 不建清单：fsenddate（缴库发送日期）/ftransdate（扣款日期）
       # 填充恰=fenterstatus='1' 全集，与 enter_date 同子集不新增信息；
       # fmsgdate≡fdate（同 fpaydate 不建惯例）；fentrustdate/fpayentrustdate/
       # foperatetime 全空（同 fchgagencode 惯例，ETL 补数后自动生效再议）；ftranstime 基本无值
       - name: build_date
         title: 缴库单生成日期（建单日）
-        description: fdate（源 FBUILDDATE，缴库单生成日期，xls#150）——主时间轴，日报/趋势按它；
+        description: fdate（源 FBUILDDATE，缴库单生成日期）——主时间轴，日报/趋势按它；
           权威口径"缴库日期"判给 fsendate（缴库发送，未建，与已入库子集重合）；
           fpaydate 与之全等不建；与缴款日期（pay_date）是两个口径
         sql: "toDateOrNull({CUBE}.`fdate`)"
         type: time
       - name: enter_date
         title: 入国库日期
-        description: fenterdate——入库日期（xls#203，源缴库报文表，配 fenterstatus 入库状态
+        description: fenterdate——入库日期（源缴库报文表，配 fenterstatus 入库状态
           0未入库 1已入库），仅入库成功行有值；"已入国库 N 笔/金额"的时间轴必须用它，勿用 build_date。
           allocation/collection 视图同名 enter_date 是划拨到账口径，不同节点勿混用
         sql: "toDateOrNull({CUBE}.`fenterdate`)"
         type: time
       - name: reconcile_date
         title: 对账日期（缴库）
-        description: freconciledate——缴库对账日期（xls#217，源缴库报文表），仅对账成功行有值；
+        description: freconciledate——缴库对账日期（源缴库报文表），仅对账成功行有值；
           与 enter_date 完全同日勿当独立时间轴；collection 视图同名是缴款书对账口径
         sql: "toDateOrNull({CUBE}.`freconciledate`)"
         type: time
 
-      # ── 技术键（可建但 public: false，§4.3）──
+      # ── 技术键（可建但 public: false）──
       - name: fid
         title: 缴库明细ID
         description: 去重键——主 sql GROUP BY 它；同 fid 的 ftranscollectid 多值行已合并
@@ -342,9 +339,9 @@ cubes:
         type: string
         public: false
 
-    # 行级权限：三条款骨架与五要素语义见 26-资金模块建模开发方案 §3.2，JWT 占位符与 claims 约定见 §3.1，
-    # 白名单制硬语义见 §3.2（未命中任何策略=整表拒绝 1=0）。
-    # treasury 差异点：① 财政用户双区划 OR（照 allocation 现款，§3.2 AND/OR #2 已验证）——缴库单双侧区划均有值，
+    # 行级权限：三条款骨架（group/conditions/row_level），JWT 约定 region_code/agency_code，
+    # 白名单制（未命中任何策略=整表拒绝 1=0）。
+    # treasury 差异点：① 财政用户双区划 OR——缴库单双侧区划均有值，
     #   rec_rgn_code 有 530100 下级行，equals 单边会丢行——OR 恰好兜住；
     # ② 单位用户条款照挂但源列 fchgagencode 全空——命中即空结果（属预期），
     #   ETL 补列后自动生效；③ rec 双无 allow_all。ftm 无缴款人字段，不需要 member_masking。

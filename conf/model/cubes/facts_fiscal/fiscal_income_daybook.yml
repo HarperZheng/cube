@@ -1,16 +1,17 @@
-# 收入流水（fne_income_daybook）—— 非税收入全景 round-03 q23 建模
-# 回改单 rounds/round-03/feedback.md q23：执收单位已收上来但还没有汇缴上缴的资金分档
+# 收入流水（fne_income_daybook）
 # 口径：已收未汇缴=fisgenerec=0（"是否生成缴库记录"，IncomeDayBook.java:95，入账置 0、
 #       生成缴库置 1 并回填批次 TreasuryServiceImpl.java:222-233；现成查询
-#       queryIncomeUnGeneRec IncomeDayBookServiceImpl.java:256-268）；
-#       round-02 草案的 fnr_unpaid 口径（欠缴）与 fbatchno IS NULL 混装过滤均废除
+#       queryIncomeUnGeneRec IncomeDayBookServiceImpl.java:256-268）
 # ⚠ 断供项：fisgenerec 在缴款宽表 fne_paybook_full_high 及其中间表均无此列，本口径
 #   必须走 fne_income_daybook 表，不得在宽表上造
-# 实测（2026-10-27）：740 行全 fisgenerec=0（存量池），fimamt 合计 1,472,288.25、
-#   fownimamt 1,139,899.98；freceiveddate 池内跨 2022-2026；fisgenerec 为 UInt8 数值型
-# 开口（待人定，round-03 q23 注记）：①fimamt（收入金额）vs fownimamt（本级收入，
-#   按 fiodirection 方向加权）口径差；②是否叠加资金性质"预算内"条件（现成查询带此条件，
-#   funds_nature 维度已建作抓手，未作默认过滤）
+# 数据现状：全表 fisgenerec=0（存量池，fisgenerec 为 UInt8 数值型）；fisgeneacct 全 0
+#   （无已记账行，过滤后 0 属数据现实）；fimagenname/fbgtagenname/fdeptname/
+#   ffindeptname/fimrgnname 全填（区划 3 码）；fpaydate/freceiveddate 全填；
+#   记账完成无独立日期列，收入侧时间锚以 fpaydate 代锚（源侧 FENTERDATE 落地列
+#   语义待业务核对）；frecrgncode/frecrgnname/fenterdate/fdate 本表无列
+# 开口（待人定）：①fimamt（收入金额）vs fownimamt（本级收入，按 fiodirection 方向
+#   加权）口径差；②是否叠加资金性质"预算内"条件（现成查询带此条件，funds_nature
+#   维度已建作抓手，未作默认过滤）
 cubes:
   - name: fiscal_income_daybook
     title: 收入流水
@@ -25,9 +26,8 @@ cubes:
     measures:
       - name: stay_amt
         title: 滞留金额(元)
-        description: sum(fimamt) 限已收未汇缴（fisgenerec=0，存量池）——q23 拍板口径；
-          fownimamt（本级收入，按 fiodirection 加权）口径辨析待人定，未建勿替代；
-          实测池 740 行/1,472,288.25 元（2026-10-27）
+        description: sum(fimamt) 限已收未汇缴（fisgenerec=0，存量池）；
+          fownimamt（本级收入，按 fiodirection 加权）口径辨析待人定，未建勿替代
         sql: "{CUBE}.`fimamt`"
         type: sum
         filters:
@@ -38,6 +38,29 @@ cubes:
           与 stay_amt 同值，ETL 刷新出现 fisgenerec=1 后两口径分离）
         sql: "{CUBE}.`fimamt`"
         type: sum
+      - name: own_income_amt
+        title: 本级收入金额(元)
+        description: sum(fownimamt) 不限池——本级收入口径（fownimamt 按 fiodirection
+          方向加权，report.sql:56）；与"已完成财政记账"（recorded_amt）是两个口径勿互替
+        sql: "{CUBE}.`fownimamt`"
+        type: sum
+      - name: recorded_amt
+        title: 已完成财政记账金额(元)
+        description: sum(fimamt) 限 fisgeneacct=1——"已完成财政记账"的金额口径（数值
+          比较=1 不加引号）；当前全表无已记账行，查询返回空（null/无分组行）属数据
+          现实，按"无已完成财政记账数据"报；勿用 own_income_amt
+          （本级收入口径）或入库/缴库侧口径顶替
+        sql: "{CUBE}.`fimamt`"
+        type: sum
+        filters:
+          - sql: "{CUBE}.`fisgeneacct` = 1"
+      - name: recorded_count
+        title: 已完成财政记账笔数
+        description: count 限 fisgeneacct=1——已完成财政记账的到账流水笔数（一行一笔
+          流水）；当前全表无已记账行，笔数=0 属数据现实
+        type: count
+        filters:
+          - sql: "{CUBE}.`fisgeneacct` = 1"
 
     dimensions:
       - name: pay_code
@@ -49,12 +72,12 @@ cubes:
       - name: received_date
         title: 资金到账日期
         description: freceiveddate——到账回执驱动写入（PayBook.java:96/
-          PayBookServiceImpl.java:749-765），q23 滞留时长起算锚，与全局拍板口径一致
+          PayBookServiceImpl.java:749-765），滞留时长起算锚
         sql: "toDateOrNull({CUBE}.`freceiveddate`)"
         type: time
       - name: stay_bucket
         title: 滞留时长档位
-        description: 当前日−资金到账日期（天），q23 分档维度，拍板4 时长序列 <1天/1–10天/
+        description: 当前日−资金到账日期（天），分档维度，时长序列 <1天/1–10天/
           10–100天/≥100天，到账日空落"未知"档；存量池（题面无"今年"，勿按 received_date
           过滤当年）
         sql: "multiIf(toDateOrNull({CUBE}.`freceiveddate`) IS NULL, '未知', dateDiff('day', toDateOrNull({CUBE}.`freceiveddate`), today()) < 1, '<1天', dateDiff('day', toDateOrNull({CUBE}.`freceiveddate`), today()) < 10, '1–10天', dateDiff('day', toDateOrNull({CUBE}.`freceiveddate`), today()) < 100, '10–100天', '≥100天')"
@@ -62,8 +85,8 @@ cubes:
       - name: fisgenerec
         title: 是否生成缴库记录
         description: fisgenerec（UInt8 数值型）——0未生成（已收未汇缴，滞留池）1已生成
-          （已汇缴并回填批次）；"已收未汇缴"判定=0，勿用 fbatchno 空否替代（round-02
-          混装过滤已废除）
+          （已汇缴并回填批次）；"已收未汇缴"判定=0，勿用 fbatchno 空否替代（fbatchno
+          是汇缴批次回填列，未汇缴行本就为空，判不出"未汇缴"）
         sql: "{CUBE}.`fisgenerec`"
         type: number
       - name: batch_no
@@ -82,12 +105,15 @@ cubes:
         type: string
       - name: sub_name
         title: 预算科目名称
-        description: fsubname 原值——一码多名时以 sub_code 分组
-        sql: "{CUBE}.`fsubname`"
+        description: 空编码行落"未归属"组（fsubcode 空=项目未配置预算科目的收入，非脏
+          数据，单列不摊入具体科目）；fsubname 台账落库名称列直接分组，一码多名时以
+          sub_code 分组
+        sql: "multiIf({CUBE}.`fsubcode` = '', '未归属', {CUBE}.`fsubname`)"
         type: string
       - name: funds_nature_code
         title: 资金性质编码
-        description: ffundsnature——q23 开口"是否叠加预算内条件"的抓手维度，未作默认过滤
+        description: ffundsnature——"是否叠加预算内条件"的抓手维度，未作默认过滤
+          （叠加与否待人定）
         sql: "{CUBE}.`ffundsnature`"
         type: string
       - name: funds_nature_name
@@ -106,11 +132,57 @@ cubes:
         type: string
       - name: rgn_code
         title: 收入区划编码
-        description: fimrgncode——收入归属区划，行级过滤键（JWT region_code 注入，§3.1）
+        description: fimrgncode——收入归属区划，行级过滤键（JWT region_code 注入）
         sql: "{CUBE}.`fimrgncode`"
         type: string
+      - name: rgn_name
+        title: 收入区划名称
+        description: fimrgnname 落库列直接分组（免字典 join，宽表侧 AFA_AUTH_REGION 内
+          连接丢空区划行的坑与本列无关）；一码多名时以 rgn_code 分组
+        sql: "{CUBE}.`fimrgnname`"
+        type: string
+      - name: income_date
+        title: 收入日期（记账锚）
+        description: fpaydate 字符串转 Date——收入侧业务日期锚，"今年（收入侧）"过滤轴；
+          记账完成无独立日期列，以本列代锚（源侧 FENTERDATE 落地列语义待业务核对）；
+          received_date 是到账锚（滞留时长专用），勿混；与 collection/
+          allocation/treasury 视图的 enter_date 同名不同义，故本成员另名 income_date
+        sql: "toDateOrNull({CUBE}.`fpaydate`)"
+        type: time
+      - name: fisgeneacct
+        title: 是否完成财政记账
+        description: fisgeneacct（UInt8 数值型）——1=已完成财政记账，"已完成财政记账"
+          判定=本字段=1（数值比较不加引号）；金额/笔数口径用 recorded_amt/recorded_count；
+          当前全表无已记账行（过滤后 0 属数据现实）；
+          同义层备选 fincomestatus 是缴库侧口径（treasury 视图
+          income_status），勿混
+        sql: "{CUBE}.`fisgeneacct`"
+        type: number
+      - name: income_agen_name
+        title: 收入单位名称
+        description: fimagenname——权威收入归属单位，"收入单位"分组列（名称列落库直接
+          分组，识别码 fimagenidcode 不建）；勿用执收单位 chg_agen_name 冒充
+        sql: "{CUBE}.`fimagenname`"
+        type: string
+      - name: bgt_agen_name
+        title: 预算单位名称（收入侧）
+        description: fbgtagenname——"各预算单位对应的收入金额"分组列；缴款侧
+          budget_agen（fchgbgtagenname）在收入类问题中弃用（收入侧名称全填）
+        sql: "{CUBE}.`fbgtagenname`"
+        type: string
+      - name: dept_name
+        title: 主管部门名称
+        description: fdeptname——"主管部门归口"维度主选；用预算单位 bgt_agen_name 冒充
+          主管部门是错的
+        sql: "{CUBE}.`fdeptname`"
+        type: string
+      - name: fin_dept_name
+        title: 归口处室名称
+        description: ffindeptname——归口业务处室，主管部门的备选维度（二选一待业务定）
+        sql: "{CUBE}.`ffindeptname`"
+        type: string
 
-    # 行级权限三条款骨架同 daybook/cbill（26-资金模块建模开发方案 §3.2）
+    # 行级权限三条款骨架（group/conditions/row_level），白名单制
     access_policy:
       - group: "*"
         conditions:
